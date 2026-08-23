@@ -1,0 +1,28 @@
+{
+  "LanguageSwitcher": {
+    "label": "Language",
+    "en": "English",
+    "hi": "Hindi",
+    "as": "Assamese"
+  },
+  "HomePage": {
+    "title": "Project ready!",
+    "description": "You may now add components and start building.",
+    "note": "We've already added the button component for you.",
+    "button": "Button",
+    "themeHint": "(Press <kbd>d</kbd> to toggle dark mode)"
+  },
+  "LoginPage": {
+    "title": "Log in",
+    "description": "nucleus-billing — test login",
+    "email": "Email",
+    "password": "Password",
+    "submit": "Log in",
+    "submitting": "Logging in..."
+  },
+  "DashboardPage": {
+    "title": "Dashboard",
+    "loggedInAs": "Logged in as {email}",
+    "signOut": "Sign out"
+  }
+}

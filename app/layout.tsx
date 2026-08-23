@@ -1,7 +1,9 @@
 import { Geist, Geist_Mono, Inter, Roboto } from "next/font/google"
+import { getLocale } from "next-intl/server"
 
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
+import { QueryProvider } from "@/components/providers/query-provider"
 import { cn } from "@/lib/utils";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
@@ -14,20 +16,24 @@ const fontMono = Geist_Mono({
   variable: "--font-mono",
 })
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const locale = await getLocale()
+
   return (
     <html
-      lang="en"
+      lang={locale}
       suppressHydrationWarning
       className={cn("antialiased", fontMono.variable, "font-sans", inter.variable, robotoHeading.variable)}
     >
       <body>
-        <ThemeProvider>
-           <TooltipProvider>{children}</TooltipProvider></ThemeProvider>
+        <QueryProvider>
+          <ThemeProvider>
+             <TooltipProvider>{children}</TooltipProvider></ThemeProvider>
+        </QueryProvider>
       </body>
     </html>
   )
