@@ -6,8 +6,8 @@ import {
   createPurchaseBillItem,
   updatePurchaseBillItem,
   deletePurchaseBillItem,
-} from "@/lib/services/purchase-bill-items"
-import type { PurchaseBillItem } from "@/lib/billing/types"
+} from "@/lib/database/services/purchase-bill-items"
+import type { PurchaseBillItem } from "@/lib/database/types"
 
 export function usePurchaseBillItems(purchaseBillId: string | undefined) {
   return useQuery({

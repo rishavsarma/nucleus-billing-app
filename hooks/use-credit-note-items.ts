@@ -6,8 +6,8 @@ import {
   createCreditNoteItem,
   updateCreditNoteItem,
   deleteCreditNoteItem,
-} from "@/lib/services/credit-note-items"
-import type { CreditNoteItem } from "@/lib/billing/types"
+} from "@/lib/database/services/credit-note-items"
+import type { CreditNoteItem } from "@/lib/database/types"
 
 export function useCreditNoteItems(creditNoteId: string | undefined) {
   return useQuery({

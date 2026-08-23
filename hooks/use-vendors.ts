@@ -6,8 +6,8 @@ import {
   createVendor,
   updateVendor,
   deleteVendor,
-} from "@/lib/services/vendors"
-import type { Vendor } from "@/lib/billing/types"
+} from "@/lib/database/services/vendors"
+import type { Vendor } from "@/lib/database/types"
 
 export function useVendors() {
   return useQuery({

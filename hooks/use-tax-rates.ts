@@ -6,8 +6,8 @@ import {
   createTaxRate,
   updateTaxRate,
   deleteTaxRate,
-} from "@/lib/services/tax-rates"
-import type { TaxRate } from "@/lib/billing/types"
+} from "@/lib/database/services/tax-rates"
+import type { TaxRate } from "@/lib/database/types"
 
 export function useTaxRates() {
   return useQuery({

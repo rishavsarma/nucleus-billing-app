@@ -6,8 +6,8 @@ import {
   createWarehouse,
   updateWarehouse,
   deleteWarehouse,
-} from "@/lib/services/warehouses"
-import type { Warehouse } from "@/lib/billing/types"
+} from "@/lib/database/services/warehouses"
+import type { Warehouse } from "@/lib/database/types"
 
 export function useWarehouses() {
   return useQuery({

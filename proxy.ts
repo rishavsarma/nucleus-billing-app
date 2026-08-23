@@ -1,33 +1,58 @@
-import { createServerClient } from "@supabase/ssr";
-import createMiddleware from "next-intl/middleware";
-import { type NextRequest } from "next/server";
-import { routing } from "@/i18n/routing";
+import createMiddleware from "next-intl/middleware"
+import { NextResponse, type NextRequest } from "next/server"
+import { routing, type Locale } from "@/i18n/routing"
+import { updateSession } from "@/lib/supabase/proxy"
 
-const handleI18nRouting = createMiddleware(routing);
+const handleI18nRouting = createMiddleware(routing)
+
+// Prefixes (locale-stripped, leading slash) that require a signed-in user.
+const PROTECTED_PREFIXES = [
+  "/sales",
+  "/purchases",
+  "/catalog",
+  "/parties",
+  "/inventory",
+  "/settings",
+  "/admin",
+]
+
+// Prefixes that a signed-in user shouldn't see (bounce them to the app instead).
+const AUTH_ONLY_PREFIXES = ["/login"]
+
+function localeAndPath(pathname: string): { locale: Locale; path: string } {
+  const [, maybeLocale, ...rest] = pathname.split("/")
+  if (routing.locales.includes(maybeLocale as Locale)) {
+    return { locale: maybeLocale as Locale, path: "/" + rest.join("/") }
+  }
+  return { locale: routing.defaultLocale, path: pathname }
+}
 
 export async function proxy(request: NextRequest) {
-  const response = handleI18nRouting(request);
+  const response = handleI18nRouting(request)
+  const user = await updateSession(request, response)
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() { return request.cookies.getAll(); },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
-          cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options));
-        },
-      },
-    },
-  );
+  const { locale, path } = localeAndPath(request.nextUrl.pathname)
+  const normalizedPath = path === "" ? "/" : path
 
-  await supabase.auth.getUser(); // refreshes the session cookie
+  const isProtected =
+    normalizedPath === "/" || PROTECTED_PREFIXES.some((p) => normalizedPath.startsWith(p))
+  const isAuthOnly = AUTH_ONLY_PREFIXES.some((p) => normalizedPath.startsWith(p))
 
-  return response;
+  if (!user && isProtected) {
+    const url = request.nextUrl.clone()
+    url.pathname = `/${locale}/login`
+    return NextResponse.redirect(url)
+  }
+
+  if (user && isAuthOnly) {
+    const url = request.nextUrl.clone()
+    url.pathname = `/${locale}`
+    return NextResponse.redirect(url)
+  }
+
+  return response
 }
 
 export const config = {
   matcher: ["/((?!_next/static|_next/image|favicon.ico|monitoring|api|auth).*)"],
-};
+}

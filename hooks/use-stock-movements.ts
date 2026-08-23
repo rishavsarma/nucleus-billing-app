@@ -1,8 +1,8 @@
 "use client"
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { fetchStockMovements, createStockMovement } from "@/lib/services/stock-movements"
-import type { StockMovement } from "@/lib/billing/types"
+import { fetchStockMovements, createStockMovement } from "@/lib/database/services/stock-movements"
+import type { StockMovement } from "@/lib/database/types"
 
 export function useStockMovements() {
   return useQuery({

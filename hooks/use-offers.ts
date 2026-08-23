@@ -1,8 +1,8 @@
 "use client"
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { fetchOffers, createOffer, updateOffer, deleteOffer } from "@/lib/services/offers"
-import type { Offer } from "@/lib/billing/types"
+import { fetchOffers, createOffer, updateOffer, deleteOffer } from "@/lib/database/services/offers"
+import type { Offer } from "@/lib/database/types"
 
 export function useOffers() {
   return useQuery({

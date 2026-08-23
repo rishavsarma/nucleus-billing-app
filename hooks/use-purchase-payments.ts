@@ -5,8 +5,8 @@ import {
   fetchPurchasePayments,
   createPurchasePayment,
   updatePurchasePayment,
-} from "@/lib/services/purchase-payments"
-import type { PurchasePayment } from "@/lib/billing/types"
+} from "@/lib/database/services/purchase-payments"
+import type { PurchasePayment } from "@/lib/database/types"
 
 export function usePurchasePayments() {
   return useQuery({

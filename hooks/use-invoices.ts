@@ -1,8 +1,8 @@
 "use client"
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { fetchInvoices, createInvoice, updateInvoice } from "@/lib/services/invoices"
-import type { Invoice } from "@/lib/billing/types"
+import { fetchInvoices, createInvoice, updateInvoice } from "@/lib/database/services/invoices"
+import type { Invoice } from "@/lib/database/types"
 
 export function useInvoices() {
   return useQuery({

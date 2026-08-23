@@ -6,8 +6,8 @@ import {
   createDebitNoteItem,
   updateDebitNoteItem,
   deleteDebitNoteItem,
-} from "@/lib/services/debit-note-items"
-import type { DebitNoteItem } from "@/lib/billing/types"
+} from "@/lib/database/services/debit-note-items"
+import type { DebitNoteItem } from "@/lib/database/types"
 
 export function useDebitNoteItems(debitNoteId: string | undefined) {
   return useQuery({

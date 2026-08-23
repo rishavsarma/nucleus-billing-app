@@ -6,8 +6,8 @@ import {
   createInvoiceItem,
   updateInvoiceItem,
   deleteInvoiceItem,
-} from "@/lib/services/invoice-items"
-import type { InvoiceItem } from "@/lib/billing/types"
+} from "@/lib/database/services/invoice-items"
+import type { InvoiceItem } from "@/lib/database/types"
 
 export function useInvoiceItems(invoiceId: string | undefined) {
   return useQuery({

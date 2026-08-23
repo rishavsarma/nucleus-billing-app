@@ -1,8 +1,8 @@
 "use client"
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { fetchItems, createItem, updateItem, deleteItem } from "@/lib/services/items"
-import type { Item } from "@/lib/billing/types"
+import { fetchItems, createItem, updateItem, deleteItem } from "@/lib/database/services/items"
+import type { Item } from "@/lib/database/types"
 
 export function useItems() {
   return useQuery({

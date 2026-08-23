@@ -6,8 +6,8 @@ import {
   createCustomer,
   updateCustomer,
   deleteCustomer,
-} from "@/lib/services/customers"
-import type { Customer } from "@/lib/billing/types"
+} from "@/lib/database/services/customers"
+import type { Customer } from "@/lib/database/types"
 
 export function useCustomers() {
   return useQuery({

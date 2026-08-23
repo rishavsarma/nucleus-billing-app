@@ -1,8 +1,9 @@
-import { Geist, Geist_Mono, Inter, Roboto } from "next/font/google"
+import {  Geist_Mono, Inter, Roboto } from "next/font/google"
 import { getLocale } from "next-intl/server"
 
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
+import { ThemePresetScript } from "@/components/theme-preset-script"
 import { QueryProvider } from "@/components/providers/query-provider"
 import { cn } from "@/lib/utils";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -29,6 +30,9 @@ export default async function RootLayout({
       suppressHydrationWarning
       className={cn("antialiased", fontMono.variable, "font-sans", inter.variable, robotoHeading.variable)}
     >
+      <head>
+        <ThemePresetScript />
+      </head>
       <body>
         <QueryProvider>
           <ThemeProvider>

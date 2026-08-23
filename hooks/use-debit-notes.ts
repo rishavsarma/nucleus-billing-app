@@ -1,8 +1,8 @@
 "use client"
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { fetchDebitNotes, createDebitNote, updateDebitNote } from "@/lib/services/debit-notes"
-import type { DebitNote } from "@/lib/billing/types"
+import { fetchDebitNotes, createDebitNote, updateDebitNote } from "@/lib/database/services/debit-notes"
+import type { DebitNote } from "@/lib/database/types"
 
 export function useDebitNotes() {
   return useQuery({

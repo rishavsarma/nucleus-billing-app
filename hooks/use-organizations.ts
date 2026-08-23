@@ -5,8 +5,8 @@ import {
   fetchOrganizations,
   createOrganization,
   updateOrganization,
-} from "@/lib/services/organizations"
-import type { Organization } from "@/lib/billing/types"
+} from "@/lib/database/services/organizations"
+import type { Organization } from "@/lib/database/types"
 
 export function useOrganizations() {
   return useQuery({

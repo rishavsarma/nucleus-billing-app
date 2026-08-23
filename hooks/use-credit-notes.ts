@@ -1,8 +1,8 @@
 "use client"
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { fetchCreditNotes, createCreditNote, updateCreditNote } from "@/lib/services/credit-notes"
-import type { CreditNote } from "@/lib/billing/types"
+import { fetchCreditNotes, createCreditNote, updateCreditNote } from "@/lib/database/services/credit-notes"
+import type { CreditNote } from "@/lib/database/types"
 
 export function useCreditNotes() {
   return useQuery({

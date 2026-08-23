@@ -5,8 +5,8 @@ import {
   fetchOfferItems,
   createOfferItem,
   deleteOfferItem,
-} from "@/lib/services/offer-items"
-import type { OfferItem } from "@/lib/billing/types"
+} from "@/lib/database/services/offer-items"
+import type { OfferItem } from "@/lib/database/types"
 
 export function useOfferItems(offerId: string | undefined) {
   return useQuery({

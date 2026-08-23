@@ -6,8 +6,8 @@ import {
   createMembership,
   updateMembership,
   deleteMembership,
-} from "@/lib/services/memberships"
-import type { Membership } from "@/lib/billing/types"
+} from "@/lib/database/services/memberships"
+import type { Membership } from "@/lib/database/types"
 
 export function useMemberships() {
   return useQuery({

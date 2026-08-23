@@ -5,8 +5,8 @@ import {
   fetchPurchaseBills,
   createPurchaseBill,
   updatePurchaseBill,
-} from "@/lib/services/purchase-bills"
-import type { PurchaseBill } from "@/lib/billing/types"
+} from "@/lib/database/services/purchase-bills"
+import type { PurchaseBill } from "@/lib/database/types"
 
 export function usePurchaseBills() {
   return useQuery({

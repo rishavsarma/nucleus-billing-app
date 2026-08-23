@@ -1,8 +1,8 @@
 "use client"
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { fetchPayments, createPayment, updatePayment } from "@/lib/services/payments"
-import type { Payment } from "@/lib/billing/types"
+import { fetchPayments, createPayment, updatePayment } from "@/lib/database/services/payments"
+import type { Payment } from "@/lib/database/types"
 
 export function usePayments() {
   return useQuery({

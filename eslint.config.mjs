@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Reference-only copy of the tweakcn source, not part of this app.
+    "tweakcn-main/**",
   ]),
 ]);
 
