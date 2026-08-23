@@ -2,6 +2,7 @@ import { useTranslations } from "next-intl"
 
 import { Button } from "@/components/ui/button"
 import { LanguageSwitcher } from "@/components/language-switcher"
+import { OrganizationsList } from "@/components/organizations-list"
 
 export default function Page() {
   const t = useTranslations("HomePage")
@@ -17,6 +18,10 @@ export default function Page() {
           <p>{t("description")}</p>
           <p>{t("note")}</p>
           <Button className="mt-2">{t("button")}</Button>
+        </div>
+        <div>
+          <h2 className="font-medium">Organizations</h2>
+          <OrganizationsList />
         </div>
         <div className="font-mono text-xs text-muted-foreground">
           {t.rich("themeHint", { kbd: (chunks) => <kbd>{chunks}</kbd> })}

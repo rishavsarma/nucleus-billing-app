@@ -229,6 +229,7 @@ CREATE TABLE billing.organizations (
   pdf_footer_notes text,
   financial_year_start_month integer NOT NULL DEFAULT 4 CHECK (financial_year_start_month >= 1 AND financial_year_start_month <= 12),
   low_stock_alerts_enabled boolean NOT NULL DEFAULT true,
+  is_active boolean NOT NULL DEFAULT true,
   created_at timestamp with time zone NOT NULL DEFAULT now(),
   updated_at timestamp with time zone NOT NULL DEFAULT now(),
   CONSTRAINT organizations_pkey PRIMARY KEY (id)
@@ -320,10 +321,16 @@ CREATE TABLE billing.stock_movements (
   created_by uuid DEFAULT uid(),
   created_at timestamp with time zone NOT NULL DEFAULT now(),
   CONSTRAINT stock_movements_pkey PRIMARY KEY (id),
-  CONSTRAINT stock_movements_org_id_fkey FOREIGN KEY (org_id) REFERENCES billing.organizations(id),
   CONSTRAINT stock_movements_item_id_fkey FOREIGN KEY (item_id) REFERENCES billing.items(id),
+  CONSTRAINT stock_movements_org_id_fkey FOREIGN KEY (org_id) REFERENCES billing.organizations(id),
   CONSTRAINT stock_movements_warehouse_id_fkey FOREIGN KEY (warehouse_id) REFERENCES billing.warehouses(id),
   CONSTRAINT stock_movements_created_by_fkey FOREIGN KEY (created_by) REFERENCES auth.users(id)
+);
+CREATE TABLE billing.superadmins (
+  user_id uuid NOT NULL,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT superadmins_pkey PRIMARY KEY (user_id),
+  CONSTRAINT superadmins_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
 );
 CREATE TABLE billing.tax_rates (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
