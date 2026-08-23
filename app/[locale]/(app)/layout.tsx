@@ -1,7 +1,7 @@
 import { AppSidebar } from "@/components/app-sidebar"
 import { LanguageSwitcher } from "@/components/language-switcher"
+import { ModeToggle } from "@/components/mode-toggle"
 import { ThemePresetSelector } from "@/components/theme-preset-selector"
-import { Separator } from "@/components/ui/separator"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 
 // Auth is enforced in middleware.ts (unauthenticated requests to any of
@@ -10,13 +10,14 @@ import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/s
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <SidebarProvider>
-      <AppSidebar />
+      <AppSidebar variant="inset"/>
       <SidebarInset>
         <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4">
           <SidebarTrigger />
-          <Separator orientation="vertical" className="h-4!" />
+          {/* <Separator orientation="vertical" className="h-full" /> */}
           <div className="flex-1" />
           <ThemePresetSelector />
+          <ModeToggle />
           <LanguageSwitcher />
         </header>
         <div className="flex-1 p-6">{children}</div>
