@@ -1,5 +1,5 @@
 -- ============================================================================
--- nucleus-billing — functions & triggers v2
+-- nucleus-billing — functions & triggers v3
 -- Run after 001_billing_schema.sql.
 -- ============================================================================
 
@@ -31,6 +31,8 @@ create trigger credit_notes_set_updated_at before update on billing.credit_notes
 create trigger debit_notes_set_updated_at before update on billing.debit_notes
   for each row execute function billing.set_updated_at();
 create trigger offers_set_updated_at before update on billing.offers
+  for each row execute function billing.set_updated_at();
+create trigger organization_addon_subscriptions_set_updated_at before update on billing.organization_addon_subscriptions
   for each row execute function billing.set_updated_at();
 
 -- ----------------------------------------------------------------------------
@@ -767,9 +769,9 @@ create trigger debit_notes_stock_effect after update of status on billing.debit_
 
 -- ----------------------------------------------------------------------------
 -- Only a superadmin may flip organizations.is_active. Everything else on
--- the row (name, GST/PDF settings, prefixes...) stays governed by the
--- ordinary organizations_update RLS policy in 003 — this trigger only
--- guards this one column.
+-- the row (name, GST/PDF settings, prefixes, business_type_id...) stays
+-- governed by the ordinary organizations_update RLS policy in 003 — this
+-- trigger only guards this one column.
 -- ----------------------------------------------------------------------------
 create or replace function billing.check_organization_active_change()
 returns trigger language plpgsql set search_path = billing, public as $$
@@ -783,3 +785,23 @@ $$;
 create trigger organizations_active_change_guard before update of is_active on billing.organizations
   for each row when (old.is_active is distinct from new.is_active)
   execute function billing.check_organization_active_change();
+
+-- ----------------------------------------------------------------------------
+-- Same guard, same reasoning, for the new base-plan billing state. Only a
+-- superadmin may flip subscription_status — an org can never pay itself
+-- into 'active' by writing the column directly. Later, once a real payment
+-- gateway exists, a webhook (running as service_role, which bypasses this
+-- trigger the same way superadmin does) would call this instead of a human.
+-- ----------------------------------------------------------------------------
+create or replace function billing.check_organization_subscription_change()
+returns trigger language plpgsql set search_path = billing, public as $$
+begin
+  if old.subscription_status is distinct from new.subscription_status and not billing.is_superadmin() then
+    raise exception 'Organization % — only a superadmin can change subscription_status', old.id;
+  end if;
+  return new;
+end;
+$$;
+create trigger organizations_subscription_change_guard before update of subscription_status on billing.organizations
+  for each row when (old.subscription_status is distinct from new.subscription_status)
+  execute function billing.check_organization_subscription_change();

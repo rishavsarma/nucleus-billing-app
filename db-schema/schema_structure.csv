@@ -1,0 +1,273 @@
+table,column,type,nullable,default,primary_key,references,check_constraint,notes
+billing.business_types,id,uuid,NO,gen_random_uuid(),YES,,,
+billing.business_types,name,text,NO,,,,,
+billing.business_types,slug,text,NO,,,,UNIQUE,
+billing.business_types,description,text,YES,,,,,
+billing.business_types,is_active,boolean,NO,true,,,,Superadmin can retire from new signups without deleting history
+billing.business_types,created_at,timestamptz,NO,now(),,,,
+billing.organizations,id,uuid,NO,gen_random_uuid(),YES,,,
+billing.organizations,name,text,NO,,,,,
+billing.organizations,slug,text,YES,,,,UNIQUE,
+billing.organizations,billing_email,text,YES,,,,,
+billing.organizations,default_currency,text,NO,'INR',,,,
+billing.organizations,business_type_id,uuid,YES,,,business_types.id ON DELETE SET NULL,,"Set at onboarding; drives default setup + add-on recommendations only, not access control"
+billing.organizations,invoice_prefix,text,NO,'INV',,,,
+billing.organizations,bill_prefix,text,NO,'BILL',,,,
+billing.organizations,credit_note_prefix,text,NO,'CN',,,,
+billing.organizations,debit_note_prefix,text,NO,'DN',,,,
+billing.organizations,gstin,text,YES,,,,,
+billing.organizations,gst_registered,boolean,NO,false,,,,
+billing.organizations,state_code,text,YES,,,,,GST place-of-supply state code
+billing.organizations,pdf_watermark_text,text,YES,,,,,null = no watermark
+billing.organizations,pdf_logo_url,text,YES,,,,,
+billing.organizations,pdf_footer_notes,text,YES,,,,,Default invoice/bill T&C
+billing.organizations,financial_year_start_month,int,NO,4,,,1-12,
+billing.organizations,low_stock_alerts_enabled,boolean,NO,true,,,,
+billing.organizations,is_active,boolean,NO,true,,,,"Superadmin-only to change; false locks out the org's own members"
+billing.organizations,subscription_status,text,NO,'trialing',,,"subscription_status IN ('trialing','active','past_due','cancelled')","Superadmin-only to change; independent of is_active. Only trialing/active pass is_org_member()/is_org_admin() — past_due and cancelled lock the org out the same way an inactive org does"
+billing.organizations,subscription_current_period_end,timestamptz,YES,,,,,When the current paid (or trial) period ends; also what organization_addon_subscriptions.renews_at is synced to
+billing.organizations,created_at,timestamptz,NO,now(),,,,
+billing.organizations,updated_at,timestamptz,NO,now(),,,,Auto-bumped by set_updated_at
+billing.memberships,id,uuid,NO,gen_random_uuid(),YES,,,
+billing.memberships,org_id,uuid,NO,,,organizations.id ON DELETE CASCADE,,"Part of UNIQUE(org_id,user_id)"
+billing.memberships,user_id,uuid,NO,,,auth.users.id ON DELETE CASCADE,,"Part of UNIQUE(org_id,user_id)"
+billing.memberships,role,text,NO,'owner',,,"role IN ('owner','admin','member')",
+billing.memberships,created_at,timestamptz,NO,now(),,,,
+billing.superadmins,user_id,uuid,NO,,YES,auth.users.id ON DELETE CASCADE,,"No insert/update/delete policy at all — granted only via direct SQL"
+billing.superadmins,created_at,timestamptz,NO,now(),,,,
+billing.customers,id,uuid,NO,gen_random_uuid(),YES,,,
+billing.customers,org_id,uuid,NO,,,organizations.id ON DELETE CASCADE,,
+billing.customers,name,text,NO,,,,,
+billing.customers,email,text,YES,,,,,
+billing.customers,phone,text,YES,,,,,
+billing.customers,billing_address,jsonb,YES,,,,,
+billing.customers,tax_id,text,YES,,,,,e.g. GSTIN
+billing.customers,notes,text,YES,,,,,
+billing.customers,created_by,uuid,YES,,,auth.users.id,,
+billing.customers,created_at,timestamptz,NO,now(),,,,
+billing.customers,updated_at,timestamptz,NO,now(),,,,Auto-bumped
+billing.vendors,id,uuid,NO,gen_random_uuid(),YES,,,
+billing.vendors,org_id,uuid,NO,,,organizations.id ON DELETE CASCADE,,
+billing.vendors,name,text,NO,,,,,
+billing.vendors,email,text,YES,,,,,
+billing.vendors,phone,text,YES,,,,,
+billing.vendors,billing_address,jsonb,YES,,,,,
+billing.vendors,tax_id,text,YES,,,,,
+billing.vendors,notes,text,YES,,,,,
+billing.vendors,created_by,uuid,YES,,,auth.users.id,,
+billing.vendors,created_at,timestamptz,NO,now(),,,,
+billing.vendors,updated_at,timestamptz,NO,now(),,,,Auto-bumped
+billing.tax_rates,id,uuid,NO,gen_random_uuid(),YES,,,
+billing.tax_rates,org_id,uuid,NO,,,organizations.id ON DELETE CASCADE,,
+billing.tax_rates,name,text,NO,,,,,"e.g. ""GST 18%"""
+billing.tax_rates,rate,"numeric(5,2)",NO,,,,rate BETWEEN 0 AND 100,
+billing.tax_rates,is_default,boolean,NO,false,,,,
+billing.tax_rates,created_at,timestamptz,NO,now(),,,,
+billing.warehouses,id,uuid,NO,gen_random_uuid(),YES,,,
+billing.warehouses,org_id,uuid,NO,,,organizations.id ON DELETE CASCADE,,
+billing.warehouses,name,text,NO,,,,,
+billing.warehouses,address,jsonb,YES,,,,,
+billing.warehouses,is_default,boolean,NO,false,,,,
+billing.warehouses,created_at,timestamptz,NO,now(),,,,
+billing.items,id,uuid,NO,gen_random_uuid(),YES,,,
+billing.items,org_id,uuid,NO,,,organizations.id ON DELETE CASCADE,,"Part of UNIQUE(org_id,sku) where sku not null"
+billing.items,name,text,NO,,,,,
+billing.items,sku,text,YES,,,,,"Part of UNIQUE(org_id,sku) where sku not null"
+billing.items,description,text,YES,,,,,
+billing.items,hsn_sac_code,text,YES,,,,,GST HSN(goods)/SAC(services) code
+billing.items,unit,text,NO,'pcs',,,,Unit of measure
+billing.items,unit_price,"numeric(14,2)",NO,0,,,,Default selling price
+billing.items,purchase_price,"numeric(14,2)",NO,0,,,,"Default cost, prefills purchase bills"
+billing.items,tax_rate_id,uuid,YES,,,tax_rates.id ON DELETE SET NULL,,
+billing.items,track_inventory,boolean,NO,true,,,,false = service/non-stock item
+billing.items,reorder_level,"numeric(14,4)",NO,0,,,,
+billing.items,is_active,boolean,NO,true,,,,
+billing.items,created_at,timestamptz,NO,now(),,,,
+billing.items,updated_at,timestamptz,NO,now(),,,,Auto-bumped
+billing.item_stock,item_id,uuid,NO,,YES (composite),items.id ON DELETE CASCADE,,"PK part 1; read-only, derived from stock_movements"
+billing.item_stock,warehouse_id,uuid,NO,,YES (composite),warehouses.id ON DELETE CASCADE,,PK part 2
+billing.item_stock,quantity_on_hand,"numeric(14,4)",NO,0,,,,Written only by stock_movements_apply() trigger
+billing.stock_movements,id,uuid,NO,gen_random_uuid(),YES,,,
+billing.stock_movements,org_id,uuid,NO,,,organizations.id ON DELETE CASCADE,,
+billing.stock_movements,item_id,uuid,NO,,,items.id ON DELETE RESTRICT,,
+billing.stock_movements,warehouse_id,uuid,NO,,,warehouses.id ON DELETE RESTRICT,,
+billing.stock_movements,quantity_delta,"numeric(14,4)",NO,,,,quantity_delta <> 0,"Positive = stock in, negative = stock out"
+billing.stock_movements,movement_type,text,NO,,,,"movement_type IN ('purchase','purchase_void','sale','sale_void','sales_return','sales_return_void','purchase_return','purchase_return_void','adjustment')",
+billing.stock_movements,reference_type,text,YES,,,,,'invoice' | 'purchase_bill' | 'credit_note' | 'debit_note' | 'manual'
+billing.stock_movements,reference_id,uuid,YES,,,,,Not FK'd (polymorphic across document tables)
+billing.stock_movements,notes,text,YES,,,,,
+billing.stock_movements,created_by,uuid,YES,auth.uid(),,auth.users.id,,Auto-stamped from the session that wrote the row
+billing.stock_movements,created_at,timestamptz,NO,now(),,,,"Append-only: UPDATE/DELETE blocked by trigger, even for service_role"
+billing.offers,id,uuid,NO,gen_random_uuid(),YES,,,
+billing.offers,org_id,uuid,NO,,,organizations.id ON DELETE CASCADE,,
+billing.offers,name,text,NO,,,,,"e.g. ""Diwali Sale"""
+billing.offers,description,text,YES,,,,,
+billing.offers,discount_type,text,NO,,,,"discount_type IN ('percentage','flat')",
+billing.offers,value,"numeric(14,2)",NO,,,,value >= 0,
+billing.offers,applies_to_all_items,boolean,NO,true,,,,false = scoped via offer_items
+billing.offers,starts_at,date,YES,,,,,"Informational only, not enforced at write time"
+billing.offers,ends_at,date,YES,,,,,"Informational only, not enforced at write time"
+billing.offers,is_active,boolean,NO,true,,,,
+billing.offers,created_at,timestamptz,NO,now(),,,,
+billing.offers,updated_at,timestamptz,NO,now(),,,,Auto-bumped
+billing.offer_items,offer_id,uuid,NO,,YES (composite),offers.id ON DELETE CASCADE,,PK part 1
+billing.offer_items,item_id,uuid,NO,,YES (composite),items.id ON DELETE CASCADE,,PK part 2; not enforced against invoice lines at write time
+billing.org_document_counters,org_id,uuid,NO,,YES (composite),organizations.id ON DELETE CASCADE,,PK part 1
+billing.org_document_counters,doc_type,text,NO,,YES (composite),,"doc_type IN ('invoice','purchase_bill','credit_note','debit_note')",PK part 2
+billing.org_document_counters,next_value,int,NO,1,,,,Written only by next_document_number() (SECURITY DEFINER)
+billing.invoices,id,uuid,NO,gen_random_uuid(),YES,,,
+billing.invoices,org_id,uuid,NO,,,organizations.id ON DELETE CASCADE,,"Part of UNIQUE(org_id,invoice_number)"
+billing.invoices,customer_id,uuid,NO,,,customers.id ON DELETE RESTRICT,,
+billing.invoices,warehouse_id,uuid,YES,,,warehouses.id,,Required once a tracked item is on the invoice (enforced at status change)
+billing.invoices,offer_id,uuid,YES,,,offers.id ON DELETE SET NULL,,Drives auto-computed discount_total
+billing.invoices,invoice_number,text,YES,assigned by trigger,,,,"Part of UNIQUE(org_id,invoice_number)"
+billing.invoices,status,text,NO,'draft',,,"status IN ('draft','sent','partially_paid','paid','overdue','void')",Auto-transitioned by recalc_invoice() once out of draft/void
+billing.invoices,currency,text,NO,'INR',,,,
+billing.invoices,issue_date,date,NO,current_date,,,,
+billing.invoices,due_date,date,YES,,,,,
+billing.invoices,notes,text,YES,,,,,
+billing.invoices,subtotal,"numeric(14,2)",NO,0,,,,Auto-maintained
+billing.invoices,tax_total,"numeric(14,2)",NO,0,,,,Auto-maintained
+billing.invoices,discount_total,"numeric(14,2)",NO,0,,,,Auto-computed from offer_id
+billing.invoices,total,"numeric(14,2)",NO,0,,,,Auto-maintained: subtotal+tax_total-discount_total
+billing.invoices,amount_paid,"numeric(14,2)",NO,0,,,,Auto-maintained: sum of payments.amount
+billing.invoices,created_by,uuid,YES,,,auth.users.id,,
+billing.invoices,created_at,timestamptz,NO,now(),,,,
+billing.invoices,updated_at,timestamptz,NO,now(),,,,Auto-bumped
+billing.invoice_items,id,uuid,NO,gen_random_uuid(),YES,,,
+billing.invoice_items,invoice_id,uuid,NO,,,invoices.id ON DELETE CASCADE,,
+billing.invoice_items,item_id,uuid,YES,,,items.id ON DELETE SET NULL,,Null = free-form line
+billing.invoice_items,description,text,NO,,,,,
+billing.invoice_items,quantity,"numeric(14,4)",NO,1,,,quantity > 0,
+billing.invoice_items,unit_price,"numeric(14,2)",NO,0,,,,
+billing.invoice_items,tax_rate,"numeric(5,2)",NO,0,,,tax_rate BETWEEN 0 AND 100,
+billing.invoice_items,line_subtotal,"numeric(14,2)",NO,0,,,,Auto: quantity*unit_price
+billing.invoice_items,line_tax,"numeric(14,2)",NO,0,,,,Auto: line_subtotal*tax_rate/100
+billing.invoice_items,line_total,"numeric(14,2)",NO,0,,,,Auto: line_subtotal+line_tax
+billing.invoice_items,sort_order,int,NO,0,,,,
+billing.invoice_items,created_at,timestamptz,NO,now(),,,,
+billing.payments,id,uuid,NO,gen_random_uuid(),YES,,,
+billing.payments,org_id,uuid,NO,,,organizations.id ON DELETE CASCADE,,
+billing.payments,invoice_id,uuid,NO,,,invoices.id ON DELETE CASCADE,,
+billing.payments,amount,"numeric(14,2)",NO,,,,amount > 0,
+billing.payments,method,text,NO,'manual',,,"method IN ('manual','bank_transfer','cash','upi','razorpay')",
+billing.payments,reference,text,YES,,,,,Gateway payment id for razorpay
+billing.payments,notes,text,YES,,,,,
+billing.payments,paid_at,timestamptz,NO,now(),,,,
+billing.payments,created_by,uuid,YES,,,auth.users.id,,
+billing.payments,created_at,timestamptz,NO,now(),,,,
+billing.credit_notes,id,uuid,NO,gen_random_uuid(),YES,,,
+billing.credit_notes,org_id,uuid,NO,,,organizations.id ON DELETE CASCADE,,"Part of UNIQUE(org_id,credit_note_number)"
+billing.credit_notes,invoice_id,uuid,NO,,,invoices.id ON DELETE RESTRICT,,The original sale being returned against
+billing.credit_notes,customer_id,uuid,NO,,,customers.id ON DELETE RESTRICT,,
+billing.credit_notes,warehouse_id,uuid,YES,,,warehouses.id,,Required once a tracked item is on the note (enforced at status change)
+billing.credit_notes,credit_note_number,text,YES,assigned by trigger,,,,"Part of UNIQUE(org_id,credit_note_number)"
+billing.credit_notes,status,text,NO,'draft',,,"status IN ('draft','issued','void')",issued = restocks; void reverses
+billing.credit_notes,issue_date,date,NO,current_date,,,,
+billing.credit_notes,reason,text,YES,,,,,
+billing.credit_notes,subtotal,"numeric(14,2)",NO,0,,,,Auto-maintained
+billing.credit_notes,tax_total,"numeric(14,2)",NO,0,,,,Auto-maintained
+billing.credit_notes,total,"numeric(14,2)",NO,0,,,,Auto-maintained
+billing.credit_notes,created_by,uuid,YES,,,auth.users.id,,
+billing.credit_notes,created_at,timestamptz,NO,now(),,,,
+billing.credit_notes,updated_at,timestamptz,NO,now(),,,,Auto-bumped
+billing.credit_note_items,id,uuid,NO,gen_random_uuid(),YES,,,
+billing.credit_note_items,credit_note_id,uuid,NO,,,credit_notes.id ON DELETE CASCADE,,
+billing.credit_note_items,invoice_item_id,uuid,YES,,,invoice_items.id ON DELETE SET NULL,,Optional link back to the original line
+billing.credit_note_items,item_id,uuid,YES,,,items.id ON DELETE SET NULL,,
+billing.credit_note_items,description,text,NO,,,,,
+billing.credit_note_items,quantity,"numeric(14,4)",NO,1,,,quantity > 0,
+billing.credit_note_items,unit_price,"numeric(14,2)",NO,0,,,,
+billing.credit_note_items,tax_rate,"numeric(5,2)",NO,0,,,tax_rate BETWEEN 0 AND 100,
+billing.credit_note_items,line_subtotal,"numeric(14,2)",NO,0,,,,Auto
+billing.credit_note_items,line_tax,"numeric(14,2)",NO,0,,,,Auto
+billing.credit_note_items,line_total,"numeric(14,2)",NO,0,,,,Auto
+billing.credit_note_items,created_at,timestamptz,NO,now(),,,,
+billing.purchase_bills,id,uuid,NO,gen_random_uuid(),YES,,,
+billing.purchase_bills,org_id,uuid,NO,,,organizations.id ON DELETE CASCADE,,"Part of UNIQUE(org_id,bill_number)"
+billing.purchase_bills,vendor_id,uuid,NO,,,vendors.id ON DELETE RESTRICT,,
+billing.purchase_bills,warehouse_id,uuid,YES,,,warehouses.id,,Required once a tracked item is on the bill (enforced at status change)
+billing.purchase_bills,bill_number,text,YES,assigned by trigger,,,,"Our internal number; part of UNIQUE(org_id,bill_number)"
+billing.purchase_bills,vendor_invoice_number,text,YES,,,,,The supplier's own invoice/reference number
+billing.purchase_bills,status,text,NO,'draft',,,"status IN ('draft','received','partially_paid','paid','void')",Auto-transitioned by recalc_purchase_bill() once out of draft/void
+billing.purchase_bills,currency,text,NO,'INR',,,,
+billing.purchase_bills,bill_date,date,NO,current_date,,,,
+billing.purchase_bills,due_date,date,YES,,,,,
+billing.purchase_bills,notes,text,YES,,,,,
+billing.purchase_bills,subtotal,"numeric(14,2)",NO,0,,,,Auto-maintained
+billing.purchase_bills,tax_total,"numeric(14,2)",NO,0,,,,Auto-maintained
+billing.purchase_bills,total,"numeric(14,2)",NO,0,,,,Auto-maintained
+billing.purchase_bills,amount_paid,"numeric(14,2)",NO,0,,,,Auto-maintained: sum of purchase_payments.amount
+billing.purchase_bills,created_by,uuid,YES,,,auth.users.id,,
+billing.purchase_bills,created_at,timestamptz,NO,now(),,,,
+billing.purchase_bills,updated_at,timestamptz,NO,now(),,,,Auto-bumped
+billing.purchase_bill_items,id,uuid,NO,gen_random_uuid(),YES,,,
+billing.purchase_bill_items,purchase_bill_id,uuid,NO,,,purchase_bills.id ON DELETE CASCADE,,
+billing.purchase_bill_items,item_id,uuid,YES,,,items.id ON DELETE SET NULL,,
+billing.purchase_bill_items,description,text,NO,,,,,
+billing.purchase_bill_items,quantity,"numeric(14,4)",NO,1,,,quantity > 0,
+billing.purchase_bill_items,unit_cost,"numeric(14,2)",NO,0,,,,
+billing.purchase_bill_items,tax_rate,"numeric(5,2)",NO,0,,,tax_rate BETWEEN 0 AND 100,
+billing.purchase_bill_items,line_subtotal,"numeric(14,2)",NO,0,,,,Auto: quantity*unit_cost
+billing.purchase_bill_items,line_tax,"numeric(14,2)",NO,0,,,,Auto
+billing.purchase_bill_items,line_total,"numeric(14,2)",NO,0,,,,Auto
+billing.purchase_bill_items,sort_order,int,NO,0,,,,
+billing.purchase_bill_items,created_at,timestamptz,NO,now(),,,,
+billing.purchase_payments,id,uuid,NO,gen_random_uuid(),YES,,,
+billing.purchase_payments,org_id,uuid,NO,,,organizations.id ON DELETE CASCADE,,
+billing.purchase_payments,purchase_bill_id,uuid,NO,,,purchase_bills.id ON DELETE CASCADE,,
+billing.purchase_payments,amount,"numeric(14,2)",NO,,,,amount > 0,
+billing.purchase_payments,method,text,NO,'bank_transfer',,,"method IN ('bank_transfer','cash','upi','cheque','other')",
+billing.purchase_payments,reference,text,YES,,,,,
+billing.purchase_payments,notes,text,YES,,,,,
+billing.purchase_payments,paid_at,timestamptz,NO,now(),,,,
+billing.purchase_payments,created_by,uuid,YES,,,auth.users.id,,
+billing.purchase_payments,created_at,timestamptz,NO,now(),,,,
+billing.debit_notes,id,uuid,NO,gen_random_uuid(),YES,,,
+billing.debit_notes,org_id,uuid,NO,,,organizations.id ON DELETE CASCADE,,"Part of UNIQUE(org_id,debit_note_number)"
+billing.debit_notes,purchase_bill_id,uuid,NO,,,purchase_bills.id ON DELETE RESTRICT,,The original purchase being returned against
+billing.debit_notes,vendor_id,uuid,NO,,,vendors.id ON DELETE RESTRICT,,
+billing.debit_notes,warehouse_id,uuid,YES,,,warehouses.id,,Required once a tracked item is on the note (enforced at status change)
+billing.debit_notes,debit_note_number,text,YES,assigned by trigger,,,,"Part of UNIQUE(org_id,debit_note_number)"
+billing.debit_notes,status,text,NO,'draft',,,"status IN ('draft','issued','void')",issued = destocks; void reverses
+billing.debit_notes,issue_date,date,NO,current_date,,,,
+billing.debit_notes,reason,text,YES,,,,,
+billing.debit_notes,subtotal,"numeric(14,2)",NO,0,,,,Auto-maintained
+billing.debit_notes,tax_total,"numeric(14,2)",NO,0,,,,Auto-maintained
+billing.debit_notes,total,"numeric(14,2)",NO,0,,,,Auto-maintained
+billing.debit_notes,created_by,uuid,YES,,,auth.users.id,,
+billing.debit_notes,created_at,timestamptz,NO,now(),,,,
+billing.debit_notes,updated_at,timestamptz,NO,now(),,,,Auto-bumped
+billing.debit_note_items,id,uuid,NO,gen_random_uuid(),YES,,,
+billing.debit_note_items,debit_note_id,uuid,NO,,,debit_notes.id ON DELETE CASCADE,,
+billing.debit_note_items,purchase_bill_item_id,uuid,YES,,,purchase_bill_items.id ON DELETE SET NULL,,Optional link back to the original line
+billing.debit_note_items,item_id,uuid,YES,,,items.id ON DELETE SET NULL,,
+billing.debit_note_items,description,text,NO,,,,,
+billing.debit_note_items,quantity,"numeric(14,4)",NO,1,,,quantity > 0,
+billing.debit_note_items,unit_cost,"numeric(14,2)",NO,0,,,,
+billing.debit_note_items,tax_rate,"numeric(5,2)",NO,0,,,tax_rate BETWEEN 0 AND 100,
+billing.debit_note_items,line_subtotal,"numeric(14,2)",NO,0,,,,Auto
+billing.debit_note_items,line_tax,"numeric(14,2)",NO,0,,,,Auto
+billing.debit_note_items,line_total,"numeric(14,2)",NO,0,,,,Auto
+billing.debit_note_items,created_at,timestamptz,NO,now(),,,,
+billing.addons,id,uuid,NO,gen_random_uuid(),YES,,,
+billing.addons,name,text,NO,,,,,
+billing.addons,slug,text,NO,,,,UNIQUE,Stable key app code/RLS checks against (billing.org_has_addon)
+billing.addons,description,text,YES,,,,,
+billing.addons,price,"numeric(10,2)",NO,,,,,Monthly
+billing.addons,min_commitment_days,int,NO,30,,,,
+billing.addons,is_active,boolean,NO,true,,,,Superadmin retires from new purchases without touching existing subscribers
+billing.addons,created_at,timestamptz,NO,now(),,,,
+billing.organization_addon_subscriptions,id,uuid,NO,gen_random_uuid(),YES,,,
+billing.organization_addon_subscriptions,org_id,uuid,NO,,,organizations.id ON DELETE CASCADE,,"Part of partial UNIQUE(org_id,addon_id) WHERE status='active'"
+billing.organization_addon_subscriptions,addon_id,uuid,NO,,,addons.id ON DELETE RESTRICT,,"Part of partial UNIQUE(org_id,addon_id) WHERE status='active'"
+billing.organization_addon_subscriptions,status,text,NO,,,,"status IN ('active','cancelled')",
+billing.organization_addon_subscriptions,started_at,timestamptz,NO,now(),,,,
+billing.organization_addon_subscriptions,min_commitment_until,timestamptz,NO,,,,,"started_at + addon.min_commitment_days; informational only in v1, not enforced"
+billing.organization_addon_subscriptions,cancelled_at,timestamptz,YES,,,,,
+billing.organization_addon_subscriptions,renews_at,timestamptz,YES,,,,,Synced to organizations.subscription_current_period_end — shared billing cycle, not independent
+billing.organization_addon_subscriptions,created_at,timestamptz,NO,now(),,,,
+billing.organization_addon_subscriptions,updated_at,timestamptz,NO,now(),,,,Auto-bumped
+billing.business_type_addon_recommendations,business_type_id,uuid,NO,,YES (composite),business_types.id ON DELETE CASCADE,,PK part 1
+billing.business_type_addon_recommendations,addon_id,uuid,NO,,YES (composite),addons.id ON DELETE CASCADE,,PK part 2
+billing.business_type_addon_recommendations,note,text,YES,,,,,"Short reason shown in onboarding UI; advisory only, never enforced"

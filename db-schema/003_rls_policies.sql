@@ -1,5 +1,5 @@
 -- ============================================================================
--- nucleus-billing — Row Level Security v2
+-- nucleus-billing — Row Level Security v3
 -- Run after 001_billing_schema.sql and 002_functions_triggers.sql.
 -- ============================================================================
 
@@ -10,8 +10,9 @@
 
 -- Platform superadmin check. Deliberately its own function (rather than
 -- inlined) so every policy/trigger that needs it — org creation, the
--- is_active guard, and is_org_member/is_org_admin below — reads it the
--- same way.
+-- is_active/subscription_status guards, is_org_member/is_org_admin,
+-- org_has_addon, and the two addon subscribe/cancel functions below —
+-- reads it the same way.
 create or replace function billing.is_superadmin()
 returns boolean language sql stable security definer set search_path = billing, public as $$
   select exists (select 1 from billing.superadmins s where s.user_id = auth.uid());
@@ -21,15 +22,24 @@ $$;
 -- gives them cross-tenant read access everywhere, since virtually every
 -- table's RLS policy is ultimately gated through is_org_member/is_org_admin
 -- (either directly, or via one of the *_org_id lookup helpers below).
--- For everyone else, membership only counts while the org is active — an
--- org a superadmin has deactivated stops being visible/writable to its own
--- members immediately, without touching any of the ~60 policies below.
+--
+-- For everyone else, membership only counts while BOTH of two independent
+-- conditions hold: the org hasn't been suspended by a superadmin
+-- (is_active), and the org's base-plan subscription is actually usable
+-- (subscription_status in 'trialing'/'active' — 'past_due' and 'cancelled'
+-- do not pass). Folding the subscription check in here, right alongside
+-- is_active, means every one of the ~55+ RLS policies below that already
+-- depend on is_org_member/is_org_admin automatically enforces "org must
+-- have a working base subscription" too — nothing else in this file, or in
+-- 002, needed to change for that.
 create or replace function billing.is_org_member(p_org_id uuid)
 returns boolean language sql stable security definer set search_path = billing, public as $$
   select billing.is_superadmin() or exists (
     select 1 from billing.memberships m
     join billing.organizations o on o.id = m.org_id
-    where m.org_id = p_org_id and m.user_id = auth.uid() and o.is_active
+    where m.org_id = p_org_id and m.user_id = auth.uid()
+      and o.is_active
+      and o.subscription_status in ('trialing', 'active')
   );
 $$;
 
@@ -39,7 +49,25 @@ returns boolean language sql stable security definer set search_path = billing, 
     select 1 from billing.memberships m
     join billing.organizations o on o.id = m.org_id
     where m.org_id = p_org_id and m.user_id = auth.uid()
-      and m.role in ('owner', 'admin') and o.is_active
+      and m.role in ('owner', 'admin')
+      and o.is_active
+      and o.subscription_status in ('trialing', 'active')
+  );
+$$;
+
+-- The add-on equivalent of is_org_member — checks a narrower thing (this
+-- org has this ONE add-on active) rather than "is this person in the org
+-- at all." A superadmin bypasses this too, same as the other two, so
+-- support/ops can see gated features without the org needing to actually
+-- hold the entitlement. Every future add-on-gated feature (a future
+-- eway_bills table, for example) should combine this with is_org_member,
+-- e.g.: using (billing.is_org_member(org_id) and billing.org_has_addon(org_id, 'eway-bill'))
+create or replace function billing.org_has_addon(p_org_id uuid, p_addon_slug text)
+returns boolean language sql stable security definer set search_path = billing, public as $$
+  select billing.is_superadmin() or exists (
+    select 1 from billing.organization_addon_subscriptions oas
+    join billing.addons a on a.id = oas.addon_id
+    where oas.org_id = p_org_id and a.slug = p_addon_slug and oas.status = 'active'
   );
 $$;
 
@@ -82,10 +110,11 @@ create policy organizations_select on billing.organizations for select using (bi
 -- has no path to insert one, including their own, via the API.
 create policy organizations_insert on billing.organizations for insert with check (billing.is_superadmin());
 -- Org owners/admins can still update their own org's settings (GST, PDF,
--- prefixes, etc.) while it's active — is_org_admin() already requires
--- is_active for them, so this closes itself the moment a superadmin
--- deactivates the org. Changing is_active itself is further restricted to
--- superadmins only by the organizations_active_change_guard trigger below,
+-- prefixes, business_type_id, etc.) while it's active and subscribed —
+-- is_org_admin() already requires both for them, so this closes itself the
+-- moment a superadmin deactivates the org or the base subscription lapses.
+-- Changing is_active or subscription_status themselves is further
+-- restricted to superadmins only by the two guard triggers in 002,
 -- regardless of what this policy allows.
 create policy organizations_update on billing.organizations for update using (billing.is_org_admin(id));
 -- No delete policy — organizations are never hard-deleted, only
@@ -247,3 +276,116 @@ create policy debit_note_items_select on billing.debit_note_items for select usi
 create policy debit_note_items_insert on billing.debit_note_items for insert with check (billing.is_org_member(billing.debit_note_org_id(debit_note_id)));
 create policy debit_note_items_update on billing.debit_note_items for update using (billing.is_org_member(billing.debit_note_org_id(debit_note_id)));
 create policy debit_note_items_delete on billing.debit_note_items for delete using (billing.is_org_member(billing.debit_note_org_id(debit_note_id)));
+
+-- ----------------------------------------------------------------------------
+-- Add-on marketplace
+-- ----------------------------------------------------------------------------
+
+-- business_types / addons / business_type_addon_recommendations: global
+-- catalogs, not org-scoped. Readable by any signed-in user (so the app can
+-- show the onboarding picker and the add-on marketplace to anyone), write
+-- restricted to superadmin only.
+alter table billing.business_types enable row level security;
+create policy business_types_select on billing.business_types for select using (auth.uid() is not null);
+create policy business_types_insert on billing.business_types for insert with check (billing.is_superadmin());
+create policy business_types_update on billing.business_types for update using (billing.is_superadmin());
+create policy business_types_delete on billing.business_types for delete using (billing.is_superadmin());
+
+alter table billing.addons enable row level security;
+create policy addons_select on billing.addons for select using (auth.uid() is not null);
+create policy addons_insert on billing.addons for insert with check (billing.is_superadmin());
+create policy addons_update on billing.addons for update using (billing.is_superadmin());
+create policy addons_delete on billing.addons for delete using (billing.is_superadmin());
+
+alter table billing.business_type_addon_recommendations enable row level security;
+create policy business_type_addon_recommendations_select on billing.business_type_addon_recommendations for select using (auth.uid() is not null);
+create policy business_type_addon_recommendations_insert on billing.business_type_addon_recommendations for insert with check (billing.is_superadmin());
+create policy business_type_addon_recommendations_update on billing.business_type_addon_recommendations for update using (billing.is_superadmin());
+create policy business_type_addon_recommendations_delete on billing.business_type_addon_recommendations for delete using (billing.is_superadmin());
+
+-- organization_addon_subscriptions: org members can read what's active for
+-- their own org (so the UI can show it). Deliberately NO insert/update/
+-- delete policy for ordinary members at all — the only way a row here gets
+-- written is through the two SECURITY DEFINER functions below, which are
+-- superadmin-gated inside their own function body (not by RLS/grants,
+-- which stay broad — same pattern the stock-effect functions in 002 use to
+-- write restricted stock_movements rows).
+alter table billing.organization_addon_subscriptions enable row level security;
+create policy organization_addon_subscriptions_select on billing.organization_addon_subscriptions for select using (billing.is_org_member(org_id));
+
+-- Subscribe an org to an add-on. Superadmin/service_role only for now — an
+-- org can never grant itself a paid entitlement by calling this directly.
+-- Once real payment collection exists, a webhook (as service_role) calls
+-- this instead of a human; nothing else about the function needs to change.
+create or replace function billing.subscribe_org_to_addon(p_org_id uuid, p_addon_slug text)
+returns uuid
+language plpgsql
+security definer
+set search_path = billing, public
+as $$
+declare
+  v_addon      billing.addons%rowtype;
+  v_existing   uuid;
+  v_period_end timestamptz;
+  v_new_id     uuid;
+begin
+  if not billing.is_superadmin() then
+    raise exception 'Only a superadmin can subscribe an organization to an add-on';
+  end if;
+
+  select * into v_addon from billing.addons where slug = p_addon_slug and is_active;
+  if v_addon.id is null then
+    raise exception 'Add-on % does not exist or is not currently purchasable', p_addon_slug;
+  end if;
+
+  select id into v_existing from billing.organization_addon_subscriptions
+    where org_id = p_org_id and addon_id = v_addon.id and status = 'active';
+  if v_existing is not null then
+    raise exception 'Organization % already has an active subscription to %', p_org_id, p_addon_slug;
+  end if;
+
+  select subscription_current_period_end into v_period_end
+    from billing.organizations where id = p_org_id;
+
+  insert into billing.organization_addon_subscriptions
+    (org_id, addon_id, status, min_commitment_until, renews_at)
+  values
+    (p_org_id, v_addon.id, 'active', now() + (v_addon.min_commitment_days || ' days')::interval, v_period_end)
+  returning id into v_new_id;
+
+  return v_new_id;
+end;
+$$;
+
+-- Cancel an org's active subscription to an add-on. Same superadmin-only
+-- gate as above. min_commitment_until is informational only in this
+-- version (see 001's comment on the table) — cancelling before that date
+-- is allowed here; enforcing/blocking it is a product decision to make
+-- once real billing exists, not something this function decides silently.
+create or replace function billing.cancel_org_addon(p_org_id uuid, p_addon_slug text)
+returns void
+language plpgsql
+security definer
+set search_path = billing, public
+as $$
+declare
+  v_addon_id uuid;
+begin
+  if not billing.is_superadmin() then
+    raise exception 'Only a superadmin can cancel an organization''s add-on subscription';
+  end if;
+
+  select id into v_addon_id from billing.addons where slug = p_addon_slug;
+  if v_addon_id is null then
+    raise exception 'Add-on % does not exist', p_addon_slug;
+  end if;
+
+  update billing.organization_addon_subscriptions
+    set status = 'cancelled', cancelled_at = now()
+    where org_id = p_org_id and addon_id = v_addon_id and status = 'active';
+
+  if not found then
+    raise exception 'Organization % has no active subscription to %', p_org_id, p_addon_slug;
+  end if;
+end;
+$$;
