@@ -4,5 +4,108 @@
     "en": "English",
     "hi": "Hindi",
     "as": "Assamese"
+  },
+  "LoginForm": {
+    "title": "Login to your account",
+    "subtitle": "Enter your email below to login to your account",
+    "emailLabel": "Email",
+    "emailPlaceholder": "m@example.com",
+    "passwordLabel": "Password",
+    "forgotPassword": "Forgot your password?",
+    "submit": "Login",
+    "genericError": "Something went wrong. Please try again.",
+    "networkError": "Couldn't reach the server. Check your connection and try again.",
+    "invalidCredentials": "Invalid email or password.",
+    "invalidEmail": "Please enter a valid email address.",
+    "passwordRequired": "Password is required."
+  },
+  "Sidebar": {
+    "brand": "Billing App",
+    "groups": {
+      "dashboard": "Dashboard",
+      "sales": "Sales",
+      "purchases": "Purchases",
+      "catalog": "Catalog",
+      "parties": "Parties",
+      "inventory": "Inventory",
+      "settings": "Settings",
+      "admin": "Admin"
+    },
+    "items": {
+      "reports": "Reports",
+      "analysis": "Analysis",
+      "payments": "Payments",
+      "overview" : "Overview",
+      "invoices": "Invoices",
+      "creditNotes": "Credit Notes",
+      "bills": "Bills",
+      "debitNotes": "Debit Notes",
+      "items": "Items",
+      "taxRates": "Tax Rates",
+      "warehouses": "Warehouses",
+      "offers": "Offers",
+      "customers": "Customers",
+      "vendors": "Vendors",
+      "stock": "Stock",
+      "movements": "Movements",
+      "organization": "Organization",
+      "members": "Members",
+      "organizations": "Organizations",
+      "superadmins": "Superadmins"
+    }
+  },
+  "ModeToggle": {
+    "toggleLabel": "Toggle light/dark mode",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
+  },
+  "ThemePresetSelector": {
+    "fallbackLabel": "Theme",
+    "searchPlaceholder": "Search themes...",
+    "noResults": "No theme found."
+  },
+  "LoginPage": {
+    "imageAlt": "Login illustration"
+  },
+  "AuthCodeError": {
+    "title": "Sign-in link didn't work",
+    "description": "That link is invalid or has expired. Go back and try signing in again."
+  },
+  "PlaceholderPage": {
+    "comingSoon": "Coming soon.",
+    "todoForm": "TODO: build the form.",
+    "todoDetail": "TODO: build the detail view for {id}."
+  },
+  "PageTitles": {
+    "dashboard": "Dashboard",
+    "customers": "Customers",
+    "newCustomer": "New Customer",
+    "vendors": "Vendors",
+    "newVendor": "New Vendor",
+    "organization": "Organization",
+    "members": "Members",
+    "purchasePayments": "Purchase Payments",
+    "purchaseBills": "Purchase Bills",
+    "newPurchaseBill": "New Purchase Bill",
+    "debitNotes": "Debit Notes",
+    "newDebitNote": "New Debit Note",
+    "payments": "Payments",
+    "invoices": "Invoices",
+    "newInvoice": "New Invoice",
+    "creditNotes": "Credit Notes",
+    "newCreditNote": "New Credit Note",
+    "offers": "Offers",
+    "newOffer": "New Offer",
+    "warehouses": "Warehouses",
+    "taxRates": "Tax Rates",
+    "items": "Items",
+    "newItem": "New Item",
+    "organizations": "Organizations",
+    "newOrganization": "New Organization",
+    "superadmins": "Superadmins",
+    "stockMovements": "Stock Movements",
+    "newStockMovement": "New Stock Movement",
+    "stock": "Stock"
   }
 }

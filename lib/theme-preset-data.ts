@@ -78,7 +78,7 @@ export const THEME_PRESET_DATA = {
       "chart-4": "#1d4ed8",
       "chart-5": "#1e40af",
       "radius": "0.375rem",
-      "sidebar": "#171717",
+      "sidebar": "#26292B",
       "sidebar-foreground": "#e5e5e5",
       "sidebar-primary": "#3b82f6",
       "sidebar-primary-foreground": "#ffffff",

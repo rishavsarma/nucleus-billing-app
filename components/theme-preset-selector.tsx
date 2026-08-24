@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { Check, ChevronsUpDown, Palette } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import { useThemePreset } from "@/hooks/use-theme-preset"
 import { THEME_PRESETS, type ThemePresetId } from "@/lib/theme-presets"
@@ -20,6 +21,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 export function ThemePresetSelector() {
   const { preset, setPreset } = useThemePreset()
   const [open, setOpen] = React.useState(false)
+  const t = useTranslations("ThemePresetSelector")
 
   const current = THEME_PRESETS.find((p) => p.id === preset)
 
@@ -34,16 +36,16 @@ export function ThemePresetSelector() {
         >
           <span className="flex min-w-0 items-center gap-2">
             <Palette className="size-4 shrink-0" />
-            <span className="truncate">{current?.label ?? "Theme"}</span>
+            <span className="truncate">{current?.label ?? t("fallbackLabel")}</span>
           </span>
           <ChevronsUpDown className="size-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-56 p-0" align="end">
         <Command>
-          <CommandInput placeholder="Search themes..." />
+          <CommandInput placeholder={t("searchPlaceholder")} />
           <CommandList>
-            <CommandEmpty>No theme found.</CommandEmpty>
+            <CommandEmpty>{t("noResults")}</CommandEmpty>
             <CommandGroup>
               {THEME_PRESETS.map((p) => (
                 <CommandItem

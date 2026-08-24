@@ -1,17 +1,40 @@
+"use client"
+
+import { useEffect, useState } from "react"
 import Script from "next/script"
 import { THEME_PRESET_CSS, THEME_PRESET_FONTS, DEFAULT_THEME_PRESET } from "@/lib/theme-presets"
 import { THEME_PRESET_STORAGE_KEY } from "@/store/theme-preset-store"
 
 // Runs in <head> before hydration (strategy="beforeInteractive"), so the
 // stored color preset is painted on the very first frame instead of
-// flashing the default ("violet") palette and then jumping to the saved one
+// flashing the default ("violet-bloom") palette and then jumping to the saved one
 // once React mounts. Mirrors next-themes' own no-flash script for the .dark
 // class, but for the color preset layered on top of it — see
-// lib/theme-presets.ts for how that layering works. Uses next/script rather
-// than a raw <script> tag so Next.js manages it outside the normal React
-// tree (a plain <script> re-rendered by React on the client — e.g. during
-// Fast Refresh — logs "script tag while rendering" and won't re-execute).
+// lib/theme-presets.ts for how that layering works.
+//
+// Renders only for the initial SSR/hydration pass, then permanently returns
+// null. app/layout.tsx calls getLocale() (a dynamic API), so its output —
+// including this component — gets re-rendered by React on every client-side
+// navigation, not just the true first load. Next's beforeInteractive
+// handling only applies to that first pass; a later render hands React a
+// literal <script> element to reconcile, which logs "Encountered a script
+// tag while rendering" since browsers don't execute scripts React inserts
+// that way. Once mounted, the script has already run and its effect (the
+// injected <style id="theme-preset-override"> tag) persists in the DOM on
+// its own, so there's nothing left for it to do — returning null avoids
+// ever handing React that element again, on this or any later render.
 export function ThemePresetScript() {
+  const [hasMounted, setHasMounted] = useState(false)
+
+  useEffect(() => {
+    // Mounting is the event itself, not a signal from an external system to
+    // sync from — the usual reason this rule asks for a callback instead.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setHasMounted(true)
+  }, [])
+
+  if (hasMounted) return null
+
   const script = `
     (function () {
       try {

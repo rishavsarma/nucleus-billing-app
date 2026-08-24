@@ -1,8 +1,13 @@
-export default function NewOffersPage() {
+import { useTranslations } from "next-intl"
+
+export default function NewOfferPage() {
+  const t = useTranslations("PageTitles")
+  const tPlaceholder = useTranslations("PlaceholderPage")
+
   return (
     <div className="space-y-1">
-      <h1 className="text-2xl font-semibold">New Offer</h1>
-      <p className="text-muted-foreground text-sm">TODO: build the form.</p>
+      <h1 className="text-2xl font-semibold">{t("newOffer")}</h1>
+      <p className="text-muted-foreground text-sm">{tPlaceholder("todoForm")}</p>
     </div>
   )
 }

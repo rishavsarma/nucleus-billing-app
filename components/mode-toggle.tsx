@@ -1,6 +1,7 @@
 "use client"
 
 import { Check, Monitor, Moon, Sun } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { useTheme } from "next-themes"
 
 import { cn } from "@/lib/utils"
@@ -13,18 +14,19 @@ import {
 } from "@/components/ui/dropdown-menu"
 
 const OPTIONS = [
-  { value: "light", label: "Light", icon: Sun },
-  { value: "dark", label: "Dark", icon: Moon },
-  { value: "system", label: "System", icon: Monitor },
+  { value: "light", labelKey: "light", icon: Sun },
+  { value: "dark", labelKey: "dark", icon: Moon },
+  { value: "system", labelKey: "system", icon: Monitor },
 ] as const
 
 export function ModeToggle() {
   const { theme, setTheme } = useTheme()
+  const t = useTranslations("ModeToggle")
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative" aria-label="Toggle light/dark mode">
+        <Button variant="ghost" size="icon" className="relative" aria-label={t("toggleLabel")}>
           <Sun className="scale-100 rotate-0 transition-all dark:scale-0 dark:-rotate-90" />
           <Moon className="absolute scale-0 rotate-90 transition-all dark:scale-100 dark:rotate-0" />
         </Button>
@@ -33,7 +35,7 @@ export function ModeToggle() {
         {OPTIONS.map((option) => (
           <DropdownMenuItem key={option.value} onClick={() => setTheme(option.value)}>
             <option.icon />
-            {option.label}
+            {t(option.labelKey)}
             <Check className={cn("ml-auto size-4", theme === option.value ? "opacity-100" : "opacity-0")} />
           </DropdownMenuItem>
         ))}

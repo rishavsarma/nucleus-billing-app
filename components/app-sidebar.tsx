@@ -18,6 +18,7 @@ import {
   Wallet,
   Warehouse,
 } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import { Link, usePathname } from "@/i18n/navigation"
 import {
@@ -44,66 +45,75 @@ type NavGroup = {
   items: NavItem[]
 }
 
-// TODO: hide the "Admin" group unless the signed-in user is a superadmin
-// (see requireSuperadmin() in lib/database/require-org.ts / useSuperadmins()).
-const navGroups: NavGroup[] = [
-  {
-    label: "Sales",
-    items: [
-      { title: "Invoices", url: "/sales/invoices", icon: FileText },
-      { title: "Credit Notes", url: "/sales/credit-notes", icon: Undo2 },
-      { title: "Payments", url: "/sales/payments", icon: Wallet },
-    ],
-  },
-  {
-    label: "Purchases",
-    items: [
-      { title: "Bills", url: "/purchases/bills", icon: ShoppingCart },
-      { title: "Debit Notes", url: "/purchases/debit-notes", icon: Undo2 },
-      { title: "Payments", url: "/purchases/payments", icon: Receipt },
-    ],
-  },
-  {
-    label: "Catalog",
-    items: [
-      { title: "Items", url: "/catalog/items", icon: Tag },
-      { title: "Tax Rates", url: "/catalog/tax-rates", icon: Percent },
-      { title: "Warehouses", url: "/catalog/warehouses", icon: Warehouse },
-      { title: "Offers", url: "/catalog/offers", icon: Boxes },
-    ],
-  },
-  {
-    label: "Parties",
-    items: [
-      { title: "Customers", url: "/parties/customers", icon: Users },
-      { title: "Vendors", url: "/parties/vendors", icon: Truck },
-    ],
-  },
-  {
-    label: "Inventory",
-    items: [
-      { title: "Stock", url: "/inventory/stock", icon: Boxes },
-      { title: "Movements", url: "/inventory/movements", icon: ArrowLeftRight },
-    ],
-  },
-  {
-    label: "Settings",
-    items: [
-      { title: "Organization", url: "/settings/organization", icon: Building2 },
-      { title: "Members", url: "/settings/members", icon: UserCog },
-    ],
-  },
-  {
-    label: "Admin",
-    items: [
-      { title: "Organizations", url: "/admin/organizations", icon: Building2 },
-      { title: "Superadmins", url: "/admin/superadmins", icon: ShieldCheck },
-    ],
-  },
-]
-
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname()
+  const t = useTranslations("Sidebar")
+
+  // TODO: hide the "Admin" group unless the signed-in user is a superadmin
+  // (see requireSuperadmin() in lib/database/require-org.ts / useSuperadmins()).
+  const navGroups: NavGroup[] = [
+    {
+      label: t("groups.dashboard"),
+      items: [
+        { title: t("items.overview"), url: "/dashboard/overview", icon: Wallet },
+        { title: t("items.reports"), url: "/dashboard/reports", icon: FileText },
+        { title: t("items.analysis"), url: "/dashboard/analysis", icon: Undo2 },
+      ],
+    },
+    {
+      label: t("groups.sales"),
+      items: [
+        { title: t("items.invoices"), url: "/sales/invoices", icon: FileText },
+        { title: t("items.creditNotes"), url: "/sales/credit-notes", icon: Undo2 },
+        { title: t("items.payments"), url: "/sales/payments", icon: Wallet },
+      ],
+    },
+    {
+      label: t("groups.purchases"),
+      items: [
+        { title: t("items.bills"), url: "/purchases/bills", icon: ShoppingCart },
+        { title: t("items.debitNotes"), url: "/purchases/debit-notes", icon: Undo2 },
+        { title: t("items.payments"), url: "/purchases/payments", icon: Receipt },
+      ],
+    },
+    {
+      label: t("groups.catalog"),
+      items: [
+        { title: t("items.items"), url: "/catalog/items", icon: Tag },
+        { title: t("items.taxRates"), url: "/catalog/tax-rates", icon: Percent },
+        { title: t("items.warehouses"), url: "/catalog/warehouses", icon: Warehouse },
+        { title: t("items.offers"), url: "/catalog/offers", icon: Boxes },
+      ],
+    },
+    {
+      label: t("groups.parties"),
+      items: [
+        { title: t("items.customers"), url: "/parties/customers", icon: Users },
+        { title: t("items.vendors"), url: "/parties/vendors", icon: Truck },
+      ],
+    },
+    {
+      label: t("groups.inventory"),
+      items: [
+        { title: t("items.stock"), url: "/inventory/stock", icon: Boxes },
+        { title: t("items.movements"), url: "/inventory/movements", icon: ArrowLeftRight },
+      ],
+    },
+    {
+      label: t("groups.settings"),
+      items: [
+        { title: t("items.organization"), url: "/settings/organization", icon: Building2 },
+        { title: t("items.members"), url: "/settings/members", icon: UserCog },
+      ],
+    },
+    {
+      label: t("groups.admin"),
+      items: [
+        { title: t("items.organizations"), url: "/admin/organizations", icon: Building2 },
+        { title: t("items.superadmins"), url: "/admin/superadmins", icon: ShieldCheck },
+      ],
+    },
+  ]
 
   return (
     <Sidebar collapsible="icon" {...props}>
@@ -113,7 +123,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <SidebarMenuButton asChild>
               <Link href="/">
                 <LayoutDashboard />
-                <span className="font-medium">Dashboard</span>
+                <span className="font-medium">{t("brand")}</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>

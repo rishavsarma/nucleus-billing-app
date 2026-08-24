@@ -4,5 +4,108 @@
     "en": "अंग्रेज़ी",
     "hi": "हिन्दी",
     "as": "असमिया"
+  },
+  "LoginForm": {
+    "title": "अपने खाते में लॉगिन करें",
+    "subtitle": "लॉगिन करने के लिए नीचे अपना ईमेल दर्ज करें",
+    "emailLabel": "ईमेल",
+    "emailPlaceholder": "m@example.com",
+    "passwordLabel": "पासवर्ड",
+    "forgotPassword": "पासवर्ड भूल गए?",
+    "submit": "लॉगिन करें",
+    "genericError": "कुछ गड़बड़ हो गई। कृपया फिर से प्रयास करें।",
+    "networkError": "सर्वर तक नहीं पहुंच सके। अपना कनेक्शन जांचें और फिर से प्रयास करें।",
+    "invalidCredentials": "ईमेल या पासवर्ड गलत है।",
+    "invalidEmail": "कृपया एक मान्य ईमेल पता दर्ज करें।",
+    "passwordRequired": "पासवर्ड आवश्यक है।"
+  },
+  "Sidebar": {
+    "brand": "बिलिंग ऐप",
+    "groups": {
+      "dashboard": "डैशबोर्ड",
+      "sales": "बिक्री",
+      "purchases": "खरीद",
+      "catalog": "कैटलॉग",
+      "parties": "पार्टियाँ",
+      "inventory": "इन्वेंटरी",
+      "settings": "सेटिंग्स",
+      "admin": "एडमिन"
+    },
+    "items": {
+      "overview": "अवलोकन",
+      "reports": "रिपोर्ट",
+      "analysis": "विश्लेषण",
+      "payments": "भुगतान",
+      "invoices": "चालान",
+      "creditNotes": "क्रेडिट नोट",
+      "bills": "बिल",
+      "debitNotes": "डेबिट नोट",
+      "items": "वस्तुएं",
+      "taxRates": "कर दरें",
+      "warehouses": "गोदाम",
+      "offers": "ऑफ़र",
+      "customers": "ग्राहक",
+      "vendors": "विक्रेता",
+      "stock": "स्टॉक",
+      "movements": "मूवमेंट",
+      "organization": "संगठन",
+      "members": "सदस्य",
+      "organizations": "संगठन",
+      "superadmins": "सुपरएडमिन"
+    }
+  },
+  "ModeToggle": {
+    "toggleLabel": "लाइट/डार्क मोड टॉगल करें",
+    "light": "लाइट",
+    "dark": "डार्क",
+    "system": "सिस्टम"
+  },
+  "ThemePresetSelector": {
+    "fallbackLabel": "थीम",
+    "searchPlaceholder": "थीम खोजें...",
+    "noResults": "कोई थीम नहीं मिली।"
+  },
+  "LoginPage": {
+    "imageAlt": "लॉगिन चित्रण"
+  },
+  "AuthCodeError": {
+    "title": "साइन-इन लिंक काम नहीं किया",
+    "description": "वह लिंक अमान्य है या समाप्त हो गया है। वापस जाएं और फिर से साइन इन करने का प्रयास करें।"
+  },
+  "PlaceholderPage": {
+    "comingSoon": "जल्द आ रहा है।",
+    "todoForm": "TODO: फ़ॉर्म बनाना बाकी है।",
+    "todoDetail": "TODO: {id} के लिए विवरण दृश्य बनाना बाकी है।"
+  },
+  "PageTitles": {
+    "dashboard": "डैशबोर्ड",
+    "customers": "ग्राहक",
+    "newCustomer": "नया ग्राहक",
+    "vendors": "विक्रेता",
+    "newVendor": "नया विक्रेता",
+    "organization": "संगठन",
+    "members": "सदस्य",
+    "purchasePayments": "क्रय भुगतान",
+    "purchaseBills": "क्रय बिल",
+    "newPurchaseBill": "नया क्रय बिल",
+    "debitNotes": "डेबिट नोट",
+    "newDebitNote": "नया डेबिट नोट",
+    "payments": "भुगतान",
+    "invoices": "चालान",
+    "newInvoice": "नया चालान",
+    "creditNotes": "क्रेडिट नोट",
+    "newCreditNote": "नया क्रेडिट नोट",
+    "offers": "ऑफ़र",
+    "newOffer": "नया ऑफ़र",
+    "warehouses": "गोदाम",
+    "taxRates": "कर दरें",
+    "items": "वस्तुएं",
+    "newItem": "नई वस्तु",
+    "organizations": "संगठन",
+    "newOrganization": "नया संगठन",
+    "superadmins": "सुपरएडमिन",
+    "stockMovements": "स्टॉक मूवमेंट",
+    "newStockMovement": "नया स्टॉक मूवमेंट",
+    "stock": "स्टॉक"
   }
 }

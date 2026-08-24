@@ -7,6 +7,8 @@ import { ThemePresetScript } from "@/components/theme-preset-script"
 import { QueryProvider } from "@/components/providers/query-provider"
 import { cn } from "@/lib/utils";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { Toaster } from "@/components/ui/sonner";
+import { ThemeLoaderOverlay } from "@/components/theme-loader-overlay";
 
 const robotoHeading = Roboto({subsets:['latin'],variable:'--font-heading'});
 
@@ -28,16 +30,18 @@ export default async function RootLayout({
     <html
       lang={locale}
       suppressHydrationWarning
-      className={cn("antialiased", fontMono.variable, "font-sans", inter.variable, robotoHeading.variable)}
+      className={cn("antialiased", fontMono.variable, "font-sans", inter.variable, robotoHeading.variable, "bg-sidebar")}
     >
       <head>
         <ThemePresetScript />
       </head>
       <body>
+        <ThemeLoaderOverlay />
         <QueryProvider>
           <ThemeProvider>
              <TooltipProvider>{children}</TooltipProvider></ThemeProvider>
         </QueryProvider>
+        <Toaster />
       </body>
     </html>
   )

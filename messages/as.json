@@ -4,5 +4,108 @@
     "en": "ইংৰাজী",
     "hi": "হিন্দী",
     "as": "অসমীয়া"
+  },
+  "LoginForm": {
+    "title": "আপোনাৰ একাউণ্টত লগইন কৰক",
+    "subtitle": "লগইন কৰিবলৈ তলত আপোনাৰ ইমেইল দিয়ক",
+    "emailLabel": "ইমেইল",
+    "emailPlaceholder": "m@example.com",
+    "passwordLabel": "পাছৱৰ্ড",
+    "forgotPassword": "পাছৱৰ্ড পাহৰিছে?",
+    "submit": "লগইন",
+    "genericError": "কিবা এটা ভুল হ'ল। অনুগ্ৰহ কৰি পুনৰ চেষ্টা কৰক।",
+    "networkError": "চাৰ্ভাৰ পাব পৰা নগ'ল। আপোনাৰ সংযোগ পৰীক্ষা কৰি পুনৰ চেষ্টা কৰক।",
+    "invalidCredentials": "ইমেইল বা পাছৱৰ্ড ভুল।",
+    "invalidEmail": "অনুগ্ৰহ কৰি এটা বৈধ ইমেইল ঠিকনা দিয়ক।",
+    "passwordRequired": "পাছৱৰ্ড আৱশ্যক।"
+  },
+  "Sidebar": {
+    "brand": "বিলিং এপ",
+    "groups": {
+      "dashboard": "ড্যাশব'ৰ্ড",
+      "sales": "বিক্ৰী",
+      "purchases": "ক্ৰয়",
+      "catalog": "কেটেলগ",
+      "parties": "পাৰ্টি",
+      "inventory": "ইনভেণ্টৰী",
+      "settings": "ছেটিংছ",
+      "admin": "এডমিন"
+    },
+    "items": {
+      "overview" : "অভ্যাৱলোকন",
+      "reports": "প্ৰতিবেদন",
+      "analysis": "বিশ্লেষণ",
+      "payments": "পৰিশোধ",
+      "invoices": "চালান",
+      "creditNotes": "ক্ৰেডিট নোট",
+      "bills": "বিল",
+      "debitNotes": "ডেবিট নোট",
+      "items": "সামগ্ৰী",
+      "taxRates": "কৰ হাৰ",
+      "warehouses": "গুদাম",
+      "offers": "অফাৰ",
+      "customers": "গ্ৰাহক",
+      "vendors": "বিক্ৰেতা",
+      "stock": "ষ্টক",
+      "movements": "গতিবিধি",
+      "organization": "সংস্থা",
+      "members": "সদস্য",
+      "organizations": "সংস্থা",
+      "superadmins": "সুপাৰএডমিন"
+    }
+  },
+  "ModeToggle": {
+    "toggleLabel": "লাইট/ডাৰ্ক মোড ট'গল কৰক",
+    "light": "লাইট",
+    "dark": "ডাৰ্ক",
+    "system": "ছিষ্টেম"
+  },
+  "ThemePresetSelector": {
+    "fallbackLabel": "থীম",
+    "searchPlaceholder": "থীম বিচাৰক...",
+    "noResults": "কোনো থীম পোৱা নগ'ল।"
+  },
+  "LoginPage": {
+    "imageAlt": "লগইন চিত্ৰণ"
+  },
+  "AuthCodeError": {
+    "title": "ছাইন-ইন লিংকটোৱে কাম নকৰিলে",
+    "description": "সেই লিংকটো অবৈধ বা মেয়াদ উকলি গৈছে। ঘূৰি গৈ পুনৰ ছাইন ইন কৰাৰ চেষ্টা কৰক।"
+  },
+  "PlaceholderPage": {
+    "comingSoon": "সোনকালে আহিব।",
+    "todoForm": "TODO: ফৰ্ম নিৰ্মাণ বাকী আছে।",
+    "todoDetail": "TODO: {id} ৰ বাবে বিৱৰণ দৃশ্য নিৰ্মাণ বাকী আছে।"
+  },
+  "PageTitles": {
+    "dashboard": "ড্যাশব'ৰ্ড",
+    "customers": "গ্ৰাহক",
+    "newCustomer": "নতুন গ্ৰাহক",
+    "vendors": "বিক্ৰেতা",
+    "newVendor": "নতুন বিক্ৰেতা",
+    "organization": "সংস্থা",
+    "members": "সদস্য",
+    "purchasePayments": "ক্ৰয় পৰিশোধ",
+    "purchaseBills": "ক্ৰয় বিল",
+    "newPurchaseBill": "নতুন ক্ৰয় বিল",
+    "debitNotes": "ডেবিট নোট",
+    "newDebitNote": "নতুন ডেবিট নোট",
+    "payments": "পৰিশোধ",
+    "invoices": "চালান",
+    "newInvoice": "নতুন চালান",
+    "creditNotes": "ক্ৰেডিট নোট",
+    "newCreditNote": "নতুন ক্ৰেডিট নোট",
+    "offers": "অফাৰ",
+    "newOffer": "নতুন অফাৰ",
+    "warehouses": "গুদাম",
+    "taxRates": "কৰ হাৰ",
+    "items": "সামগ্ৰী",
+    "newItem": "নতুন সামগ্ৰী",
+    "organizations": "সংস্থাসমূহ",
+    "newOrganization": "নতুন সংস্থা",
+    "superadmins": "সুপাৰএডমিন",
+    "stockMovements": "ষ্টক গতিবিধি",
+    "newStockMovement": "নতুন ষ্টক গতিবিধি",
+    "stock": "ষ্টক"
   }
 }
