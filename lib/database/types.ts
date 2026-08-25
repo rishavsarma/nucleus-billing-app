@@ -7,6 +7,7 @@ export interface Organization {
   slug: string | null
   billing_email: string | null
   default_currency: string
+  business_type_id: string | null
   invoice_prefix: string
   bill_prefix: string
   credit_note_prefix: string
@@ -20,6 +21,41 @@ export interface Organization {
   financial_year_start_month: number
   low_stock_alerts_enabled: boolean
   is_active: boolean
+  subscription_status: "trialing" | "active" | "past_due" | "cancelled"
+  subscription_current_period_end: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface BusinessType {
+  id: string
+  name: string
+  slug: string
+  description: string | null
+  is_active: boolean
+  created_at: string
+}
+
+export interface Addon {
+  id: string
+  name: string
+  slug: string
+  description: string | null
+  price: number
+  min_commitment_days: number
+  is_active: boolean
+  created_at: string
+}
+
+export interface OrganizationAddonSubscription {
+  id: string
+  org_id: string
+  addon_id: string
+  status: "active" | "cancelled"
+  started_at: string
+  min_commitment_until: string
+  cancelled_at: string | null
+  renews_at: string | null
   created_at: string
   updated_at: string
 }

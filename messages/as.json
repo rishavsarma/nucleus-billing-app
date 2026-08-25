@@ -51,8 +51,88 @@
       "organization": "সংস্থা",
       "members": "সদস্য",
       "organizations": "সংস্থা",
-      "superadmins": "সুপাৰএডমিন"
+      "superadmins": "সুপাৰএডমিন",
+      "billing": "বিলিং",
+      "subscription": "চাঁদা",
+      "addons": "এড-অন",
+      "appSettings": "এপ ছেটিংছ"
     }
+  },
+  "Common": {
+    "loading": "লোড হৈ আছে…",
+    "new": "নতুন",
+    "save": "সংৰক্ষণ কৰক",
+    "saving": "সংৰক্ষণ কৰি থকা হৈছে…",
+    "cancel": "বাতিল কৰক",
+    "discard": "বাদ দিয়ক",
+    "edit": "সম্পাদনা কৰক",
+    "delete": "মচি পেলাওক",
+    "actions": "কাৰ্য",
+    "create": "সৃষ্টি কৰক",
+    "creating": "সৃষ্টি কৰি থকা হৈছে…",
+    "confirm": "নিশ্চিত কৰক",
+    "back": "উভতি যাওক",
+    "required": "এই ফিল্ডটো আৱশ্যক।",
+    "loadError": "এই পৃষ্ঠাটো লোড কৰোঁতে কিবা ভুল হ'ল।",
+    "deleteConfirmTitle": "আপুনি নিশ্চিত নে?",
+    "deleteConfirmDescription": "এই কাৰ্য পূৰ্বাৱস্থালৈ অনা নাযাব।",
+    "createdSuccess": "সফলতাৰে সৃষ্টি কৰা হ'ল।",
+    "updatedSuccess": "সফলতাৰে আপডেট কৰা হ'ল।",
+    "deletedSuccess": "সফলতাৰে মচি পেলোৱা হ'ল।",
+    "genericError": "কিবা এটা ভুল হ'ল। অনুগ্ৰহ কৰি পুনৰ চেষ্টা কৰক।"
+  },
+  "DataTable": {
+    "loading": "লোড হৈ আছে…",
+    "noResults": "কোনো ফলাফল নাই।",
+    "rowCount": "{count} শাৰী।",
+    "pageOf": "পৃষ্ঠা {page}, মুঠ {pages}"
+  },
+  "PartyFields": {
+    "email": "ইমেইল",
+    "phone": "ফোন",
+    "taxId": "টেক্স আইডি / GSTIN",
+    "addressLine": "ঠিকনা",
+    "city": "চহৰ",
+    "state": "ৰাজ্য",
+    "postalCode": "পিন কোড",
+    "country": "দেশ",
+    "notes": "টোকা",
+    "notesPlaceholder": "আভ্যন্তৰীণ টোকা, পাৰ্টীক দেখুওৱা নহয়…",
+    "basicDetailsTitle": "মূল বিৱৰণ",
+    "addressTitle": "বিলিং ঠিকনা",
+    "notesTitle": "টোকা"
+  },
+  "Customers": {
+    "title": "গ্ৰাহক",
+    "description": "যাক আপুনি চালান দিয়ে।",
+    "searchPlaceholder": "গ্ৰাহক বিচাৰক…",
+    "newCustomer": "নতুন গ্ৰাহক",
+    "noResults": "এতিয়ালৈকে কোনো গ্ৰাহক নাই।",
+    "columnName": "নাম",
+    "columnContact": "সম্পৰ্ক",
+    "columnLocation": "অৱস্থান",
+    "columnGstin": "GSTIN",
+    "nameLabel": "সম্পূৰ্ণ নাম",
+    "basicDetailsDescription": "এই গ্ৰাহকজন কোন, আৰু তেওঁৰ সৈতে কেনেকৈ যোগাযোগ কৰিব।",
+    "addressDescription": "চালান আৰু ক্ৰেডিট নোট PDF ত ব্যৱহৃত হয়।",
+    "deleteDescription": "এই গ্ৰাহকৰ পুৰণি চালানসমূহ ৰক্ষিত হৈ থাকিব, কিন্তু নতুন চালানত ইয়াক আৰু বাছনি কৰিব নোৱাৰি।",
+    "backToList": "গ্ৰাহক তালিকালৈ উভতি যাওক"
+  },
+  "Vendors": {
+    "title": "বিক্ৰেতা",
+    "description": "যাৰ পৰা আপুনি কিনে।",
+    "searchPlaceholder": "বিক্ৰেতা বিচাৰক…",
+    "newVendor": "নতুন বিক্ৰেতা",
+    "noResults": "এতিয়ালৈকে কোনো বিক্ৰেতা নাই।",
+    "columnName": "নাম",
+    "columnContact": "সম্পৰ্ক",
+    "columnLocation": "অৱস্থান",
+    "columnGstin": "GSTIN",
+    "nameLabel": "বিক্ৰেতাৰ নাম",
+    "basicDetailsDescription": "এই বিক্ৰেতাজন কোন, আৰু তেওঁৰ সৈতে কেনেকৈ যোগাযোগ কৰিব।",
+    "addressDescription": "ক্ৰয় বিল আৰু ডেবিট নোট PDF ত ব্যৱহৃত হয়।",
+    "deleteDescription": "এই বিক্ৰেতাৰ পুৰণি ক্ৰয় বিলসমূহ ৰক্ষিত হৈ থাকিব, কিন্তু নতুন বিলত ইয়াক আৰু বাছনি কৰিব নোৱাৰি।",
+    "backToList": "বিক্ৰেতা তালিকালৈ উভতি যাওক"
   },
   "ModeToggle": {
     "toggleLabel": "লাইট/ডাৰ্ক মোড ট'গল কৰক",
@@ -106,6 +186,10 @@
     "superadmins": "সুপাৰএডমিন",
     "stockMovements": "ষ্টক গতিবিধি",
     "newStockMovement": "নতুন ষ্টক গতিবিধি",
-    "stock": "ষ্টক"
+    "stock": "ষ্টক",
+    "billing": "বিলিং",
+    "subscription": "মোৰ চাঁদা",
+    "addons": "এড-অন",
+    "appSettings": "এপ ছেটিংছ"
   }
 }

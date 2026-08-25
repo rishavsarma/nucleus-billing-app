@@ -51,8 +51,88 @@
       "organization": "Organization",
       "members": "Members",
       "organizations": "Organizations",
-      "superadmins": "Superadmins"
+      "superadmins": "Superadmins",
+      "billing": "Billing",
+      "subscription": "Subscription",
+      "addons": "Add-ons",
+      "appSettings": "App Settings"
     }
+  },
+  "Common": {
+    "loading": "Loading…",
+    "new": "New",
+    "save": "Save",
+    "saving": "Saving…",
+    "cancel": "Cancel",
+    "discard": "Discard",
+    "edit": "Edit",
+    "delete": "Delete",
+    "actions": "Actions",
+    "create": "Create",
+    "creating": "Creating…",
+    "confirm": "Confirm",
+    "back": "Back",
+    "required": "This field is required.",
+    "loadError": "Something went wrong loading this page.",
+    "deleteConfirmTitle": "Are you sure?",
+    "deleteConfirmDescription": "This action cannot be undone.",
+    "createdSuccess": "Created successfully.",
+    "updatedSuccess": "Updated successfully.",
+    "deletedSuccess": "Deleted successfully.",
+    "genericError": "Something went wrong. Please try again."
+  },
+  "DataTable": {
+    "loading": "Loading…",
+    "noResults": "No results.",
+    "rowCount": "{count} row(s).",
+    "pageOf": "Page {page} of {pages}"
+  },
+  "PartyFields": {
+    "email": "Email",
+    "phone": "Phone",
+    "taxId": "Tax ID / GSTIN",
+    "addressLine": "Address Line",
+    "city": "City",
+    "state": "State",
+    "postalCode": "Postal Code",
+    "country": "Country",
+    "notes": "Notes",
+    "notesPlaceholder": "Internal notes, not shown to the party…",
+    "basicDetailsTitle": "Basic Details",
+    "addressTitle": "Billing Address",
+    "notesTitle": "Notes"
+  },
+  "Customers": {
+    "title": "Customers",
+    "description": "Everyone you invoice.",
+    "searchPlaceholder": "Search customers…",
+    "newCustomer": "New Customer",
+    "noResults": "No customers yet.",
+    "columnName": "Name",
+    "columnContact": "Contact",
+    "columnLocation": "Location",
+    "columnGstin": "GSTIN",
+    "nameLabel": "Full Name",
+    "basicDetailsDescription": "Who this customer is, and how to reach them.",
+    "addressDescription": "Used on invoice and credit note PDFs.",
+    "deleteDescription": "This customer's past invoices are kept, but they'll no longer be selectable on new ones.",
+    "backToList": "Back to customers"
+  },
+  "Vendors": {
+    "title": "Vendors",
+    "description": "Everyone you buy from.",
+    "searchPlaceholder": "Search vendors…",
+    "newVendor": "New Vendor",
+    "noResults": "No vendors yet.",
+    "columnName": "Name",
+    "columnContact": "Contact",
+    "columnLocation": "Location",
+    "columnGstin": "GSTIN",
+    "nameLabel": "Vendor Name",
+    "basicDetailsDescription": "Who this vendor is, and how to reach them.",
+    "addressDescription": "Used on purchase bill and debit note PDFs.",
+    "deleteDescription": "This vendor's past purchase bills are kept, but they'll no longer be selectable on new ones.",
+    "backToList": "Back to vendors"
   },
   "ModeToggle": {
     "toggleLabel": "Toggle light/dark mode",
@@ -106,6 +186,10 @@
     "superadmins": "Superadmins",
     "stockMovements": "Stock Movements",
     "newStockMovement": "New Stock Movement",
-    "stock": "Stock"
+    "stock": "Stock",
+    "billing": "Billing",
+    "subscription": "My Subscription",
+    "addons": "Add-ons",
+    "appSettings": "App Settings"
   }
 }

@@ -2,7 +2,7 @@ import { api } from "@/lib/axios"
 import type { ItemStock } from "@/lib/database/types"
 
 export async function fetchItemStock(itemId: string): Promise<ItemStock[]> {
-  const { data } = await api.get<ItemStock[]>("/billing/item_stock", {
+  const { data } = await api.get<ItemStock[]>("/database/item_stock", {
     params: { item_id: itemId },
   })
   return data

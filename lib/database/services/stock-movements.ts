@@ -2,14 +2,14 @@ import { api } from "@/lib/axios"
 import type { StockMovement } from "@/lib/database/types"
 
 export async function fetchStockMovements(): Promise<StockMovement[]> {
-  const { data } = await api.get<StockMovement[]>("/billing/stock_movements")
+  const { data } = await api.get<StockMovement[]>("/database/stock_movements")
   return data
 }
 
 export async function createStockMovement(
   input: Partial<StockMovement>,
 ): Promise<StockMovement> {
-  const { data } = await api.post<StockMovement>("/billing/stock_movements", input)
+  const { data } = await api.post<StockMovement>("/database/stock_movements", input)
   return data
 }
 

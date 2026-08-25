@@ -51,8 +51,88 @@
       "organization": "संगठन",
       "members": "सदस्य",
       "organizations": "संगठन",
-      "superadmins": "सुपरएडमिन"
+      "superadmins": "सुपरएडमिन",
+      "billing": "बिलिंग",
+      "subscription": "सदस्यता",
+      "addons": "ऐड-ऑन",
+      "appSettings": "ऐप सेटिंग्स"
     }
+  },
+  "Common": {
+    "loading": "लोड हो रहा है…",
+    "new": "नया",
+    "save": "सहेजें",
+    "saving": "सहेजा जा रहा है…",
+    "cancel": "रद्द करें",
+    "discard": "छोड़ें",
+    "edit": "संपादित करें",
+    "delete": "हटाएं",
+    "actions": "कार्रवाई",
+    "create": "बनाएं",
+    "creating": "बनाया जा रहा है…",
+    "confirm": "पुष्टि करें",
+    "back": "वापस",
+    "required": "यह फ़ील्ड आवश्यक है।",
+    "loadError": "इस पेज को लोड करने में कुछ गड़बड़ हुई।",
+    "deleteConfirmTitle": "क्या आप सुनिश्चित हैं?",
+    "deleteConfirmDescription": "यह कार्रवाई पूर्ववत नहीं की जा सकती।",
+    "createdSuccess": "सफलतापूर्वक बनाया गया।",
+    "updatedSuccess": "सफलतापूर्वक अपडेट किया गया।",
+    "deletedSuccess": "सफलतापूर्वक हटाया गया।",
+    "genericError": "कुछ गड़बड़ हो गई। कृपया फिर से प्रयास करें।"
+  },
+  "DataTable": {
+    "loading": "लोड हो रहा है…",
+    "noResults": "कोई परिणाम नहीं।",
+    "rowCount": "{count} पंक्तियाँ।",
+    "pageOf": "पृष्ठ {page} में से {pages}"
+  },
+  "PartyFields": {
+    "email": "ईमेल",
+    "phone": "फ़ोन",
+    "taxId": "टैक्स आईडी / GSTIN",
+    "addressLine": "पता",
+    "city": "शहर",
+    "state": "राज्य",
+    "postalCode": "पिन कोड",
+    "country": "देश",
+    "notes": "नोट्स",
+    "notesPlaceholder": "आंतरिक नोट्स, पार्टी को नहीं दिखाए जाते…",
+    "basicDetailsTitle": "मूल विवरण",
+    "addressTitle": "बिलिंग पता",
+    "notesTitle": "नोट्स"
+  },
+  "Customers": {
+    "title": "ग्राहक",
+    "description": "जिन्हें आप चालान भेजते हैं।",
+    "searchPlaceholder": "ग्राहक खोजें…",
+    "newCustomer": "नया ग्राहक",
+    "noResults": "अभी तक कोई ग्राहक नहीं।",
+    "columnName": "नाम",
+    "columnContact": "संपर्क",
+    "columnLocation": "स्थान",
+    "columnGstin": "GSTIN",
+    "nameLabel": "पूरा नाम",
+    "basicDetailsDescription": "यह ग्राहक कौन है, और उससे कैसे संपर्क करें।",
+    "addressDescription": "चालान और क्रेडिट नोट PDF पर उपयोग किया जाता है।",
+    "deleteDescription": "इस ग्राहक के पुराने चालान सुरक्षित रहेंगे, लेकिन नए चालान में यह अब उपलब्ध नहीं होगा।",
+    "backToList": "ग्राहकों की सूची पर वापस जाएं"
+  },
+  "Vendors": {
+    "title": "विक्रेता",
+    "description": "जिनसे आप खरीदते हैं।",
+    "searchPlaceholder": "विक्रेता खोजें…",
+    "newVendor": "नया विक्रेता",
+    "noResults": "अभी तक कोई विक्रेता नहीं।",
+    "columnName": "नाम",
+    "columnContact": "संपर्क",
+    "columnLocation": "स्थान",
+    "columnGstin": "GSTIN",
+    "nameLabel": "विक्रेता का नाम",
+    "basicDetailsDescription": "यह विक्रेता कौन है, और उससे कैसे संपर्क करें।",
+    "addressDescription": "क्रय बिल और डेबिट नोट PDF पर उपयोग किया जाता है।",
+    "deleteDescription": "इस विक्रेता के पुराने क्रय बिल सुरक्षित रहेंगे, लेकिन नए बिल में यह अब उपलब्ध नहीं होगा।",
+    "backToList": "विक्रेताओं की सूची पर वापस जाएं"
   },
   "ModeToggle": {
     "toggleLabel": "लाइट/डार्क मोड टॉगल करें",
@@ -106,6 +186,10 @@
     "superadmins": "सुपरएडमिन",
     "stockMovements": "स्टॉक मूवमेंट",
     "newStockMovement": "नया स्टॉक मूवमेंट",
-    "stock": "स्टॉक"
+    "stock": "स्टॉक",
+    "billing": "बिलिंग",
+    "subscription": "मेरी सदस्यता",
+    "addons": "ऐड-ऑन",
+    "appSettings": "ऐप सेटिंग्स"
   }
 }

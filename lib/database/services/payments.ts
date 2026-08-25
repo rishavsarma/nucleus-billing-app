@@ -2,17 +2,17 @@ import { api } from "@/lib/axios"
 import type { Payment } from "@/lib/database/types"
 
 export async function fetchPayments(): Promise<Payment[]> {
-  const { data } = await api.get<Payment[]>("/billing/payments")
+  const { data } = await api.get<Payment[]>("/database/payments")
   return data
 }
 
 export async function createPayment(input: Partial<Payment>): Promise<Payment> {
-  const { data } = await api.post<Payment>("/billing/payments", input)
+  const { data } = await api.post<Payment>("/database/payments", input)
   return data
 }
 
 export async function updatePayment(id: string, input: Partial<Payment>): Promise<Payment> {
-  const { data } = await api.put<Payment>("/billing/payments", input, { params: { id } })
+  const { data } = await api.put<Payment>("/database/payments", input, { params: { id } })
   return data
 }
 

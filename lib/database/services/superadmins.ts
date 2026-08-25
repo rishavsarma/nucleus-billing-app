@@ -2,7 +2,7 @@ import { api } from "@/lib/axios"
 import type { Superadmin } from "@/lib/database/types"
 
 export async function fetchSuperadmins(): Promise<Superadmin[]> {
-  const { data } = await api.get<Superadmin[]>("/billing/superadmins")
+  const { data } = await api.get<Superadmin[]>("/database/superadmins")
   return data
 }
 

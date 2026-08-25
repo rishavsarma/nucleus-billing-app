@@ -1,7 +1,9 @@
 import { AppSidebar } from "@/components/app-sidebar"
+import { Breadcrumbs } from "@/components/breadcrumbs"
 import { LanguageSwitcher } from "@/components/language-switcher"
 import { ModeToggle } from "@/components/mode-toggle"
 import { ThemePresetSelector } from "@/components/theme-preset-selector"
+import { Separator } from "@/components/ui/separator"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 
 // Auth is enforced in proxy.ts (unauthenticated requests to any of
@@ -14,11 +16,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <SidebarInset >
         <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4">
           <SidebarTrigger />
-          {/* <Separator orientation="vertical" className="h-full" /> */}
+          <Breadcrumbs />
           <div className="flex-1" />
           <ThemePresetSelector />
           <ModeToggle />
-          <LanguageSwitcher />
+          <LanguageSwitcher /> 
         </header>
         <div className="flex-1 p-6">{children}</div>
       </SidebarInset>

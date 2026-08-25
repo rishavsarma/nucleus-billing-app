@@ -1,0 +1,723 @@
+<title>Nucleus Ledger</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --bg: #f5f4ee;
+    --surface: #fcfbf7;
+    --surface-alt: #ebe8dc;
+    --rule: #d9d4c3;
+    --rule-strong: #c3bda8;
+    --ink: #1b1e1a;
+    --ink-muted: #726c5c;
+    --ink-faint: #a19c88;
+
+    --accent: #2c3e6b;
+    --accent-soft: #e2e6f0;
+    --accent-ink: #1d2a4a;
+
+    --live: #2f7d4f;
+    --live-bg: #e2f0e6;
+    --live-line: #b9d9c2;
+
+    --designed: #ac7318;
+    --designed-bg: #f4e8d1;
+    --designed-line: #e3cd9d;
+
+    --deferred: #756f60;
+    --deferred-bg: #e9e6da;
+    --deferred-line: #d3cdb9;
+
+    --shadow: 0 1px 2px rgba(27,30,26,0.06), 0 4px 14px rgba(27,30,26,0.05);
+    --font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
+    --font-body: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14181a;
+      --surface: #1a2022;
+      --surface-alt: #212a27;
+      --rule: #303a36;
+      --rule-strong: #3d4a44;
+      --ink: #eae6d9;
+      --ink-muted: #a29c8a;
+      --ink-faint: #6f6a5c;
+
+      --accent: #8ea0d6;
+      --accent-soft: #232c42;
+      --accent-ink: #c3cdec;
+
+      --live: #74cd97;
+      --live-bg: #1c3327;
+      --live-line: #2c4d3a;
+
+      --designed: #e2b264;
+      --designed-bg: #3a2d16;
+      --designed-line: #56421f;
+
+      --deferred: #a9a291;
+      --deferred-bg: #262521;
+      --deferred-line: #3a382f;
+
+      --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.35);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --bg: #14181a;
+    --surface: #1a2022;
+    --surface-alt: #212a27;
+    --rule: #303a36;
+    --rule-strong: #3d4a44;
+    --ink: #eae6d9;
+    --ink-muted: #a29c8a;
+    --ink-faint: #6f6a5c;
+
+    --accent: #8ea0d6;
+    --accent-soft: #232c42;
+    --accent-ink: #c3cdec;
+
+    --live: #74cd97;
+    --live-bg: #1c3327;
+    --live-line: #2c4d3a;
+
+    --designed: #e2b264;
+    --designed-bg: #3a2d16;
+    --designed-line: #56421f;
+
+    --deferred: #a9a291;
+    --deferred-bg: #262521;
+    --deferred-line: #3a382f;
+
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.35);
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+  }
+
+  .wrap {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 3rem 1.5rem 5rem;
+  }
+
+  /* ---------- masthead ---------- */
+  .masthead {
+    border: 1px solid var(--rule-strong);
+    background: var(--surface);
+    border-radius: 4px;
+    padding: 2.25rem 2rem;
+    box-shadow: var(--shadow);
+    position: relative;
+    overflow: hidden;
+  }
+  .masthead::before {
+    content: "";
+    position: absolute;
+    inset: 8px;
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    pointer-events: none;
+  }
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+  }
+  .eyebrow .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--live); flex: none; }
+  .masthead h1 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: clamp(2rem, 4.4vw, 2.9rem);
+    margin: 0.5rem 0 0.4rem;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+  .masthead .sub {
+    color: var(--ink-muted);
+    font-size: 1.02rem;
+    max-width: 56ch;
+    margin: 0 0 1.4rem;
+  }
+  .headline-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 1px;
+    background: var(--rule);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-top: 1.4rem;
+  }
+  .hstat {
+    background: var(--surface);
+    padding: 0.85rem 1rem;
+  }
+  .hstat .n {
+    font-family: var(--font-mono);
+    font-size: 1.5rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--accent-ink);
+  }
+  .hstat .l {
+    font-size: 0.74rem;
+    color: var(--ink-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-top: 0.15rem;
+  }
+
+  /* ---------- section headers ---------- */
+  section { margin-top: 3.2rem; }
+  .section-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    border-bottom: 1px solid var(--rule-strong);
+    padding-bottom: 0.6rem;
+    margin-bottom: 1.4rem;
+  }
+  .section-head h2 {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin: 0;
+  }
+  .section-head .count {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--ink-faint);
+  }
+  .section-note {
+    color: var(--ink-muted);
+    font-size: 0.94rem;
+    max-width: 68ch;
+    margin: -0.6rem 0 1.5rem;
+  }
+
+  /* ---------- timeline ---------- */
+  .timeline {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    background: var(--surface);
+    overflow: hidden;
+  }
+  .tl-row {
+    display: grid;
+    grid-template-columns: 2.4rem 6.5rem 1fr;
+    gap: 1rem;
+    align-items: start;
+    padding: 0.95rem 1.1rem;
+    border-top: 1px solid var(--rule);
+  }
+  .tl-row:first-child { border-top: none; }
+  .tl-row:nth-child(odd) { background: color-mix(in srgb, var(--surface-alt) 45%, transparent); }
+  .tl-num {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--live);
+    background: var(--live-bg);
+    border: 1px solid var(--live-line);
+    border-radius: 50%;
+    width: 1.7rem; height: 1.7rem;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 600;
+  }
+  .tl-tag {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--ink-faint);
+    letter-spacing: 0.04em;
+    padding-top: 0.25rem;
+  }
+  .tl-body h3 {
+    margin: 0 0 0.2rem;
+    font-size: 1rem;
+    font-weight: 600;
+  }
+  .tl-body p {
+    margin: 0;
+    color: var(--ink-muted);
+    font-size: 0.92rem;
+  }
+
+  /* ---------- stamp ---------- */
+  .stamp {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    padding: 0.28rem 0.6rem;
+    border-radius: 2px;
+    border: 1.5px dashed transparent;
+    white-space: nowrap;
+  }
+  .stamp::before { content: ""; width: 6px; height: 6px; border-radius: 50%; flex: none; }
+  .stamp.live { color: var(--live); background: var(--live-bg); border-color: var(--live-line); }
+  .stamp.live::before { background: var(--live); }
+  .stamp.designed { color: var(--designed); background: var(--designed-bg); border-color: var(--designed-line); }
+  .stamp.designed::before { background: var(--designed); }
+  .stamp.deferred { color: var(--deferred); background: var(--deferred-bg); border-color: var(--deferred-line); }
+  .stamp.deferred::before { background: var(--deferred); }
+
+  /* ---------- capability grid ---------- */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+    gap: 1rem;
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    padding: 1.15rem 1.2rem 1.3rem;
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+    gap: 0.7rem;
+  }
+  .card-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.6rem;
+  }
+  .card h3 {
+    font-family: var(--font-display);
+    font-size: 1.12rem;
+    font-weight: 600;
+    margin: 0;
+    line-height: 1.25;
+  }
+  .card ul {
+    margin: 0;
+    padding-left: 1.05rem;
+    color: var(--ink-muted);
+    font-size: 0.88rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.32rem;
+  }
+  .card li::marker { color: var(--ink-faint); }
+  .card .foot {
+    margin-top: auto;
+    padding-top: 0.5rem;
+    border-top: 1px dashed var(--rule);
+    font-size: 0.8rem;
+    color: var(--ink-faint);
+    font-style: italic;
+  }
+
+  /* ---------- deferred ledger ---------- */
+  .ledger-list {
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    background: var(--surface);
+    overflow: hidden;
+  }
+  .ledger-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 1rem;
+    align-items: baseline;
+    padding: 0.8rem 1.1rem;
+    border-top: 1px solid var(--rule);
+  }
+  .ledger-row:first-child { border-top: none; }
+  .ledger-row .item { font-weight: 600; font-size: 0.94rem; }
+  .ledger-row .why { color: var(--ink-muted); font-size: 0.86rem; margin-top: 0.15rem; }
+
+  /* ---------- checklist ---------- */
+  .checklist {
+    display: flex;
+    flex-direction: column;
+    gap: 0.7rem;
+  }
+  .check-row {
+    display: grid;
+    grid-template-columns: 1.4rem 1fr;
+    gap: 0.8rem;
+    padding: 0.85rem 1rem;
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+  }
+  .check-box {
+    width: 1.15rem; height: 1.15rem;
+    border: 1.5px solid var(--ink-faint);
+    border-radius: 3px;
+    margin-top: 0.1rem;
+  }
+  .check-row.done .check-box {
+    background: var(--live-bg);
+    border-color: var(--live);
+    position: relative;
+  }
+  .check-row.done .check-box::after {
+    content: "";
+    position: absolute;
+    left: 3px; top: -1px;
+    width: 5px; height: 9px;
+    border: solid var(--live);
+    border-width: 0 2px 2px 0;
+    transform: rotate(40deg);
+  }
+  .check-title { font-weight: 600; font-size: 0.95rem; }
+  .check-desc { color: var(--ink-muted); font-size: 0.87rem; margin-top: 0.15rem; }
+  .check-row.done .check-title { color: var(--ink-muted); text-decoration: line-through; text-decoration-color: var(--live-line); }
+
+  /* ---------- footer ---------- */
+  footer {
+    margin-top: 3.5rem;
+    padding-top: 1.4rem;
+    border-top: 1px solid var(--rule-strong);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.8rem;
+    font-family: var(--font-mono);
+    font-size: 0.76rem;
+    color: var(--ink-faint);
+  }
+  footer .refs { display: flex; gap: 0.9rem; flex-wrap: wrap; }
+  footer .refs span { color: var(--ink-muted); }
+
+  @media (max-width: 560px) {
+    .tl-row { grid-template-columns: 2rem 1fr; }
+    .tl-tag { display: none; }
+  }
+</style>
+
+<div class="wrap">
+
+  <div class="masthead">
+    <div class="eyebrow"><span class="dot"></span> NUCLEUS BILLING — PROJECT LEDGER</div>
+    <h1>Where things stand</h1>
+    <p class="sub">Base subscription + add-on marketplace architecture, applied to production. This is the running record — what's live, what's designed but not shipped yet, and what's deliberately off the table for now.</p>
+    <div class="headline-stats">
+      <div class="hstat"><div class="n">v3</div><div class="l">Schema version</div></div>
+      <div class="hstat"><div class="n">19/19</div><div class="l">Verify scenarios passed</div></div>
+      <div class="hstat"><div class="n">11</div><div class="l">Capability areas live</div></div>
+      <div class="hstat"><div class="n">0</div><div class="l">Designed, not applied</div></div>
+    </div>
+  </div>
+
+  <section>
+    <div class="section-head">
+      <h2>The build log</h2>
+      <span class="count">8 entries</span>
+    </div>
+    <div class="timeline">
+      <div class="tl-row">
+        <div class="tl-num">1</div>
+        <div class="tl-tag">RESEARCH</div>
+        <div class="tl-body">
+          <h3>Competitive teardown of mybillbook.in</h3>
+          <p>Toured every document type, form, and settings screen — 48 screenshots captured as the ground-truth reference for what a real Indian GST billing product looks like.</p>
+        </div>
+      </div>
+      <div class="tl-row">
+        <div class="tl-num">2</div>
+        <div class="tl-tag">ANALYSIS</div>
+        <div class="tl-body">
+          <h3>Gap analysis</h3>
+          <p>Compared it against our schema — found real gaps (batch/expiry, PO/e-way fields, single-address parties) and real strengths (append-only ledger, status guards, enforced offer windows).</p>
+        </div>
+      </div>
+      <div class="tl-row">
+        <div class="tl-num">3</div>
+        <div class="tl-tag">STRATEGY</div>
+        <div class="tl-body">
+          <h3>Base + add-on pricing model</h3>
+          <p>Designed a ₹200 base plan + paid modular add-ons (e-way bill as the running example), checked against the market — nobody in India GST billing does this; flat opaque tiers are the norm.</p>
+        </div>
+      </div>
+      <div class="tl-row">
+        <div class="tl-num">4</div>
+        <div class="tl-tag">ARCHITECTURE</div>
+        <div class="tl-body">
+          <h3>Three-gate access control</h3>
+          <p><code>is_active</code> (ban switch) + <code>subscription_status</code> (paid the base plan) + per-add-on entitlement — all routing through the same helper functions every table already depended on.</p>
+        </div>
+      </div>
+      <div class="tl-row">
+        <div class="tl-num">5</div>
+        <div class="tl-tag">BUILD</div>
+        <div class="tl-body">
+          <h3>Full schema rewrite (v3)</h3>
+          <p>Rebuilt tables, functions, and RLS policies from scratch with the subscription/business-type/add-on layer native — no separate patch file needed.</p>
+        </div>
+      </div>
+      <div class="tl-row">
+        <div class="tl-num">6</div>
+        <div class="tl-tag">VERIFY</div>
+        <div class="tl-body">
+          <h3>Tested against a live Postgres 16 instance</h3>
+          <p>11 scenarios end to end — subscription gating, superadmin bypass, the full add-on lifecycle, and a regression of the original purchase → sale → stock flow. All 11 passed.</p>
+        </div>
+      </div>
+      <div class="tl-row">
+        <div class="tl-num">7</div>
+        <div class="tl-tag">SHIPPED</div>
+        <div class="tl-body">
+          <h3>Applied to production</h3>
+          <p>Schema is live on the Oracle VM (4 OCPU / 24GB / 200GB, self-hosted Supabase + Redis + app).</p>
+        </div>
+      </div>
+      <div class="tl-row">
+        <div class="tl-num">8</div>
+        <div class="tl-tag">PATCH</div>
+        <div class="tl-body">
+          <h3>Local delivery + public pricing calculator</h3>
+          <p>Standalone patch applied on top of the live schema — delivery tracking, and catalog tables opened to anonymous reads. Verified with 8 more scenarios before shipping (19/19 total across both rounds).</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-head">
+      <h2>What the schema supports</h2>
+      <span class="count">11 areas</span>
+    </div>
+    <p class="section-note">Every card below is scoped by org via Row Level Security — nothing here relies on the application layer to keep tenants apart.</p>
+
+    <div class="grid">
+
+      <div class="card">
+        <div class="card-top"><h3>Tenancy &amp; access control</h3><span class="stamp live">Live</span></div>
+        <ul>
+          <li>Multi-tenant by design, isolated at the database layer</li>
+          <li>Platform superadmins, cross-tenant, granted only via direct SQL</li>
+          <li>Three independent gates: ban switch, base-plan status, add-on entitlement</li>
+          <li>Owner / admin / member roles per org</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-top"><h3>Business types &amp; onboarding</h3><span class="stamp live">Live</span></div>
+        <ul>
+          <li>Seeded catalog: Retail, Pharmacy, Restaurant, Distributor, Services</li>
+          <li>Advisory add-on recommendations per type — never enforced</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-top"><h3>Add-on marketplace</h3><span class="stamp live">Live</span></div>
+        <ul>
+          <li>Priced catalog, each with a minimum commitment period</li>
+          <li>Full subscribe/cancel history — cancelled rows kept, not deleted</li>
+          <li>Guarded functions only — an org can never self-grant an entitlement</li>
+          <li>Renews on the base-plan cycle, not independently</li>
+        </ul>
+        <div class="foot">Public pricing calculator planned on top of this — see below.</div>
+      </div>
+
+      <div class="card">
+        <div class="card-top"><h3>Parties</h3><span class="stamp live">Live</span></div>
+        <ul>
+          <li>Customers &amp; vendors with structured address, tax ID, notes</li>
+          <li>Full audit trail — created_by / created_at throughout</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-top"><h3>Catalog &amp; inventory</h3><span class="stamp live">Live</span></div>
+        <ul>
+          <li>SKU, HSN/SAC, unit, reorder level, tax rate per item</li>
+          <li>Multi-warehouse stock, always derived, never hand-edited</li>
+          <li>Append-only ledger — corrections are offsetting entries, never edits</li>
+          <li>Real movements only ever written by the system, not the client</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-top"><h3>Sales</h3><span class="stamp live">Live</span></div>
+        <ul>
+          <li>Auto-numbered invoices, auto-computed totals</li>
+          <li>Status machine — <em>paid</em> can only be earned by a recorded payment</li>
+          <li>Line items lock once confirmed — void &amp; reissue, never silently edited</li>
+          <li>Named, dated discount schemes with real date-window enforcement</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-top"><h3>Sales returns</h3><span class="stamp live">Live</span></div>
+        <ul>
+          <li>Credit notes tied to the original invoice, own numbering</li>
+          <li>Restocks on issue, reverses on void</li>
+          <li>Return quantity checked against what's actually left unreturned</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-top"><h3>Purchases</h3><span class="stamp live">Live</span></div>
+        <ul>
+          <li>Vendor + warehouse + our number + the vendor's own reference number</li>
+          <li>Same auto-computed totals &amp; earned-status pattern as sales</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-top"><h3>Purchase returns</h3><span class="stamp live">Live</span></div>
+        <ul>
+          <li>Debit notes tied to the original bill</li>
+          <li>Destocks on issue, same over-return protection as credit notes</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-top"><h3>Local delivery</h3><span class="stamp live">Live</span></div>
+        <ul>
+          <li>One delivery per invoice — address, assigned person, status</li>
+          <li>Delivery person is a simple per-org dropdown, not a login role</li>
+          <li>COD / prepaid is a label only — no payment collection wired to it</li>
+          <li>Core feature — not gated behind an add-on</li>
+        </ul>
+        <div class="foot">Applied via a standalone patch, same convention as the superadmin patch in v2.</div>
+      </div>
+
+      <div class="card">
+        <div class="card-top"><h3>Public pricing calculator</h3><span class="stamp live">Live</span></div>
+        <ul>
+          <li>Catalog tables now readable by anonymous visitors, not just signed-in users</li>
+          <li>Defaults to the recommended add-ons for the visitor's business type</li>
+          <li>Reads directly from the existing add-on catalog — no new tables needed</li>
+        </ul>
+        <div class="foot">Frontend build (the actual calculator UI) is still ahead — the data access it needs is ready.</div>
+      </div>
+
+    </div>
+  </section>
+
+  <section>
+    <div class="section-head">
+      <h2>Deliberately off the table for now</h2>
+      <span class="count">6 items</span>
+    </div>
+    <div class="ledger-list">
+      <div class="ledger-row">
+        <div>
+          <div class="item">Real payment gateway integration</div>
+          <div class="why">Subscription &amp; add-on state is superadmin-driven for now — shaped so a webhook can take over later without a redesign.</div>
+        </div>
+        <span class="stamp deferred">Deferred</span>
+      </div>
+      <div class="ledger-row">
+        <div>
+          <div class="item">E-way bill / PO number / vehicle number fields</div>
+          <div class="why">Waiting on whether "e-way bill" means free data entry or a real paid GSP integration.</div>
+        </div>
+        <span class="stamp deferred">Deferred</span>
+      </div>
+      <div class="ledger-row">
+        <div>
+          <div class="item">GST return-ready reporting</div>
+          <div class="why">GSTR-1/3B exports, CGST/SGST/IGST split — a meaningfully bigger scope on its own.</div>
+        </div>
+        <span class="stamp deferred">Deferred</span>
+      </div>
+      <div class="ledger-row">
+        <div>
+          <div class="item">Grace period on <code>past_due</code></div>
+          <div class="why">Locks out immediately for now — a real dunning flow needs real payment collection to reconcile against.</div>
+        </div>
+        <span class="stamp deferred">Deferred</span>
+      </div>
+      <div class="ledger-row">
+        <div>
+          <div class="item">Independent add-on billing cycles</div>
+          <div class="why">Every add-on renews on the base-plan date — simpler to reconcile with no payment gateway yet.</div>
+        </div>
+        <span class="stamp deferred">Deferred</span>
+      </div>
+      <div class="ledger-row">
+        <div>
+          <div class="item">Multi-vertical schema (real estate, etc.)</div>
+          <div class="why">Not built — the add-on framework is generic enough for a future vertical to reuse instead of needing its own.</div>
+        </div>
+        <span class="stamp deferred">Deferred</span>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-head">
+      <h2>Before it takes real traffic</h2>
+      <span class="count">4 items</span>
+    </div>
+    <div class="checklist">
+      <div class="check-row done">
+        <div class="check-box"></div>
+        <div>
+          <div class="check-title">Schema verified against a live Postgres instance</div>
+          <div class="check-desc">11/11 scenarios passed before anything was applied.</div>
+        </div>
+      </div>
+      <div class="check-row done">
+        <div class="check-box"></div>
+        <div>
+          <div class="check-title">Loosen catalog RLS for the public pricing calculator</div>
+          <div class="check-desc"><code>business_types</code> / <code>addons</code> / recommendations now readable by anonymous visitors, not just signed-in.</div>
+        </div>
+      </div>
+      <div class="check-row done">
+        <div class="check-box"></div>
+        <div>
+          <div class="check-title">Write &amp; apply the local delivery tables</div>
+          <div class="check-desc"><code>deliveries</code> + <code>delivery_persons</code>, applied and verified — 8/8 scenarios passed.</div>
+        </div>
+      </div>
+      <div class="check-row">
+        <div class="check-box"></div>
+        <div>
+          <div class="check-title">Check <code>PGRST_DB_POOL</code> before real concurrent load</div>
+          <div class="check-desc">Defaults to 10 — fine for now, but worth confirming headroom once real shops are on it, on a box shared with Supabase's full stack + Redis + the app itself.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <span>Full detail lives alongside the schema —</span>
+    <div class="refs">
+      <span>SYSTEM_DESIGN.md</span>
+      <span>APPLY.md</span>
+      <span>schema_structure.csv</span>
+    </div>
+  </footer>
+
+</div>

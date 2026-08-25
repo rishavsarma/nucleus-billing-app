@@ -2,12 +2,12 @@ import { api } from "@/lib/axios"
 import type { DebitNote } from "@/lib/database/types"
 
 export async function fetchDebitNotes(): Promise<DebitNote[]> {
-  const { data } = await api.get<DebitNote[]>("/billing/debit_notes")
+  const { data } = await api.get<DebitNote[]>("/database/debit_notes")
   return data
 }
 
 export async function createDebitNote(input: Partial<DebitNote>): Promise<DebitNote> {
-  const { data } = await api.post<DebitNote>("/billing/debit_notes", input)
+  const { data } = await api.post<DebitNote>("/database/debit_notes", input)
   return data
 }
 
@@ -15,7 +15,7 @@ export async function updateDebitNote(
   id: string,
   input: Partial<DebitNote>,
 ): Promise<DebitNote> {
-  const { data } = await api.put<DebitNote>("/billing/debit_notes", input, { params: { id } })
+  const { data } = await api.put<DebitNote>("/database/debit_notes", input, { params: { id } })
   return data
 }
 

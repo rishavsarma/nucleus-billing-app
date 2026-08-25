@@ -1,18 +1,6 @@
-import { getTranslations } from "next-intl/server"
+import { VendorDetailClient } from "./vendor-detail-client"
 
-export default async function VendorsDetailPage({
-  params,
-}: {
-  params: Promise<{ id: string }>
-}) {
+export default async function VendorDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const t = await getTranslations("PageTitles")
-  const tPlaceholder = await getTranslations("PlaceholderPage")
-
-  return (
-    <div className="space-y-1">
-      <h1 className="text-2xl font-semibold">{t("vendors")}</h1>
-      <p className="text-muted-foreground text-sm">{tPlaceholder("todoDetail", { id })}</p>
-    </div>
-  )
+  return <VendorDetailClient id={id} />
 }
