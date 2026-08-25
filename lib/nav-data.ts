@@ -21,6 +21,8 @@ import {
   type LucideIcon,
 } from "lucide-react"
 
+import { routes } from "@/lib/routes"
+
 export type NavItemData = {
   /** Key under Sidebar.items in messages/*.json */
   titleKey: string
@@ -40,66 +42,66 @@ export const NAV_DATA: NavGroupData[] = [
   {
     labelKey: "dashboard",
     items: [
-      { titleKey: "overview", url: "/dashboard/overview", icon: Wallet },
-      { titleKey: "reports", url: "/dashboard/reports", icon: FileText },
-      { titleKey: "analysis", url: "/dashboard/analysis", icon: Undo2 },
+      { titleKey: "overview", url: routes.dashboard.overview, icon: Wallet },
+      { titleKey: "reports", url: routes.dashboard.reports, icon: FileText },
+      { titleKey: "analysis", url: routes.dashboard.analysis, icon: Undo2 },
     ],
   },
   {
     labelKey: "sales",
     items: [
-      { titleKey: "billing", url: "/sales/billing", icon: Zap },
-      { titleKey: "invoices", url: "/sales/invoices", icon: FileText },
-      { titleKey: "creditNotes", url: "/sales/credit-notes", icon: Undo2 },
-      { titleKey: "payments", url: "/sales/payments", icon: Wallet },
+      { titleKey: "billing", url: routes.sales.billing, icon: Zap },
+      { titleKey: "invoices", url: routes.sales.invoices.list, icon: FileText },
+      { titleKey: "creditNotes", url: routes.sales.creditNotes.list, icon: Undo2 },
+      { titleKey: "payments", url: routes.sales.payments, icon: Wallet },
     ],
   },
   {
     labelKey: "purchases",
     items: [
-      { titleKey: "bills", url: "/purchases/bills", icon: ShoppingCart },
-      { titleKey: "debitNotes", url: "/purchases/debit-notes", icon: Undo2 },
-      { titleKey: "payments", url: "/purchases/payments", icon: Receipt },
+      { titleKey: "bills", url: routes.purchases.bills.list, icon: ShoppingCart },
+      { titleKey: "debitNotes", url: routes.purchases.debitNotes.list, icon: Undo2 },
+      { titleKey: "payments", url: routes.purchases.payments, icon: Receipt },
     ],
   },
   {
     labelKey: "catalog",
     items: [
-      { titleKey: "items", url: "/catalog/items", icon: Tag },
-      { titleKey: "taxRates", url: "/catalog/tax-rates", icon: Percent },
-      { titleKey: "warehouses", url: "/catalog/warehouses", icon: Warehouse },
-      { titleKey: "offers", url: "/catalog/offers", icon: Boxes },
+      { titleKey: "items", url: routes.catalog.items.list, icon: Tag },
+      { titleKey: "taxRates", url: routes.catalog.taxRates, icon: Percent },
+      { titleKey: "warehouses", url: routes.catalog.warehouses, icon: Warehouse },
+      { titleKey: "offers", url: routes.catalog.offers.list, icon: Boxes },
     ],
   },
   {
     labelKey: "parties",
     items: [
-      { titleKey: "customers", url: "/parties/customers", icon: Users },
-      { titleKey: "vendors", url: "/parties/vendors", icon: Truck },
+      { titleKey: "customers", url: routes.parties.customers.list, icon: Users },
+      { titleKey: "vendors", url: routes.parties.vendors.list, icon: Truck },
     ],
   },
   {
     labelKey: "inventory",
     items: [
-      { titleKey: "stock", url: "/inventory/stock", icon: Boxes },
-      { titleKey: "movements", url: "/inventory/movements", icon: ArrowLeftRight },
+      { titleKey: "stock", url: routes.inventory.stock, icon: Boxes },
+      { titleKey: "movements", url: routes.inventory.movements.list, icon: ArrowLeftRight },
     ],
   },
   {
     labelKey: "settings",
     items: [
-      { titleKey: "organization", url: "/settings/organization", icon: Building2 },
-      { titleKey: "members", url: "/settings/members", icon: UserCog },
-      { titleKey: "subscription", url: "/settings/subscription", icon: CreditCard },
-      { titleKey: "addons", url: "/settings/addons", icon: Puzzle },
-      { titleKey: "appSettings", url: "/settings/app-settings", icon: Settings },
+      { titleKey: "organization", url: routes.settings.organization, icon: Building2 },
+      { titleKey: "members", url: routes.settings.members, icon: UserCog },
+      { titleKey: "subscription", url: routes.settings.subscription, icon: CreditCard },
+      { titleKey: "addons", url: routes.settings.addons, icon: Puzzle },
+      { titleKey: "appSettings", url: routes.settings.appSettings, icon: Settings },
     ],
   },
   {
     labelKey: "admin",
     items: [
-      { titleKey: "organizations", url: "/admin/organizations", icon: Building2 },
-      { titleKey: "superadmins", url: "/admin/superadmins", icon: ShieldCheck },
+      { titleKey: "organizations", url: routes.admin.organizations.list, icon: Building2 },
+      { titleKey: "superadmins", url: routes.admin.superadmins, icon: ShieldCheck },
     ],
   },
 ]

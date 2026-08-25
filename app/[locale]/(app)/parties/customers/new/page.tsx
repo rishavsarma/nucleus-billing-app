@@ -7,6 +7,7 @@ import { ArrowLeftIcon } from "lucide-react"
 import { Link, useRouter } from "@/i18n/navigation"
 import { PartyForm, formValuesToPartyInput, type PartyFormValues } from "@/components/party-form"
 import { useCreateCustomer } from "@/hooks/use-customers"
+import { routes } from "@/lib/routes"
 
 export default function NewCustomerPage() {
   const t = useTranslations("Customers")
@@ -19,7 +20,7 @@ export default function NewCustomerPage() {
     createCustomer.mutate(formValuesToPartyInput(values), {
       onSuccess: (customer) => {
         toast.success(tCommon("createdSuccess"))
-        router.push(`/parties/customers/${customer.id}`)
+        router.push(routes.parties.customers.detail(customer.id))
       },
       onError: () => toast.error(tCommon("genericError")),
     })
@@ -27,7 +28,7 @@ export default function NewCustomerPage() {
 
   return (
     <div className="flex flex-col gap-1">
-      <Link href="/parties/customers" className="mb-2 flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+      <Link href={routes.parties.customers.list} className="mb-2 flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
         <ArrowLeftIcon className="size-3.5" />
         {t("backToList")}
       </Link>

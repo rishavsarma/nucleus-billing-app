@@ -27,6 +27,8 @@ const TONE_BY_STATUS: Record<string, StatusTone> = {
   owner: "neutral",
   admin: "info",
   member: "neutral",
+  low: "warning",
+  ok: "success",
 }
 
 export function statusTone(status: string): StatusTone {

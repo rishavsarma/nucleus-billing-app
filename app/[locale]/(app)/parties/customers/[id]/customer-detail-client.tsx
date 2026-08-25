@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button"
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog"
 import { PartyForm, formValuesToPartyInput, partyToFormValues, type PartyFormValues } from "@/components/party-form"
 import { useCustomers, useDeleteCustomer, useUpdateCustomer } from "@/hooks/use-customers"
+import { routes } from "@/lib/routes"
 
 export function CustomerDetailClient({ id }: { id: string }) {
   const t = useTranslations("Customers")
@@ -41,7 +42,7 @@ export function CustomerDetailClient({ id }: { id: string }) {
   if (!customer) {
     return (
       <div className="flex flex-col gap-2">
-        <Link href="/parties/customers" className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+        <Link href={routes.parties.customers.list} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeftIcon className="size-3.5" />
           {t("backToList")}
         </Link>
@@ -53,7 +54,7 @@ export function CustomerDetailClient({ id }: { id: string }) {
   return (
     <div className="flex flex-col gap-1">
       <div className="mb-2 flex items-center justify-between">
-        <Link href="/parties/customers" className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+        <Link href={routes.parties.customers.list} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeftIcon className="size-3.5" />
           {t("backToList")}
         </Link>
@@ -85,7 +86,7 @@ export function CustomerDetailClient({ id }: { id: string }) {
           deleteCustomer.mutate(id, {
             onSuccess: () => {
               toast.success(tCommon("deletedSuccess"))
-              router.push("/parties/customers")
+              router.push(routes.parties.customers.list)
             },
             onError: () => toast.error(tCommon("genericError")),
           })

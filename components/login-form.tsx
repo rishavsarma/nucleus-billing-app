@@ -53,7 +53,7 @@ export function LoginForm({
       { email, password },
       {
         onSuccess: () => {
-          router.push("/")
+          router.push("/dashboard/overview")
           router.refresh()
         },
         onError: (mutationError) => {

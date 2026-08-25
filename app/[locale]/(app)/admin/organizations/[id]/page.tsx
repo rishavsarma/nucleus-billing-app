@@ -1,18 +1,10 @@
-import { getTranslations } from "next-intl/server"
+import { AdminOrganizationDetailClient } from "./admin-organization-detail-client"
 
-export default async function OrganizationsDetailPage({
+export default async function AdminOrganizationDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>
 }) {
   const { id } = await params
-  const t = await getTranslations("PageTitles")
-  const tPlaceholder = await getTranslations("PlaceholderPage")
-
-  return (
-    <div className="space-y-1">
-      <h1 className="text-2xl font-semibold">{t("organizations")}</h1>
-      <p className="text-muted-foreground text-sm">{tPlaceholder("todoDetail", { id })}</p>
-    </div>
-  )
+  return <AdminOrganizationDetailClient id={id} />
 }

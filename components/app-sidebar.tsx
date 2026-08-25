@@ -1,13 +1,17 @@
 "use client"
 
-import { LayoutDashboard } from "lucide-react"
+import { LayoutDashboard, LogOutIcon } from "lucide-react"
 import { useTranslations } from "next-intl"
+import { toast } from "sonner"
 
-import { Link, usePathname } from "@/i18n/navigation"
+import { Link, usePathname, useRouter } from "@/i18n/navigation"
+import { useLogout } from "@/hooks/use-logout"
+import { useMe } from "@/hooks/use-me"
 import { NAV_DATA } from "@/lib/nav-data"
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -20,18 +24,22 @@ import {
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname()
+  const router = useRouter()
   const t = useTranslations("Sidebar")
+  const tCommon = useTranslations("Common")
+  const { data: me } = useMe()
+  const logout = useLogout()
 
-  // TODO: hide the "Admin" group unless the signed-in user is a superadmin
-  // (see requireSuperadmin() in lib/database/require-org.ts / useSuperadmins()).
-  const navGroups = NAV_DATA.map((group) => ({
-    label: t(`groups.${group.labelKey}`),
-    items: group.items.map((item) => ({
-      title: t(`items.${item.titleKey}`),
-      url: item.url,
-      icon: item.icon,
-    })),
-  }))
+  const navGroups = NAV_DATA.filter((group) => group.labelKey !== "admin" || me?.isSuperadmin).map(
+    (group) => ({
+      label: t(`groups.${group.labelKey}`),
+      items: group.items.map((item) => ({
+        title: t(`items.${item.titleKey}`),
+        url: item.url,
+        icon: item.icon,
+      })),
+    }),
+  )
 
   return (
     <Sidebar collapsible="icon" {...props}>
@@ -68,6 +76,27 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </SidebarGroup>
         ))}
       </SidebarContent>
+      <SidebarFooter>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              onClick={() =>
+                logout.mutate(undefined, {
+                  onSuccess: () => {
+                    router.push("/login")
+                    router.refresh()
+                  },
+                  onError: () => toast.error(tCommon("genericError")),
+                })
+              }
+              disabled={logout.isPending}
+            >
+              <LogOutIcon />
+              <span>{t("logOut")}</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarFooter>
       <SidebarRail />
     </Sidebar>
   )

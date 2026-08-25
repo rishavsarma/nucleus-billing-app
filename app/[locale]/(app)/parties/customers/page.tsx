@@ -6,6 +6,7 @@ import { toast } from "sonner"
 import { PencilIcon, PlusIcon, TrashIcon } from "lucide-react"
 
 import { Link } from "@/i18n/navigation"
+import { routes } from "@/lib/routes"
 import { Button } from "@/components/ui/button"
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog"
 import { EntityTable, entityColumnHelper } from "@/components/entity-table"
@@ -25,7 +26,7 @@ export default function CustomersPage() {
     columnHelper.accessor("name", {
       header: t("columnName"),
       cell: ({ getValue, row }) => (
-        <Link href={`/parties/customers/${row.original.id}`} className="font-medium hover:underline">
+        <Link href={routes.parties.customers.detail(row.original.id)} className="font-medium hover:underline">
           {getValue()}
         </Link>
       ),
@@ -58,7 +59,7 @@ export default function CustomersPage() {
       cell: ({ row }) => (
         <div className="flex justify-end gap-1">
           <Button variant="ghost" size="icon-sm" asChild>
-            <Link href={`/parties/customers/${row.original.id}`} onClick={(event) => event.stopPropagation()}>
+            <Link href={routes.parties.customers.detail(row.original.id)} onClick={(event) => event.stopPropagation()}>
               <PencilIcon />
             </Link>
           </Button>
@@ -85,7 +86,7 @@ export default function CustomersPage() {
           <p className="text-sm text-muted-foreground">{t("description")}</p>
         </div>
         <Button asChild>
-          <Link href="/parties/customers/new">
+          <Link href={routes.parties.customers.new}>
             <PlusIcon />
             {t("newCustomer")}
           </Link>

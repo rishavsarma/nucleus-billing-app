@@ -2,8 +2,8 @@ import { AppSidebar } from "@/components/app-sidebar"
 import { Breadcrumbs } from "@/components/breadcrumbs"
 import { LanguageSwitcher } from "@/components/language-switcher"
 import { ModeToggle } from "@/components/mode-toggle"
+import { SubscriptionStatusDialog } from "@/components/subscription-status-dialog"
 import { ThemePresetSelector } from "@/components/theme-preset-selector"
-import { Separator } from "@/components/ui/separator"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 
 // Auth is enforced in proxy.ts (unauthenticated requests to any of
@@ -24,6 +24,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </header>
         <div className="flex-1 p-6">{children}</div>
       </SidebarInset>
+      <SubscriptionStatusDialog />
     </SidebarProvider>
   )
 }

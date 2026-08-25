@@ -1,18 +1,6 @@
-import { getTranslations } from "next-intl/server"
+import { PurchaseBillDetailClient } from "./purchase-bill-detail-client"
 
-export default async function PurchaseBillsDetailPage({
-  params,
-}: {
-  params: Promise<{ id: string }>
-}) {
+export default async function PurchaseBillDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const t = await getTranslations("PageTitles")
-  const tPlaceholder = await getTranslations("PlaceholderPage")
-
-  return (
-    <div className="space-y-1">
-      <h1 className="text-2xl font-semibold">{t("purchaseBills")}</h1>
-      <p className="text-muted-foreground text-sm">{tPlaceholder("todoDetail", { id })}</p>
-    </div>
-  )
+  return <PurchaseBillDetailClient id={id} />
 }

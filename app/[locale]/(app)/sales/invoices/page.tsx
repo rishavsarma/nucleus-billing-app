@@ -1,13 +1,81 @@
+"use client"
+
 import { useTranslations } from "next-intl"
+import { PlusIcon } from "lucide-react"
+
+import { Link } from "@/i18n/navigation"
+import { Button } from "@/components/ui/button"
+import { EntityTable, entityColumnHelper } from "@/components/entity-table"
+import { StatusBadge } from "@/components/status-badge"
+import { useCustomers } from "@/hooks/use-customers"
+import { useInvoices } from "@/hooks/use-invoices"
+import { routes } from "@/lib/routes"
+import type { Invoice } from "@/lib/database/types"
+
+const columnHelper = entityColumnHelper<Invoice>()
+const money = (n: number) => "₹" + n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
 export default function InvoicesPage() {
-  const t = useTranslations("PageTitles")
-  const tPlaceholder = useTranslations("PlaceholderPage")
+  const t = useTranslations("Invoices")
+  const tStatus = useTranslations("DocStatus")
+  const { data: invoices, isLoading } = useInvoices()
+  const { data: customers } = useCustomers()
+
+  const customerName = (id: string) => customers?.find((c) => c.id === id)?.name ?? "—"
+
+  const columns = [
+    columnHelper.accessor("invoice_number", {
+      header: t("columnNumber"),
+      cell: ({ getValue, row }) => (
+        <Link href={routes.sales.invoices.detail(row.original.id)} className="font-medium hover:underline">
+          {getValue() ?? "—"}
+        </Link>
+      ),
+    }),
+    columnHelper.accessor("customer_id", {
+      header: t("columnCustomer"),
+      cell: ({ getValue }) => customerName(getValue()),
+    }),
+    columnHelper.accessor("issue_date", { header: t("columnIssueDate") }),
+    columnHelper.accessor("due_date", {
+      header: t("columnDueDate"),
+      cell: ({ getValue }) => getValue() ?? "—",
+    }),
+    columnHelper.accessor("status", {
+      header: t("columnStatus"),
+      cell: ({ getValue }) => <StatusBadge status={getValue()}>{tStatus(getValue())}</StatusBadge>,
+    }),
+    columnHelper.accessor("total", {
+      header: t("columnTotal"),
+      cell: ({ getValue }) => <span className="font-medium">{money(getValue())}</span>,
+    }),
+  ]
 
   return (
-    <div className="space-y-1">
-      <h1 className="text-2xl font-semibold">{t("invoices")}</h1>
-      <p className="text-muted-foreground text-sm">{tPlaceholder("comingSoon")}</p>
+    <div className="flex flex-col gap-1">
+      <div className="mb-4 flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold">{t("title")}</h1>
+          <p className="text-sm text-muted-foreground">{t("description")}</p>
+        </div>
+        <Button asChild>
+          <Link href={routes.sales.invoices.new}>
+            <PlusIcon />
+            {t("newInvoice")}
+          </Link>
+        </Button>
+      </div>
+
+      <EntityTable
+        columns={columns}
+        data={invoices ?? []}
+        isLoading={isLoading}
+        searchPlaceholder={t("searchPlaceholder")}
+        matchesSearch={(row, query) =>
+          (row.invoice_number?.toLowerCase().includes(query) ?? false) || customerName(row.customer_id).toLowerCase().includes(query)
+        }
+        emptyMessage={t("noResults")}
+      />
     </div>
   )
 }

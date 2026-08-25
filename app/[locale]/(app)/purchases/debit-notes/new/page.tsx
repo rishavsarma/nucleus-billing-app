@@ -1,13 +1,113 @@
+"use client"
+
+import { zodResolver } from "@hookform/resolvers/zod"
+import { Loader2Icon } from "lucide-react"
+import { useForm, useWatch } from "react-hook-form"
 import { useTranslations } from "next-intl"
+import { toast } from "sonner"
+import { ArrowLeftIcon } from "lucide-react"
+import { z } from "zod"
+
+import { Link, useRouter } from "@/i18n/navigation"
+import { Button } from "@/components/ui/button"
+import { Field, FieldError, FieldLabel } from "@/components/ui/field"
+import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Textarea } from "@/components/ui/textarea"
+import { useVendors } from "@/hooks/use-vendors"
+import { useCreateDebitNote } from "@/hooks/use-debit-notes"
+import { usePurchaseBills } from "@/hooks/use-purchase-bills"
+import { routes } from "@/lib/routes"
+
+const newDebitNoteSchema = z.object({
+  purchase_bill_id: z.string().min(1),
+  reason: z.string().optional(),
+  issue_date: z.string().min(1),
+})
+type NewDebitNoteValues = z.infer<typeof newDebitNoteSchema>
 
 export default function NewDebitNotePage() {
-  const t = useTranslations("PageTitles")
-  const tPlaceholder = useTranslations("PlaceholderPage")
+  const t = useTranslations("DebitNotes")
+  const tCommon = useTranslations("Common")
+  const router = useRouter()
+  const createDebitNote = useCreateDebitNote()
+  const { data: bills } = usePurchaseBills()
+  const { data: vendors } = useVendors()
+
+  const returnableBills = bills?.filter((b) => b.status !== "draft" && b.status !== "void") ?? []
+
+  const form = useForm<NewDebitNoteValues>({
+    resolver: zodResolver(newDebitNoteSchema),
+    defaultValues: { issue_date: new Date().toISOString().slice(0, 10) },
+  })
+  const { register, handleSubmit, formState, setValue, control } = form
+  const selectedBillId = useWatch({ control, name: "purchase_bill_id" })
+  const selectedBill = bills?.find((b) => b.id === selectedBillId)
+  const vendorName = selectedBill ? vendors?.find((v) => v.id === selectedBill.vendor_id)?.name : undefined
+
+  function onSubmit(values: NewDebitNoteValues) {
+    const bill = bills?.find((b) => b.id === values.purchase_bill_id)
+    if (!bill) return
+
+    createDebitNote.mutate(
+      {
+        purchase_bill_id: values.purchase_bill_id,
+        vendor_id: bill.vendor_id,
+        warehouse_id: bill.warehouse_id,
+        reason: values.reason || null,
+        issue_date: values.issue_date,
+      },
+      {
+        onSuccess: (debitNote) => {
+          toast.success(tCommon("createdSuccess"))
+          router.push(routes.purchases.debitNotes.detail(debitNote.id))
+        },
+        onError: () => toast.error(tCommon("genericError")),
+      },
+    )
+  }
 
   return (
-    <div className="space-y-1">
-      <h1 className="text-2xl font-semibold">{t("newDebitNote")}</h1>
-      <p className="text-muted-foreground text-sm">{tPlaceholder("todoForm")}</p>
+    <div className="flex flex-col gap-1">
+      <Link href={routes.purchases.debitNotes.list} className="mb-2 flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+        <ArrowLeftIcon className="size-3.5" />
+        {t("backToList")}
+      </Link>
+      <h1 className="mb-4 text-2xl font-semibold">{t("newDebitNote")}</h1>
+
+      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4 rounded-xl bg-card p-4 ring-1 ring-foreground/10">
+        <Field data-invalid={!!formState.errors.purchase_bill_id}>
+          <FieldLabel htmlFor="dn-bill">{t("billLabel")}</FieldLabel>
+          <Select value={selectedBillId} onValueChange={(value) => setValue("purchase_bill_id", value)}>
+            <SelectTrigger id="dn-bill" className="w-full">
+              <SelectValue placeholder={t("billPlaceholder")} />
+            </SelectTrigger>
+            <SelectContent>
+              {returnableBills.map((bill) => (
+                <SelectItem key={bill.id} value={bill.id}>
+                  {bill.bill_number} — {vendors?.find((v) => v.id === bill.vendor_id)?.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {formState.errors.purchase_bill_id ? <FieldError>{tCommon("required")}</FieldError> : null}
+          {vendorName ? <p className="text-xs text-muted-foreground">{t("columnVendor")}: {vendorName}</p> : null}
+        </Field>
+        <Field>
+          <FieldLabel htmlFor="dn-issue-date">{t("issueDateLabel")}</FieldLabel>
+          <Input id="dn-issue-date" type="date" {...register("issue_date")} />
+        </Field>
+        <Field>
+          <FieldLabel htmlFor="dn-reason">{t("reasonLabel")}</FieldLabel>
+          <Textarea id="dn-reason" placeholder={t("reasonPlaceholder")} {...register("reason")} />
+        </Field>
+        <div className="flex justify-end">
+          <Button type="submit" disabled={createDebitNote.isPending}>
+            {createDebitNote.isPending ? <Loader2Icon className="animate-spin" /> : null}
+            {t("createDebitNote")}
+          </Button>
+        </div>
+      </form>
     </div>
   )
 }
