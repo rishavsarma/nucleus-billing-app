@@ -271,3 +271,21 @@ billing.organization_addon_subscriptions,updated_at,timestamptz,NO,now(),,,,Auto
 billing.business_type_addon_recommendations,business_type_id,uuid,NO,,YES (composite),business_types.id ON DELETE CASCADE,,PK part 1
 billing.business_type_addon_recommendations,addon_id,uuid,NO,,YES (composite),addons.id ON DELETE CASCADE,,PK part 2
 billing.business_type_addon_recommendations,note,text,YES,,,,,"Short reason shown in onboarding UI; advisory only, never enforced"
+billing.delivery_persons,id,uuid,NO,gen_random_uuid(),YES,,,
+billing.delivery_persons,org_id,uuid,NO,,,organizations.id ON DELETE CASCADE,,
+billing.delivery_persons,name,text,NO,,,,,
+billing.delivery_persons,phone,text,YES,,,,,
+billing.delivery_persons,is_active,boolean,NO,true,,,,Inactive people drop out of the dropdown without losing history on past deliveries
+billing.delivery_persons,created_at,timestamptz,NO,now(),,,,
+billing.deliveries,id,uuid,NO,gen_random_uuid(),YES,,,
+billing.deliveries,org_id,uuid,NO,,,organizations.id ON DELETE CASCADE,,
+billing.deliveries,invoice_id,uuid,NO,,,invoices.id ON DELETE RESTRICT,UNIQUE,One delivery per invoice (v1 simplification)
+billing.deliveries,delivery_address,jsonb,YES,,,,,Point-in-time snapshot, not a live link to the customer's saved address
+billing.deliveries,delivery_person_id,uuid,YES,,,delivery_persons.id ON DELETE SET NULL,,Nullable — can be assigned later
+billing.deliveries,payment_mode,text,YES,,,,"payment_mode IN ('cod','prepaid') or null",Label only — not wired to any payment collection
+billing.deliveries,status,text,NO,'pending',,,"status IN ('pending','out_for_delivery','delivered','failed')",No status-transition guard — operational label, not a financial document
+billing.deliveries,delivered_at,timestamptz,YES,,,,,
+billing.deliveries,notes,text,YES,,,,,
+billing.deliveries,created_by,uuid,YES,,,auth.users.id,,
+billing.deliveries,created_at,timestamptz,NO,now(),,,,
+billing.deliveries,updated_at,timestamptz,NO,now(),,,,Auto-bumped

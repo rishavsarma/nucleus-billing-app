@@ -1,5 +1,5 @@
-// Row types mirroring schema.sql (billing schema). Kept as plain interfaces
-// since this project has no generated Supabase types yet.
+// Row types mirroring db-schema/*.sql (billing schema). Kept as plain
+// interfaces since this project has no generated Supabase types yet.
 
 export interface Organization {
   id: string

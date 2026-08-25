@@ -9,7 +9,6 @@ import { ModeToggle } from "@/components/mode-toggle"
 
 export default function LoginPage() {
   const tSidebar = useTranslations("Sidebar")
-  const tLogin = useTranslations("LoginPage")
 
   return (
     <div className="grid min-h-svh lg:grid-cols-2">
@@ -29,8 +28,8 @@ export default function LoginPage() {
         </div>
       </div>
       <div className="relative hidden bg-muted lg:block">
-          <ThemePresetSelector />
-                 <ModeToggle />
+        <ThemePresetSelector />
+        <ModeToggle />
       </div>
     </div>
   )

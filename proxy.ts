@@ -7,6 +7,7 @@ const handleI18nRouting = createMiddleware(routing)
 
 // Prefixes (locale-stripped, leading slash) that require a signed-in user.
 const PROTECTED_PREFIXES = [
+  "/dashboard",
   "/sales",
   "/purchases",
   "/catalog",

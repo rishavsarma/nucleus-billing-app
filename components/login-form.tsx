@@ -42,7 +42,9 @@ export function LoginForm({
     ? login.error.response?.data
     : null
   const error = errorBody
-    ? (errorBody.code && knownErrors[errorBody.code]) || errorBody.error || t("genericError")
+    ? (errorBody.code && knownErrors[errorBody.code]) ||
+      errorBody.error ||
+      t("genericError")
     : null
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -59,16 +61,22 @@ export function LoginForm({
             toast.error(t("networkError"))
           }
         },
-      },
+      }
     )
   }
 
   return (
-    <form className={cn("flex flex-col gap-6", className)} onSubmit={handleSubmit} {...props}>
+    <form
+      className={cn("flex flex-col gap-6", className)}
+      onSubmit={handleSubmit}
+      {...props}
+    >
       <FieldGroup>
         <div className="flex flex-col items-center gap-1 text-center">
           <h1 className="text-2xl font-bold">{t("title")}</h1>
-          <p className="text-sm text-balance text-muted-foreground">{t("subtitle")}</p>
+          <p className="text-sm text-balance text-muted-foreground">
+            {t("subtitle")}
+          </p>
         </div>
         <Field data-invalid={!!error}>
           <FieldLabel htmlFor="email">{t("emailLabel")}</FieldLabel>

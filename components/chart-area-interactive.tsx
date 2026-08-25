@@ -145,7 +145,13 @@ export function ChartAreaInteractive() {
   const [timeRange, setTimeRange] = React.useState("90d")
 
   React.useEffect(() => {
+    // Deliberately re-syncs the selected range whenever the viewport
+    // crosses the mobile breakpoint (not just on mount), so resizing into
+    // mobile always narrows the default range — eslint-disable is intentional
+    // here rather than inlining into render, since isMobile is itself only
+    // known after mount (see hooks/use-mobile.ts).
     if (isMobile) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setTimeRange("7d")
     }
   }, [isMobile])

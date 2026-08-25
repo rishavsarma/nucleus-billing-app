@@ -95,6 +95,12 @@ function Carousel({
 
   React.useEffect(() => {
     if (!api) return
+    // Syncs initial scroll-button state from the embla API the moment it
+    // becomes available (api is only known post-mount, via a ref callback),
+    // then subscribes to future changes below — the documented embla-carousel
+    // pattern for this exact case (see react.dev/learn/you-might-not-need-an-effect,
+    // "subscribe for updates from an external system").
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     onSelect(api)
     api.on("reInit", onSelect)
     api.on("select", onSelect)

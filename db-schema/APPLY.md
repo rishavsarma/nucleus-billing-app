@@ -238,6 +238,38 @@ Supabase Studio → SQL Editor → paste and run each file, in this order:
 One-time initial migration, not idempotent — don't re-run `001` against a
 database that already has these tables.
 
+## 1a. Delivery system + public pricing calculator (post-launch patch)
+
+Applied after v3 was already live, same standalone-patch convention v2's
+`005_superadmin.sql` used — safe to run against a database that already has
+001-004 applied, touches no existing data. Verified the same way as
+everything else: applied to a real Postgres instance and run through 8
+scenarios (anonymous catalog reads, anonymous writes correctly rejected,
+delivery creation, the one-delivery-per-invoice constraint, status updates,
+a deleted delivery person nulling out cleanly instead of being blocked,
+cross-org isolation, and an invalid `payment_mode` being rejected) — all 8
+passed.
+
+Run **`005_delivery_and_public_pricing.sql`** — it does two things:
+
+1. **Public pricing calculator.** `business_types`, `addons`, and
+   `business_type_addon_recommendations` were previously readable by any
+   *signed-in* user only. This patch opens read access to everyone,
+   including anonymous visitors (`using (true)` instead of
+   `using (auth.uid() is not null)`), so a pricing calculator on your
+   public marketing site works before someone's created an account. Write
+   access is unchanged — still superadmin-only. Safe because none of this
+   data is customer-specific — it's your own price list and catalog.
+2. **Local delivery.** `billing.delivery_persons` (a simple per-org
+   dropdown of names — not a login role) and `billing.deliveries` (one per
+   invoice, address snapshot, assigned person, a `payment_mode` label for
+   COD vs. prepaid that isn't wired to any actual payment collection, and
+   a status of `pending` → `out_for_delivery` → `delivered`/`failed`).
+   Core feature — not gated behind an add-on. Deliberately has no
+   status-transition guard trigger and does allow deletes on both tables,
+   unlike the financial documents elsewhere in this schema — it's
+   operational tracking, not money, so it doesn't need the same rigor.
+
 ## 1b. Seed the new catalogs
 
 Nothing in the app works with an empty `business_types`/`addons` catalog —

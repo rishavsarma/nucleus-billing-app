@@ -14,6 +14,10 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // Reference-only copy of the tweakcn source, not part of this app.
     "tweakcn-main/**",
+    // VS Code Local History snapshots — timestamped copies of past edits,
+    // not source files. Left unignored, this reruns lint against hundreds
+    // of stale, sometimes syntactically-invalid old snapshots.
+    ".history/**",
   ]),
 ]);
 

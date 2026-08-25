@@ -4,7 +4,7 @@ import { ModeToggle } from "@/components/mode-toggle"
 import { ThemePresetSelector } from "@/components/theme-preset-selector"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 
-// Auth is enforced in middleware.ts (unauthenticated requests to any of
+// Auth is enforced in proxy.ts (unauthenticated requests to any of
 // these routes are redirected to /login before this layout ever renders),
 // so this layout only needs to build the shell.
 export default function AppLayout({ children }: { children: React.ReactNode }) {
