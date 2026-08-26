@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useQueries } from "@tanstack/react-query"
 import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 import { PencilIcon, PlusIcon, TrashIcon } from "lucide-react"
@@ -12,6 +13,7 @@ import { EntityTable, entityColumnHelper } from "@/components/entity-table"
 import { StatusBadge } from "@/components/status-badge"
 import { useDeleteItem, useItems } from "@/hooks/use-items"
 import { useTaxRates } from "@/hooks/use-tax-rates"
+import { fetchItemVariants } from "@/lib/database/services/item-variants"
 import { routes } from "@/lib/routes"
 import type { Item } from "@/lib/database/types"
 
@@ -25,6 +27,26 @@ export default function ItemsPage() {
   const { data: taxRates } = useTaxRates()
   const deleteItem = useDeleteItem()
   const [toDelete, setToDelete] = useState<Item | null>(null)
+
+  // Tracked items carry no price of their own — the list shows the most
+  // recently received variant's selling price instead. No "list all
+  // variants" endpoint exists (item_id is a required query param), so fetch
+  // per tracked item in parallel, same pattern as the Stock page.
+  const trackedItems = (items ?? []).filter((item) => item.track_inventory)
+  const variantQueries = useQueries({
+    queries: trackedItems.map((item) => ({
+      queryKey: ["item-variants", item.id, undefined],
+      queryFn: () => fetchItemVariants(item.id),
+      enabled: !!items,
+    })),
+  })
+  const latestPriceByItemId = new Map<string, number>()
+  trackedItems.forEach((item, index) => {
+    const variants = variantQueries[index]?.data
+    if (variants?.length) {
+      latestPriceByItemId.set(item.id, variants[variants.length - 1].unit_price)
+    }
+  })
 
   const taxRateName = (id: string | null) => taxRates?.find((r) => r.id === id)?.name
 
@@ -47,7 +69,17 @@ export default function ItemsPage() {
     columnHelper.accessor("unit", { header: t("columnUnit") }),
     columnHelper.accessor("unit_price", {
       header: t("columnSellPrice"),
-      cell: ({ getValue }) => <span className="font-medium">{money(getValue())}</span>,
+      cell: ({ getValue, row }) => {
+        if (!row.original.track_inventory) {
+          return <span className="font-medium">{money(getValue())}</span>
+        }
+        const latestPrice = latestPriceByItemId.get(row.original.id)
+        return latestPrice !== undefined ? (
+          <span className="font-medium">{t("fromPrice", { price: money(latestPrice) })}</span>
+        ) : (
+          <span className="text-xs text-muted-foreground">{t("notYetPurchased")}</span>
+        )
+      },
     }),
     columnHelper.accessor("purchase_price", {
       header: t("columnCostPrice"),

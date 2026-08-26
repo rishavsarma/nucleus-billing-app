@@ -32,6 +32,7 @@ const lineItemSchema = z.object({
   description: z.string().min(1),
   quantity: z.number().min(0.0001),
   unit_cost: z.number().min(0),
+  unit_price: z.number().min(0),
   tax_rate: z.number().min(0).max(100),
 })
 type LineItemFormValues = z.infer<typeof lineItemSchema>
@@ -61,9 +62,10 @@ export function PurchaseBillItemsSection({ purchaseBillId, editable }: { purchas
             description: editing.description,
             quantity: editing.quantity,
             unit_cost: editing.unit_cost,
+            unit_price: editing.unit_price,
             tax_rate: editing.tax_rate,
           }
-        : { item_id: undefined, description: "", quantity: 1, unit_cost: 0, tax_rate: 0 },
+        : { item_id: undefined, description: "", quantity: 1, unit_cost: 0, unit_price: 0, tax_rate: 0 },
   })
   const selectedItemId = useWatch({ control: form.control, name: "item_id" })
 
@@ -78,6 +80,7 @@ export function PurchaseBillItemsSection({ purchaseBillId, editable }: { purchas
     form.setValue("item_id", itemId)
     form.setValue("description", item.name)
     form.setValue("unit_cost", item.purchase_price)
+    form.setValue("unit_price", item.unit_price)
     if (taxRate) form.setValue("tax_rate", taxRate.rate)
   }
 
@@ -87,6 +90,7 @@ export function PurchaseBillItemsSection({ purchaseBillId, editable }: { purchas
       description: values.description,
       quantity: values.quantity,
       unit_cost: values.unit_cost,
+      unit_price: values.unit_price,
       tax_rate: values.tax_rate,
     }
     if (editing && editing !== "new") {
@@ -135,6 +139,7 @@ export function PurchaseBillItemsSection({ purchaseBillId, editable }: { purchas
                 <TableHead>{t("descriptionLabel")}</TableHead>
                 <TableHead className="text-right">{t("quantityLabel")}</TableHead>
                 <TableHead className="text-right">{t("unitCostLabel")}</TableHead>
+                <TableHead className="text-right">{t("sellingPriceLabel")}</TableHead>
                 <TableHead className="text-right">{t("taxRateLabel")}</TableHead>
                 <TableHead className="text-right">{t("lineTotalLabel")}</TableHead>
                 {editable ? <TableHead /> : null}
@@ -146,6 +151,7 @@ export function PurchaseBillItemsSection({ purchaseBillId, editable }: { purchas
                   <TableCell>{line.description}</TableCell>
                   <TableCell className="text-right">{line.quantity}</TableCell>
                   <TableCell className="text-right">{money(line.unit_cost)}</TableCell>
+                  <TableCell className="text-right">{money(line.unit_price)}</TableCell>
                   <TableCell className="text-right">{line.tax_rate}%</TableCell>
                   <TableCell className="text-right font-medium">{money(line.line_total)}</TableCell>
                   {editable ? (
@@ -197,7 +203,7 @@ export function PurchaseBillItemsSection({ purchaseBillId, editable }: { purchas
           <FieldLabel htmlFor="pbi-description">{t("descriptionLabel")}</FieldLabel>
           <Input id="pbi-description" {...form.register("description")} />
         </Field>
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 gap-4">
           <Field>
             <FieldLabel htmlFor="pbi-quantity">{t("quantityLabel")}</FieldLabel>
             <Input id="pbi-quantity" type="number" step="any" min={0} {...form.register("quantity", { valueAsNumber: true })} />
@@ -205,6 +211,11 @@ export function PurchaseBillItemsSection({ purchaseBillId, editable }: { purchas
           <Field>
             <FieldLabel htmlFor="pbi-unit-cost">{t("unitCostLabel")}</FieldLabel>
             <Input id="pbi-unit-cost" type="number" step="0.01" min={0} {...form.register("unit_cost", { valueAsNumber: true })} />
+          </Field>
+          <Field>
+            <FieldLabel htmlFor="pbi-unit-price">{t("sellingPriceLabel")}</FieldLabel>
+            <Input id="pbi-unit-price" type="number" step="0.01" min={0} {...form.register("unit_price", { valueAsNumber: true })} />
+            <p className="text-xs text-muted-foreground">{t("sellingPriceHint")}</p>
           </Field>
           <Field>
             <FieldLabel htmlFor="pbi-tax-rate">{t("taxRateLabel")}</FieldLabel>

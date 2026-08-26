@@ -146,7 +146,7 @@ export function InvoiceDetailClient({ id }: { id: string }) {
 
       <div className="grid grid-cols-3 gap-5">
         <div className="col-span-2 flex flex-col gap-5">
-          <InvoiceItemsSection invoiceId={id} editable={isDraft} />
+          <InvoiceItemsSection invoiceId={id} warehouseId={invoice.warehouse_id} editable={isDraft} />
           {invoice.notes ? (
             <div className="rounded-xl bg-card p-4 ring-1 ring-foreground/10">
               <h2 className="mb-2 text-sm font-semibold">{t("notesLabel")}</h2>

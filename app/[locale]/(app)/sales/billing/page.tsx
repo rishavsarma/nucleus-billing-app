@@ -16,10 +16,11 @@ import { useCreateCustomer, useCustomers } from "@/hooks/use-customers"
 import { useCreateInvoiceItem, useDeleteInvoiceItem, useInvoiceItems, useUpdateInvoiceItem } from "@/hooks/use-invoice-items"
 import { useCreateInvoice, useInvoices, useUpdateInvoice } from "@/hooks/use-invoices"
 import { useItems } from "@/hooks/use-items"
+import { useItemVariants } from "@/hooks/use-item-variants"
 import { useCreatePayment } from "@/hooks/use-payments"
 import { useTaxRates } from "@/hooks/use-tax-rates"
 import { useWarehouses } from "@/hooks/use-warehouses"
-import type { Item, Payment } from "@/lib/database/types"
+import type { Item, ItemVariant, Payment } from "@/lib/database/types"
 
 const money = (n: number) => "₹" + n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 const PAYMENT_METHODS = ["manual", "bank_transfer", "cash", "upi", "razorpay"]
@@ -32,6 +33,7 @@ const GUEST_CUSTOMER_NAME = "Guest Customer"
 type CartLine = {
   tempId: string
   itemId: string
+  itemVariantId: string | null
   description: string
   quantity: number
   unitPrice: number
@@ -54,6 +56,80 @@ function lineTotals(lines: CartLine[]) {
   const subtotal = lines.reduce((sum, l) => sum + l.quantity * l.unitPrice, 0)
   const tax = lines.reduce((sum, l) => sum + (l.quantity * l.unitPrice * l.taxRate) / 100, 0)
   return { subtotal, tax, total: subtotal + tax }
+}
+
+/** One catalog item's tile in the POS grid. Non-tracked items show their
+ * plain price, one click = add/increment. Tracked items with a single
+ * variant behave the same way. Tracked items with two or more variants show
+ * each as its own clickable price chip, so the cashier picks explicitly
+ * which purchase to sell from instead of the app guessing FIFO order. */
+function ItemTile({
+  item,
+  warehouseId,
+  onAdd,
+}: {
+  item: Item
+  warehouseId: string
+  onAdd: (item: Item, variant?: ItemVariant) => void
+}) {
+  const t = useTranslations("BillingPos")
+  const { data: variants } = useItemVariants(item.track_inventory ? item.id : undefined, warehouseId)
+
+  if (!item.track_inventory) {
+    return (
+      <button
+        type="button"
+        onClick={() => onAdd(item)}
+        className="flex flex-col items-start gap-1 rounded-xl bg-card p-3 text-left ring-1 ring-foreground/10 hover:ring-primary"
+      >
+        <span className="font-medium">{item.name}</span>
+        <span className="text-xs text-muted-foreground">{t("unitPrice", { price: money(item.unit_price) })}</span>
+      </button>
+    )
+  }
+
+  const availableVariants = (variants ?? []).filter((v) => v.quantity_remaining > 0)
+
+  if (!availableVariants.length) {
+    return (
+      <div className="flex flex-col items-start gap-1 rounded-xl bg-card p-3 opacity-50 ring-1 ring-foreground/10">
+        <span className="font-medium">{item.name}</span>
+        <span className="text-xs text-muted-foreground">{t("noStock")}</span>
+      </div>
+    )
+  }
+
+  if (availableVariants.length === 1) {
+    const variant = availableVariants[0]
+    return (
+      <button
+        type="button"
+        onClick={() => onAdd(item, variant)}
+        className="flex flex-col items-start gap-1 rounded-xl bg-card p-3 text-left ring-1 ring-foreground/10 hover:ring-primary"
+      >
+        <span className="font-medium">{item.name}</span>
+        <span className="text-xs text-muted-foreground">{t("unitPrice", { price: money(variant.unit_price) })}</span>
+      </button>
+    )
+  }
+
+  return (
+    <div className="flex flex-col items-start gap-1.5 rounded-xl bg-card p-3 ring-1 ring-foreground/10">
+      <span className="font-medium">{item.name}</span>
+      <div className="flex flex-wrap gap-1">
+        {availableVariants.map((variant) => (
+          <button
+            key={variant.id}
+            type="button"
+            onClick={() => onAdd(item, variant)}
+            className="rounded-md bg-muted px-2 py-1 text-xs hover:bg-primary hover:text-primary-foreground"
+          >
+            {t("variantChip", { price: money(variant.unit_price), qty: variant.quantity_remaining })}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
 }
 
 export default function BillingPosPage() {
@@ -109,18 +185,22 @@ export default function BillingPosPage() {
     })
   }
 
-  function addItemToCart(item: Item) {
+  function addItemToCart(item: Item, variant?: ItemVariant) {
+    const variantId = variant?.id ?? null
+    const unitPrice = variant ? variant.unit_price : item.unit_price
     const taxRate = taxRates?.find((r) => r.id === item.tax_rate_id)?.rate ?? 0
 
     if (!isDraftSaved) {
       setTabs((prev) =>
         prev.map((tab) => {
           if (tab.key !== activeTab.key) return tab
-          const existing = tab.lines.find((l) => l.itemId === item.id)
+          const existing = tab.lines.find((l) => l.itemId === item.id && l.itemVariantId === variantId)
           if (existing) {
             return {
               ...tab,
-              lines: tab.lines.map((l) => (l.itemId === item.id ? { ...l, quantity: l.quantity + 1 } : l)),
+              lines: tab.lines.map((l) =>
+                l.itemId === item.id && l.itemVariantId === variantId ? { ...l, quantity: l.quantity + 1 } : l,
+              ),
             }
           }
           return {
@@ -130,9 +210,10 @@ export default function BillingPosPage() {
               {
                 tempId: crypto.randomUUID(),
                 itemId: item.id,
+                itemVariantId: variantId,
                 description: item.name,
                 quantity: 1,
-                unitPrice: item.unit_price,
+                unitPrice,
                 taxRate,
               },
             ],
@@ -144,16 +225,19 @@ export default function BillingPosPage() {
 
     // Already saved as a real draft invoice — edit it live, same as the
     // invoice detail page would.
-    const existingLine = savedCartItems?.find((line) => line.item_id === item.id)
+    const existingLine = savedCartItems?.find(
+      (line) => line.item_id === item.id && line.item_variant_id === variantId,
+    )
     if (existingLine) {
       updateInvoiceItem.mutate({ id: existingLine.id, input: { quantity: existingLine.quantity + 1 } })
     } else {
       createInvoiceItem.mutate({
         invoice_id: activeTab.invoiceId!,
         item_id: item.id,
+        item_variant_id: variantId,
         description: item.name,
         quantity: 1,
-        unit_price: item.unit_price,
+        unit_price: unitPrice,
         tax_rate: taxRate,
       })
     }
@@ -177,6 +261,20 @@ export default function BillingPosPage() {
     } else {
       updateInvoiceItem.mutate({ id: lineId, input: { quantity } })
     }
+  }
+
+  function changeLocalPrice(tempId: string, unitPrice: number) {
+    setTabs((prev) =>
+      prev.map((tab) => {
+        if (tab.key !== activeTab.key) return tab
+        return { ...tab, lines: tab.lines.map((l) => (l.tempId === tempId ? { ...l, unitPrice } : l)) }
+      }),
+    )
+  }
+
+  function commitSavedPrice(lineId: string, unitPrice: number, previous: number) {
+    if (Number.isNaN(unitPrice) || unitPrice < 0 || unitPrice === previous) return
+    updateInvoiceItem.mutate({ id: lineId, input: { unit_price: unitPrice } })
   }
 
   async function resolveCustomerId(): Promise<string> {
@@ -203,6 +301,7 @@ export default function BillingPosPage() {
       await createInvoiceItem.mutateAsync({
         invoice_id: invoice.id,
         item_id: line.itemId,
+        item_variant_id: line.itemVariantId,
         description: line.description,
         quantity: line.quantity,
         unit_price: line.unitPrice,
@@ -253,6 +352,7 @@ export default function BillingPosPage() {
   )
 
   const selectedCustomerName = customers?.find((c) => c.id === activeTab.customerId)?.name
+  const warehouseChosen = !!activeTab.warehouseId
 
   return (
     <div className="flex h-[calc(100vh-8rem)] flex-col gap-4">
@@ -294,32 +394,47 @@ export default function BillingPosPage() {
 
       <div className="grid min-h-0 flex-1 grid-cols-3 gap-4">
         <div className="col-span-2 flex min-h-0 flex-col gap-3">
-          <div className="relative">
-            <SearchIcon className="pointer-events-none absolute top-1/2 start-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder={t("searchPlaceholder")}
-              className="ps-8"
-            />
-          </div>
-          <div className="grid flex-1 auto-rows-min grid-cols-3 gap-3 overflow-y-auto pr-1">
-            {filteredItems.length ? (
-              filteredItems.map((item) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => addItemToCart(item)}
-                  className="flex flex-col items-start gap-1 rounded-xl bg-card p-3 text-left ring-1 ring-foreground/10 hover:ring-primary"
-                >
-                  <span className="font-medium">{item.name}</span>
-                  <span className="text-xs text-muted-foreground">{t("unitPrice", { price: money(item.unit_price) })}</span>
-                </button>
-              ))
-            ) : (
-              <p className="col-span-3 py-8 text-center text-sm text-muted-foreground">{t("noItems")}</p>
-            )}
-          </div>
+          {warehouseChosen ? (
+            <>
+              <div className="relative">
+                <SearchIcon className="pointer-events-none absolute top-1/2 start-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  placeholder={t("searchPlaceholder")}
+                  className="ps-8"
+                />
+              </div>
+              <div className="grid flex-1 auto-rows-min grid-cols-3 gap-3 overflow-y-auto pr-1">
+                {filteredItems.length ? (
+                  filteredItems.map((item) => (
+                    <ItemTile key={item.id} item={item} warehouseId={activeTab.warehouseId!} onAdd={addItemToCart} />
+                  ))
+                ) : (
+                  <p className="col-span-3 py-8 text-center text-sm text-muted-foreground">{t("noItems")}</p>
+                )}
+              </div>
+            </>
+          ) : (
+            <div className="flex flex-1 flex-col items-center justify-center gap-3 rounded-xl bg-card p-8 text-center ring-1 ring-foreground/10">
+              <p className="text-sm text-muted-foreground">{t("selectWarehouseFirst")}</p>
+              <Select
+                value={activeTab.warehouseId ?? undefined}
+                onValueChange={(value) => updateTab(activeTab.key, { warehouseId: value })}
+              >
+                <SelectTrigger className="w-64">
+                  <SelectValue placeholder={t("warehousePlaceholder")} />
+                </SelectTrigger>
+                <SelectContent>
+                  {warehouses?.map((warehouse) => (
+                    <SelectItem key={warehouse.id} value={warehouse.id}>
+                      {warehouse.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
         </div>
 
         <div className="flex min-h-0 flex-col gap-3 rounded-xl bg-card p-4 ring-1 ring-foreground/10">
@@ -351,21 +466,24 @@ export default function BillingPosPage() {
               <UserPlusIcon />
             </Button>
           </div>
-          <Select
-            value={activeTab.warehouseId ?? undefined}
-            onValueChange={(value) => updateTab(activeTab.key, { warehouseId: value })}
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder={t("warehousePlaceholder")} />
-            </SelectTrigger>
-            <SelectContent>
-              {warehouses?.map((warehouse) => (
-                <SelectItem key={warehouse.id} value={warehouse.id}>
-                  {warehouse.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {warehouseChosen ? (
+            <Select
+              value={activeTab.warehouseId ?? undefined}
+              onValueChange={(value) => updateTab(activeTab.key, { warehouseId: value })}
+              disabled={isDraftSaved || activeTab.lines.length > 0}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder={t("warehousePlaceholder")} />
+              </SelectTrigger>
+              <SelectContent>
+                {warehouses?.map((warehouse) => (
+                  <SelectItem key={warehouse.id} value={warehouse.id}>
+                    {warehouse.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : null}
 
           <h2 className="text-sm font-semibold">{t("cartTitle")}</h2>
 
@@ -375,9 +493,19 @@ export default function BillingPosPage() {
                 <div className="flex flex-col gap-2">
                   {savedCartItems.map((line) => (
                     <div key={line.id} className="flex items-center justify-between gap-2 text-sm">
-                      <div className="flex min-w-0 flex-col">
+                      <div className="flex min-w-0 flex-col gap-1">
                         <span className="truncate">{line.description}</span>
-                        <span className="text-xs text-muted-foreground">{money(line.unit_price)}</span>
+                        <Input
+                          type="number"
+                          step="any"
+                          min={0}
+                          defaultValue={line.unit_price}
+                          onBlur={(event) => {
+                            const value = event.target.valueAsNumber
+                            commitSavedPrice(line.id, value, line.unit_price)
+                          }}
+                          className="h-7 w-24 text-xs"
+                        />
                       </div>
                       <div className="flex items-center gap-1">
                         <Button variant="ghost" size="icon-sm" onClick={() => changeSavedQuantity(line.id, line.quantity - 1)}>
@@ -401,9 +529,19 @@ export default function BillingPosPage() {
               <div className="flex flex-col gap-2">
                 {activeTab.lines.map((line) => (
                   <div key={line.tempId} className="flex items-center justify-between gap-2 text-sm">
-                    <div className="flex min-w-0 flex-col">
+                    <div className="flex min-w-0 flex-col gap-1">
                       <span className="truncate">{line.description}</span>
-                      <span className="text-xs text-muted-foreground">{money(line.unitPrice)}</span>
+                      <Input
+                        type="number"
+                        step="any"
+                        min={0}
+                        value={line.unitPrice}
+                        onChange={(event) => {
+                          const value = event.target.valueAsNumber
+                          changeLocalPrice(line.tempId, Number.isNaN(value) ? 0 : value)
+                        }}
+                        className="h-7 w-24 text-xs"
+                      />
                     </div>
                     <div className="flex items-center gap-1">
                       <Button variant="ghost" size="icon-sm" onClick={() => changeLocalQuantity(line.tempId, line.quantity - 1)}>

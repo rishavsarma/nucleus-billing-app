@@ -144,16 +144,21 @@ export function ItemForm({
       <div className="rounded-xl bg-card ring-1 ring-foreground/10">
         <div className="border-b px-4 py-3">
           <h2 className="text-sm font-semibold">{t("pricingTitle")}</h2>
-          <p className="text-xs text-muted-foreground">{t("pricingDescription")}</p>
+          <p className="text-xs text-muted-foreground">
+            {trackInventory ? t("pricingDescriptionTracked") : t("pricingDescription")}
+          </p>
         </div>
         <div className="grid grid-cols-2 gap-4 p-4">
-          <Field>
-            <FieldLabel htmlFor="item-unit-price">{t("unitPriceLabel")}</FieldLabel>
-            <Input id="item-unit-price" type="number" step="0.01" min={0} {...register("unit_price", { valueAsNumber: true })} />
-          </Field>
+          {!trackInventory ? (
+            <Field>
+              <FieldLabel htmlFor="item-unit-price">{t("unitPriceLabel")}</FieldLabel>
+              <Input id="item-unit-price" type="number" step="0.01" min={0} {...register("unit_price", { valueAsNumber: true })} />
+            </Field>
+          ) : null}
           <Field>
             <FieldLabel htmlFor="item-purchase-price">{t("purchasePriceLabel")}</FieldLabel>
             <Input id="item-purchase-price" type="number" step="0.01" min={0} {...register("purchase_price", { valueAsNumber: true })} />
+            {trackInventory ? <p className="text-xs text-muted-foreground">{t("purchasePriceHintTracked")}</p> : null}
           </Field>
         </div>
       </div>

@@ -17,6 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useCreateInvoiceItem, useDeleteInvoiceItem, useInvoiceItems, useUpdateInvoiceItem } from "@/hooks/use-invoice-items"
 import { useItems } from "@/hooks/use-items"
+import { useItemVariants } from "@/hooks/use-item-variants"
 import { useTaxRates } from "@/hooks/use-tax-rates"
 import type { InvoiceItem } from "@/lib/database/types"
 
@@ -24,6 +25,7 @@ const money = (n: number) => "₹" + n.toLocaleString("en-IN", { minimumFraction
 
 const lineItemSchema = z.object({
   item_id: z.string().optional(),
+  item_variant_id: z.string().optional(),
   description: z.string().min(1),
   quantity: z.number().min(0.0001),
   unit_price: z.number().min(0),
@@ -33,7 +35,15 @@ type LineItemFormValues = z.infer<typeof lineItemSchema>
 
 const NO_ITEM = "__none__"
 
-export function InvoiceItemsSection({ invoiceId, editable }: { invoiceId: string; editable: boolean }) {
+export function InvoiceItemsSection({
+  invoiceId,
+  warehouseId,
+  editable,
+}: {
+  invoiceId: string
+  warehouseId?: string | null
+  editable: boolean
+}) {
   const t = useTranslations("Invoices")
   const tCommon = useTranslations("Common")
 
@@ -53,18 +63,26 @@ export function InvoiceItemsSection({ invoiceId, editable }: { invoiceId: string
       editing && editing !== "new"
         ? {
             item_id: editing.item_id ?? undefined,
+            item_variant_id: editing.item_variant_id ?? undefined,
             description: editing.description,
             quantity: editing.quantity,
             unit_price: editing.unit_price,
             tax_rate: editing.tax_rate,
           }
-        : { item_id: undefined, description: "", quantity: 1, unit_price: 0, tax_rate: 0 },
+        : { item_id: undefined, item_variant_id: undefined, description: "", quantity: 1, unit_price: 0, tax_rate: 0 },
   })
   const selectedItemId = useWatch({ control: form.control, name: "item_id" })
+  const selectedVariantId = useWatch({ control: form.control, name: "item_variant_id" })
+  const selectedItem = catalogItems?.find((i) => i.id === selectedItemId)
+  const { data: variants } = useItemVariants(
+    selectedItem?.track_inventory ? selectedItemId : undefined,
+    warehouseId ?? undefined,
+  )
 
   function onPickCatalogItem(itemId: string) {
     if (itemId === NO_ITEM) {
       form.setValue("item_id", undefined)
+      form.setValue("item_variant_id", undefined)
       return
     }
     const item = catalogItems?.find((i) => i.id === itemId)
@@ -72,13 +90,24 @@ export function InvoiceItemsSection({ invoiceId, editable }: { invoiceId: string
     const taxRate = taxRates?.find((r) => r.id === item.tax_rate_id)
     form.setValue("item_id", itemId)
     form.setValue("description", item.name)
-    form.setValue("unit_price", item.unit_price)
+    form.setValue("item_variant_id", undefined)
+    if (!item.track_inventory) {
+      form.setValue("unit_price", item.unit_price)
+    }
     if (taxRate) form.setValue("tax_rate", taxRate.rate)
+  }
+
+  function onPickVariant(variantId: string) {
+    const variant = variants?.find((v) => v.id === variantId)
+    if (!variant) return
+    form.setValue("item_variant_id", variantId)
+    form.setValue("unit_price", variant.unit_price)
   }
 
   function onSubmit(values: LineItemFormValues) {
     const input = {
       item_id: values.item_id || null,
+      item_variant_id: values.item_variant_id || null,
       description: values.description,
       quantity: values.quantity,
       unit_price: values.unit_price,
@@ -188,6 +217,23 @@ export function InvoiceItemsSection({ invoiceId, editable }: { invoiceId: string
             </SelectContent>
           </Select>
         </Field>
+        {selectedItem?.track_inventory ? (
+          <Field data-invalid={!variants?.length}>
+            <FieldLabel htmlFor="li-variant">{t("variantLabel")}</FieldLabel>
+            <Select value={selectedVariantId} onValueChange={onPickVariant}>
+              <SelectTrigger id="li-variant" className="w-full">
+                <SelectValue placeholder={variants?.length ? t("variantPlaceholder") : t("variantNoneAvailable")} />
+              </SelectTrigger>
+              <SelectContent>
+                {variants?.map((variant) => (
+                  <SelectItem key={variant.id} value={variant.id}>
+                    {t("variantOption", { price: money(variant.unit_price), qty: variant.quantity_remaining })}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
+        ) : null}
         <Field>
           <FieldLabel htmlFor="li-description">{t("descriptionLabel")}</FieldLabel>
           <Input id="li-description" {...form.register("description")} />

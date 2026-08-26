@@ -80,6 +80,12 @@ export async function POST(request: Request) {
   ) {
     return NextResponse.json({ error: "item_id does not belong to this org" }, { status: 400 })
   }
+  if (
+    body.item_variant_id &&
+    !(await verifyBelongsToOrg(supabase, "item_variants", body.item_variant_id, auth.orgId, auth.isSuperadmin))
+  ) {
+    return NextResponse.json({ error: "item_variant_id does not belong to this org" }, { status: 400 })
+  }
 
   const { data, error } = await supabase
     .schema("billing")
@@ -126,6 +132,13 @@ export async function PUT(request: Request) {
   if (!ok) return NextResponse.json({ error: "Not found" }, { status: 404 })
 
   const body = await request.json()
+  if (
+    body.item_variant_id &&
+    !(await verifyBelongsToOrg(supabase, "item_variants", body.item_variant_id, auth.orgId, auth.isSuperadmin))
+  ) {
+    return NextResponse.json({ error: "item_variant_id does not belong to this org" }, { status: 400 })
+  }
+
   const { data, error } = await supabase
     .schema("billing")
     .from("invoice_items")

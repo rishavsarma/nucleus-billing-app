@@ -183,6 +183,7 @@ export interface InvoiceItem {
   id: string
   invoice_id: string
   item_id: string | null
+  item_variant_id: string | null
   description: string
   quantity: number
   unit_price: number
@@ -255,6 +256,7 @@ export interface PurchaseBillItem {
   description: string
   quantity: number
   unit_cost: number
+  unit_price: number
   tax_rate: number
   line_subtotal: number
   line_tax: number
@@ -340,6 +342,9 @@ export interface StockMovement {
     | "adjustment"
   reference_type: string | null
   reference_id: string | null
+  invoice_item_id: string | null
+  purchase_bill_item_id: string | null
+  credit_note_item_id: string | null
   notes: string | null
   created_by: string | null
   created_at: string
@@ -349,6 +354,35 @@ export interface ItemStock {
   item_id: string
   warehouse_id: string
   quantity_on_hand: number
+}
+
+// One row per purchase receiving event for a track_inventory item —
+// carries both cost and selling price, always entered together at purchase
+// time. quantity_remaining is mutated only by the *_stock_effect() DB
+// triggers (security definer); never write to it directly.
+export interface ItemVariant {
+  id: string
+  org_id: string
+  item_id: string
+  warehouse_id: string
+  unit_cost: number
+  unit_price: number
+  quantity_received: number
+  quantity_remaining: number
+  reference_type: "purchase_bill_item" | "opening_balance"
+  reference_id: string | null
+  received_at: string
+  created_by: string | null
+  created_at: string
+}
+
+export interface StockMovementVariant {
+  id: string
+  stock_movement_id: string
+  item_variant_id: string
+  quantity: number
+  sort_order: number
+  created_at: string
 }
 
 export interface OrgDocumentCounter {
