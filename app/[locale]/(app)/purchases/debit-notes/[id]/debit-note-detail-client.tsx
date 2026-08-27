@@ -12,7 +12,7 @@ import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog"
 import { DocumentStepper, type StepperStep } from "@/components/document-stepper"
 import { StatusBadge } from "@/components/status-badge"
 import { useVendors } from "@/hooks/use-vendors"
-import { useDebitNotes, useUpdateDebitNote } from "@/hooks/use-debit-notes"
+import { useDebitNote, useUpdateDebitNote } from "@/hooks/use-debit-notes"
 import { usePurchaseBills } from "@/hooks/use-purchase-bills"
 import { useWarehouses } from "@/hooks/use-warehouses"
 import { routes } from "@/lib/routes"
@@ -24,14 +24,12 @@ export function DebitNoteDetailClient({ id }: { id: string }) {
   const tStatus = useTranslations("DocStatus")
   const tCommon = useTranslations("Common")
 
-  const { data: debitNotes, isLoading } = useDebitNotes()
+  const { data: debitNote, isLoading } = useDebitNote(id)
   const { data: vendors } = useVendors()
   const { data: bills } = usePurchaseBills()
   const { data: warehouses } = useWarehouses()
   const updateDebitNote = useUpdateDebitNote()
   const [confirmVoid, setConfirmVoid] = useState(false)
-
-  const debitNote = debitNotes?.find((dn) => dn.id === id)
 
   if (isLoading) {
     return <div className="text-sm text-muted-foreground">{tCommon("loading")}</div>
@@ -57,7 +55,7 @@ export function DebitNoteDetailClient({ id }: { id: string }) {
 
   const steps: StepperStep[] = [
     { label: t("stepDraft"), done: !isDraft, current: isDraft },
-    { label: t("stepIssued"), done: false, current: !isDraft },
+    { label: t("stepIssued"), done: !isDraft, current: !isDraft },
   ]
 
   function issueDebitNote() {

@@ -25,12 +25,35 @@ export async function GET(request: Request) {
 
   const url = new URL(request.url)
   const itemId = url.searchParams.get("item_id")
+  const itemIdsParam = url.searchParams.get("item_ids")
   const warehouseId = url.searchParams.get("warehouse_id")
-  if (!itemId) {
-    return NextResponse.json({ error: 'Query param "item_id" is required' }, { status: 400 })
+  const supabase = await createClient()
+
+  // Bulk mode — every requested item's variants in one request, instead of
+  // one request per item. item_variants carries its own org_id (unlike
+  // item_stock), so this needs no join to items for org-scoping.
+  if (itemIdsParam) {
+    const itemIds = itemIdsParam.split(",").filter(Boolean)
+    if (!itemIds.length) return NextResponse.json([])
+
+    let query = supabase
+      .schema("billing")
+      .from("item_variants")
+      .select("*")
+      .in("item_id", itemIds)
+      .order("received_at", { ascending: true })
+    if (!auth.isSuperadmin) query = query.eq("org_id", auth.orgId!)
+    if (warehouseId) query = query.eq("warehouse_id", warehouseId)
+
+    const { data, error } = await query
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json(data)
   }
 
-  const supabase = await createClient()
+  if (!itemId) {
+    return NextResponse.json({ error: 'Query param "item_id" or "item_ids" is required' }, { status: 400 })
+  }
+
   const { ok, error: verifyError } = await verifyItemInOrg(
     supabase,
     itemId,

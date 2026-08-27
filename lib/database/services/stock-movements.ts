@@ -1,8 +1,16 @@
 import { api } from "@/lib/axios"
 import type { StockMovement } from "@/lib/database/types"
+import type { ListParams, PaginatedResponse } from "@/lib/database/list-params-types"
 
-export async function fetchStockMovements(): Promise<StockMovement[]> {
-  const { data } = await api.get<StockMovement[]>("/database/stock_movements")
+/** Fetch all stockmovements with no pagination — for dropdowns / pickers. */
+export async function fetchStockMovementsAll(): Promise<StockMovement[]> {
+  const { data } = await api.get<StockMovement[]>("/database/stock_movements", { params: { page: 1, pageSize: 9999 } })
+  return (data as unknown as PaginatedResponse<StockMovement>).data
+}
+
+/** Fetch a paginated + searched page of stockmovements. */
+export async function fetchStockMovementsPaginated(params: ListParams): Promise<PaginatedResponse<StockMovement>> {
+  const { data } = await api.get<PaginatedResponse<StockMovement>>("/database/stock_movements", { params })
   return data
 }
 

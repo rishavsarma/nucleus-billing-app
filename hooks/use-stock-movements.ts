@@ -1,13 +1,23 @@
 "use client"
 
+import type { ListParams } from "@/lib/database/list-params-types"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { fetchStockMovements, createStockMovement } from "@/lib/database/services/stock-movements"
+import { fetchStockMovementsAll, fetchStockMovementsPaginated, createStockMovement } from "@/lib/database/services/stock-movements"
 import type { StockMovement } from "@/lib/database/types"
 
+/** All records — use in dropdowns/pickers where you need every option. */
 export function useStockMovements() {
   return useQuery({
-    queryKey: ["stock-movements"],
-    queryFn: fetchStockMovements,
+    queryKey: ["stock-movements", "all"],
+    queryFn: fetchStockMovementsAll,
+  })
+}
+
+/** Paginated + searched list — use in list-view table pages. */
+export function useStockMovementsList(params: ListParams) {
+  return useQuery({
+    queryKey: ["stock-movements", "list", params],
+    queryFn: () => fetchStockMovementsPaginated(params),
   })
 }
 

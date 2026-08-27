@@ -12,17 +12,17 @@ import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/s
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <SidebarProvider >
-      <AppSidebar variant="inset"/>
-      <SidebarInset >
-        <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4">
+      <AppSidebar variant="inset" className="print:hidden"/>
+      <SidebarInset className="print:m-0 print:rounded-none print:shadow-none">
+        <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4 print:hidden">
           <SidebarTrigger />
           <Breadcrumbs />
           <div className="flex-1" />
           <ThemePresetSelector />
           <ModeToggle />
-          <LanguageSwitcher /> 
+          <LanguageSwitcher />
         </header>
-        <div className="flex-1 p-6">{children}</div>
+        <div className="flex-1 p-6 print:p-0">{children}</div>
       </SidebarInset>
       <SubscriptionStatusDialog />
     </SidebarProvider>

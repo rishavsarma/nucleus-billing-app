@@ -9,12 +9,14 @@ import { Link } from "@/i18n/navigation"
 import { Button } from "@/components/ui/button"
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog"
 import { EntityTable, entityColumnHelper } from "@/components/entity-table"
+import { useServerTableParams } from "@/components/server-table"
 import { StatusBadge } from "@/components/status-badge"
-import { useDeleteOffer, useOffers } from "@/hooks/use-offers"
+import { useDeleteOffer, useOffersList } from "@/hooks/use-offers"
 import { routes } from "@/lib/routes"
 import type { Offer } from "@/lib/database/types"
 
 const columnHelper = entityColumnHelper<Offer>()
+const money = (n: number) => "₹" + n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
 function offerStatus(offer: Offer): "active" | "expired" | "upcoming" | "inactive" {
   if (!offer.is_active) return "inactive"
@@ -27,7 +29,8 @@ function offerStatus(offer: Offer): "active" | "expired" | "upcoming" | "inactiv
 export default function OffersPage() {
   const t = useTranslations("Offers")
   const tCommon = useTranslations("Common")
-  const { data: offers, isLoading } = useOffers()
+  const { params, tableControlProps } = useServerTableParams()
+  const { data: result, isLoading } = useOffersList(params)
   const deleteOffer = useDeleteOffer()
   const [toDelete, setToDelete] = useState<Offer | null>(null)
 
@@ -51,7 +54,7 @@ export default function OffersPage() {
       id: "discount",
       header: t("columnDiscount"),
       cell: ({ row }) =>
-        row.original.discount_type === "percentage" ? `${row.original.value}%` : `₹${row.original.value}`,
+        row.original.discount_type === "percentage" ? `${row.original.value}%` : money(row.original.value),
     }),
     columnHelper.accessor("applies_to_all_items", {
       header: t("columnAppliesTo"),
@@ -116,10 +119,11 @@ export default function OffersPage() {
 
       <EntityTable
         columns={columns}
-        data={offers ?? []}
+        data={result?.data ?? []}
         isLoading={isLoading}
+        totalCount={result?.total ?? 0}
+        {...tableControlProps}
         searchPlaceholder={t("searchPlaceholder")}
-        matchesSearch={(row, query) => row.name.toLowerCase().includes(query)}
         emptyMessage={t("noResults")}
       />
 

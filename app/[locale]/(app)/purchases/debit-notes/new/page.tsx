@@ -9,10 +9,12 @@ import { ArrowLeftIcon } from "lucide-react"
 import { z } from "zod"
 
 import { Link, useRouter } from "@/i18n/navigation"
+import { DocumentStepper, type StepperStep } from "@/components/document-stepper"
+import { SearchableSelect } from "@/components/searchable-select"
 import { Button } from "@/components/ui/button"
+import { DatePicker } from "@/components/ui/date-picker"
 import { Field, FieldError, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { useVendors } from "@/hooks/use-vendors"
 import { useCreateDebitNote } from "@/hooks/use-debit-notes"
@@ -42,8 +44,14 @@ export default function NewDebitNotePage() {
   })
   const { register, handleSubmit, formState, setValue, control } = form
   const selectedBillId = useWatch({ control, name: "purchase_bill_id" })
+  const issueDate = useWatch({ control, name: "issue_date" })
   const selectedBill = bills?.find((b) => b.id === selectedBillId)
   const vendorName = selectedBill ? vendors?.find((v) => v.id === selectedBill.vendor_id)?.name : undefined
+
+  const steps: StepperStep[] = [
+    { label: t("stepDebitNoteDetails"), done: false, current: true },
+    { label: t("stepAddItems"), done: false, current: false },
+  ]
 
   function onSubmit(values: NewDebitNoteValues) {
     const bill = bills?.find((b) => b.id === values.purchase_bill_id)
@@ -75,27 +83,37 @@ export default function NewDebitNotePage() {
       </Link>
       <h1 className="mb-4 text-2xl font-semibold">{t("newDebitNote")}</h1>
 
+      <div className="mb-4">
+        <DocumentStepper steps={steps} />
+      </div>
+
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4 rounded-xl bg-card p-4 ring-1 ring-foreground/10">
         <Field data-invalid={!!formState.errors.purchase_bill_id}>
           <FieldLabel htmlFor="dn-bill">{t("billLabel")}</FieldLabel>
-          <Select value={selectedBillId} onValueChange={(value) => setValue("purchase_bill_id", value)}>
-            <SelectTrigger id="dn-bill" className="w-full">
-              <SelectValue placeholder={t("billPlaceholder")} />
-            </SelectTrigger>
-            <SelectContent>
-              {returnableBills.map((bill) => (
-                <SelectItem key={bill.id} value={bill.id}>
-                  {bill.bill_number} — {vendors?.find((v) => v.id === bill.vendor_id)?.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <SearchableSelect
+            id="dn-bill"
+            value={selectedBillId}
+            onValueChange={(value) => setValue("purchase_bill_id", value, { shouldValidate: true })}
+            placeholder={t("billPlaceholder")}
+            options={returnableBills.map((bill) => {
+              const vendor = vendors?.find((v) => v.id === bill.vendor_id)
+              return {
+                value: bill.id,
+                label: bill.bill_number,
+                subtitle: vendor?.name ?? undefined,
+                keywords: [vendor?.name ?? ""],
+              }
+            })}
+          />
           {formState.errors.purchase_bill_id ? <FieldError>{tCommon("required")}</FieldError> : null}
-          {vendorName ? <p className="text-xs text-muted-foreground">{t("columnVendor")}: {vendorName}</p> : null}
         </Field>
         <Field>
           <FieldLabel htmlFor="dn-issue-date">{t("issueDateLabel")}</FieldLabel>
-          <Input id="dn-issue-date" type="date" {...register("issue_date")} />
+          <DatePicker
+            id="dn-issue-date"
+            value={issueDate}
+            onChange={(value) => setValue("issue_date", value, { shouldValidate: true })}
+          />
         </Field>
         <Field>
           <FieldLabel htmlFor="dn-reason">{t("reasonLabel")}</FieldLabel>
@@ -104,7 +122,7 @@ export default function NewDebitNotePage() {
         <div className="flex justify-end">
           <Button type="submit" disabled={createDebitNote.isPending}>
             {createDebitNote.isPending ? <Loader2Icon className="animate-spin" /> : null}
-            {t("createDebitNote")}
+            {t("continueToItems")}
           </Button>
         </div>
       </form>

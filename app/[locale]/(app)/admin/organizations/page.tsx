@@ -7,8 +7,9 @@ import { Link } from "@/i18n/navigation"
 import { routes } from "@/lib/routes"
 import { Button } from "@/components/ui/button"
 import { EntityTable, entityColumnHelper } from "@/components/entity-table"
+import { useServerTableParams } from "@/components/server-table"
 import { StatusBadge } from "@/components/status-badge"
-import { useOrganizations } from "@/hooks/use-organizations"
+import { useOrganizationsList } from "@/hooks/use-organizations"
 import type { Organization } from "@/lib/database/types"
 
 const columnHelper = entityColumnHelper<Organization>()
@@ -23,7 +24,8 @@ const SUBSCRIPTION_STATUS_LABEL_KEY = {
 export default function AdminOrganizationsPage() {
   const t = useTranslations("AdminOrganizations")
   const tCommon = useTranslations("Common")
-  const { data: organizations, isLoading } = useOrganizations()
+  const { params, tableControlProps } = useServerTableParams()
+  const { data: result, isLoading } = useOrganizationsList(params)
 
   const columns = [
     columnHelper.accessor("name", {
@@ -73,10 +75,11 @@ export default function AdminOrganizationsPage() {
 
       <EntityTable
         columns={columns}
-        data={organizations ?? []}
+        data={result?.data ?? []}
         isLoading={isLoading}
+        totalCount={result?.total ?? 0}
+        {...tableControlProps}
         searchPlaceholder={t("searchPlaceholder")}
-        matchesSearch={(row, query) => row.name.toLowerCase().includes(query)}
         emptyMessage={t("noResults")}
       />
     </div>

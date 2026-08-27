@@ -1,8 +1,23 @@
 import { api } from "@/lib/axios"
 import type { DebitNote } from "@/lib/database/types"
+import type { ListParams, PaginatedResponse } from "@/lib/database/list-params-types"
 
-export async function fetchDebitNotes(): Promise<DebitNote[]> {
-  const { data } = await api.get<DebitNote[]>("/database/debit_notes")
+/** Fetch all debitnotes with no pagination — for dropdowns / pickers. */
+export async function fetchDebitNotesAll(): Promise<DebitNote[]> {
+  const { data } = await api.get<DebitNote[]>("/database/debit_notes", { params: { page: 1, pageSize: 9999 } })
+  return (data as unknown as PaginatedResponse<DebitNote>).data
+}
+
+/** Fetch a single record by id — for detail pages, instead of pulling
+ * every row via fetchDebitNotesAll() and finding it client-side. */
+export async function fetchDebitNoteById(id: string): Promise<DebitNote> {
+  const { data } = await api.get<DebitNote>("/database/debit_notes", { params: { id } })
+  return data
+}
+
+/** Fetch a paginated + searched page of debitnotes. */
+export async function fetchDebitNotesPaginated(params: ListParams): Promise<PaginatedResponse<DebitNote>> {
+  const { data } = await api.get<PaginatedResponse<DebitNote>>("/database/debit_notes", { params })
   return data
 }
 

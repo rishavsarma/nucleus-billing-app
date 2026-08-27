@@ -1,13 +1,32 @@
 "use client"
 
+import type { ListParams } from "@/lib/database/list-params-types"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { fetchItems, createItem, updateItem, deleteItem } from "@/lib/database/services/items"
+import { fetchItemsAll, fetchItemById, fetchItemsPaginated, createItem, updateItem, deleteItem } from "@/lib/database/services/items"
 import type { Item } from "@/lib/database/types"
 
+/** All records — use in dropdowns/pickers where you need every option. */
 export function useItems() {
   return useQuery({
-    queryKey: ["items"],
-    queryFn: fetchItems,
+    queryKey: ["items", "all"],
+    queryFn: fetchItemsAll,
+  })
+}
+
+/** Paginated + searched list — use in list-view table pages. */
+export function useItemsList(params: ListParams) {
+  return useQuery({
+    queryKey: ["items", "list", params],
+    queryFn: () => fetchItemsPaginated(params),
+  })
+}
+
+/** Single record by id — for detail pages. */
+export function useItem(id: string) {
+  return useQuery({
+    queryKey: ["items", "detail", id],
+    queryFn: () => fetchItemById(id),
+    enabled: !!id,
   })
 }
 

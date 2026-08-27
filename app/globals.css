@@ -191,3 +191,13 @@
     @apply font-sans;
   }
 }
+
+@media print {
+  @page {
+    margin: 10mm;
+  }
+  html,
+  body {
+    background: #fff !important;
+  }
+}

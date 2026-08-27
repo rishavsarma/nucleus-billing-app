@@ -13,10 +13,11 @@ import { Button } from "@/components/ui/button"
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog"
 import { EntityFormDialog } from "@/components/entity-form-dialog"
 import { EntityTable, entityColumnHelper } from "@/components/entity-table"
+import { useServerTableParams } from "@/components/server-table"
 import { Field, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
-import { useCreateWarehouse, useDeleteWarehouse, useUpdateWarehouse, useWarehouses } from "@/hooks/use-warehouses"
+import { useCreateWarehouse, useDeleteWarehouse, useUpdateWarehouse, useWarehousesList } from "@/hooks/use-warehouses"
 import type { Warehouse } from "@/lib/database/types"
 
 const columnHelper = entityColumnHelper<Warehouse>()
@@ -55,7 +56,8 @@ export default function WarehousesPage() {
   const t = useTranslations("Warehouses")
   const tFields = useTranslations("PartyFields")
   const tCommon = useTranslations("Common")
-  const { data: warehouses, isLoading } = useWarehouses()
+  const { params, tableControlProps } = useServerTableParams()
+  const { data: result, isLoading } = useWarehousesList(params)
   const createWarehouse = useCreateWarehouse()
   const updateWarehouse = useUpdateWarehouse()
   const deleteWarehouse = useDeleteWarehouse()
@@ -143,10 +145,11 @@ export default function WarehousesPage() {
 
       <EntityTable
         columns={columns}
-        data={warehouses ?? []}
+        data={result?.data ?? []}
         isLoading={isLoading}
+        totalCount={result?.total ?? 0}
+        {...tableControlProps}
         searchPlaceholder={t("searchPlaceholder")}
-        matchesSearch={(row, query) => row.name.toLowerCase().includes(query)}
         emptyMessage={t("noResults")}
       />
 

@@ -9,7 +9,10 @@ import { ArrowLeftIcon } from "lucide-react"
 import { z } from "zod"
 
 import { Link, useRouter } from "@/i18n/navigation"
+import { DocumentStepper, type StepperStep } from "@/components/document-stepper"
 import { Button } from "@/components/ui/button"
+import { DatePicker } from "@/components/ui/date-picker"
+import { VendorSelect } from "@/components/vendor-select"
 import { Field, FieldError, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -46,6 +49,13 @@ export default function NewPurchaseBillPage() {
   const { register, handleSubmit, formState, setValue, control } = form
   const vendorId = useWatch({ control, name: "vendor_id" })
   const warehouseId = useWatch({ control, name: "warehouse_id" })
+  const billDate = useWatch({ control, name: "bill_date" })
+  const dueDate = useWatch({ control, name: "due_date" })
+
+  const steps: StepperStep[] = [
+    { label: t("stepBillDetails"), done: false, current: true },
+    { label: t("stepAddItems"), done: false, current: false },
+  ]
 
   function onSubmit(values: NewBillValues) {
     createBill.mutate(
@@ -75,22 +85,21 @@ export default function NewPurchaseBillPage() {
       </Link>
       <h1 className="mb-4 text-2xl font-semibold">{t("newBill")}</h1>
 
+      <div className="mb-4">
+        <DocumentStepper steps={steps} />
+      </div>
+
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4 rounded-xl bg-card p-4 ring-1 ring-foreground/10">
         <div className="grid grid-cols-2 gap-4">
           <Field data-invalid={!!formState.errors.vendor_id}>
             <FieldLabel htmlFor="pb-vendor">{t("vendorLabel")}</FieldLabel>
-            <Select value={vendorId} onValueChange={(value) => setValue("vendor_id", value)}>
-              <SelectTrigger id="pb-vendor" className="w-full">
-                <SelectValue placeholder={t("vendorPlaceholder")} />
-              </SelectTrigger>
-              <SelectContent>
-                {vendors?.map((vendor) => (
-                  <SelectItem key={vendor.id} value={vendor.id}>
-                    {vendor.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <VendorSelect
+              id="pb-vendor"
+              vendors={vendors}
+              value={vendorId}
+              onValueChange={(value) => setValue("vendor_id", value, { shouldValidate: true })}
+              placeholder={t("vendorPlaceholder")}
+            />
             {formState.errors.vendor_id ? <FieldError>{tCommon("required")}</FieldError> : null}
           </Field>
           <Field>
@@ -117,11 +126,20 @@ export default function NewPurchaseBillPage() {
         <div className="grid grid-cols-2 gap-4">
           <Field>
             <FieldLabel htmlFor="pb-bill-date">{t("billDateLabel")}</FieldLabel>
-            <Input id="pb-bill-date" type="date" {...register("bill_date")} />
+            <DatePicker
+              id="pb-bill-date"
+              value={billDate}
+              onChange={(value) => setValue("bill_date", value, { shouldValidate: true })}
+            />
           </Field>
           <Field>
             <FieldLabel htmlFor="pb-due-date">{t("dueDateLabel")}</FieldLabel>
-            <Input id="pb-due-date" type="date" {...register("due_date")} />
+            <DatePicker
+              id="pb-due-date"
+              value={dueDate}
+              onChange={(value) => setValue("due_date", value, { shouldValidate: true })}
+              clearable
+            />
           </Field>
         </div>
         <Field>
@@ -131,7 +149,7 @@ export default function NewPurchaseBillPage() {
         <div className="flex justify-end">
           <Button type="submit" disabled={createBill.isPending}>
             {createBill.isPending ? <Loader2Icon className="animate-spin" /> : null}
-            {t("createBill")}
+            {t("continueToItems")}
           </Button>
         </div>
       </form>

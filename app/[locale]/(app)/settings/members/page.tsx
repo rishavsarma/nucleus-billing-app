@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dialog"
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog"
 import { EntityTable, entityColumnHelper } from "@/components/entity-table"
+import { useServerTableParams } from "@/components/server-table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useDeleteMembership, useUpdateMembership } from "@/hooks/use-memberships"
 import { useOrgMembers } from "@/hooks/use-org-members"
@@ -29,6 +30,7 @@ export default function MembersPage() {
   const t = useTranslations("SettingsMembers")
   const tRoles = useTranslations("Roles")
   const tCommon = useTranslations("Common")
+  const { tableControlProps } = useServerTableParams()
   const { data: members, isLoading } = useOrgMembers()
   const updateMembership = useUpdateMembership()
   const deleteMembership = useDeleteMembership()
@@ -112,6 +114,9 @@ export default function MembersPage() {
         columns={columns}
         data={members ?? []}
         isLoading={isLoading}
+        totalCount={members?.length ?? 0}
+        {...tableControlProps}
+        showSearch={false}
         emptyMessage={t("noResults")}
       />
 

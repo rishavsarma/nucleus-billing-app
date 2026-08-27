@@ -55,5 +55,9 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|monitoring|api|auth).*)"],
+  // The trailing `|.*\..*` excludes any path with a file extension (fonts,
+  // images, etc. served from public/) from locale-prefix redirection —
+  // without it, e.g. /fonts/NotoSans-Regular.ttf 307s to /en/fonts/... and
+  // 404s, since public/ assets aren't otherwise exempted from this matcher.
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|monitoring|api|auth|.*\\..*).*)"],
 }

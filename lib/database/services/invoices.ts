@@ -1,8 +1,23 @@
 import { api } from "@/lib/axios"
 import type { Invoice } from "@/lib/database/types"
+import type { ListParams, PaginatedResponse } from "@/lib/database/list-params-types"
 
-export async function fetchInvoices(): Promise<Invoice[]> {
-  const { data } = await api.get<Invoice[]>("/database/invoices")
+/** Fetch all invoices with no pagination — for dropdowns / pickers. */
+export async function fetchInvoicesAll(): Promise<Invoice[]> {
+  const { data } = await api.get<Invoice[]>("/database/invoices", { params: { page: 1, pageSize: 9999 } })
+  return (data as unknown as PaginatedResponse<Invoice>).data
+}
+
+/** Fetch a single record by id — for detail pages, instead of pulling
+ * every row via fetchInvoicesAll() and finding it client-side. */
+export async function fetchInvoiceById(id: string): Promise<Invoice> {
+  const { data } = await api.get<Invoice>("/database/invoices", { params: { id } })
+  return data
+}
+
+/** Fetch a paginated + searched page of invoices. */
+export async function fetchInvoicesPaginated(params: ListParams): Promise<PaginatedResponse<Invoice>> {
+  const { data } = await api.get<PaginatedResponse<Invoice>>("/database/invoices", { params })
   return data
 }
 

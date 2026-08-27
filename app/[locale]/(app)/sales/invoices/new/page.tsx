@@ -9,13 +9,18 @@ import { ArrowLeftIcon } from "lucide-react"
 import { z } from "zod"
 
 import { Link, useRouter } from "@/i18n/navigation"
+import { CustomerSelect } from "@/components/customer-select"
+import { DocumentStepper, type StepperStep } from "@/components/document-stepper"
+import { OfferSelect } from "@/components/offer-select"
 import { Button } from "@/components/ui/button"
+import { DatePicker } from "@/components/ui/date-picker"
 import { Field, FieldError, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { useCustomers } from "@/hooks/use-customers"
 import { useCreateInvoice } from "@/hooks/use-invoices"
+import { useOffers } from "@/hooks/use-offers"
 import { useWarehouses } from "@/hooks/use-warehouses"
 import { routes } from "@/lib/routes"
 
@@ -24,6 +29,7 @@ const NONE = "__none__"
 const newInvoiceSchema = z.object({
   customer_id: z.string().min(1),
   warehouse_id: z.string().optional(),
+  offer_id: z.string().optional(),
   issue_date: z.string().min(1),
   due_date: z.string().optional(),
   notes: z.string().optional(),
@@ -37,6 +43,7 @@ export default function NewInvoicePage() {
   const createInvoice = useCreateInvoice()
   const { data: customers } = useCustomers()
   const { data: warehouses } = useWarehouses()
+  const { data: offers } = useOffers()
 
   const form = useForm<NewInvoiceValues>({
     resolver: zodResolver(newInvoiceSchema),
@@ -45,12 +52,21 @@ export default function NewInvoicePage() {
   const { register, handleSubmit, formState, setValue, control } = form
   const customerId = useWatch({ control, name: "customer_id" })
   const warehouseId = useWatch({ control, name: "warehouse_id" })
+  const offerId = useWatch({ control, name: "offer_id" })
+  const issueDate = useWatch({ control, name: "issue_date" })
+  const dueDate = useWatch({ control, name: "due_date" })
+
+  const steps: StepperStep[] = [
+    { label: t("stepInvoiceDetails"), done: false, current: true },
+    { label: t("stepAddItems"), done: false, current: false },
+  ]
 
   function onSubmit(values: NewInvoiceValues) {
     createInvoice.mutate(
       {
         customer_id: values.customer_id,
         warehouse_id: values.warehouse_id || null,
+        offer_id: values.offer_id || null,
         issue_date: values.issue_date,
         due_date: values.due_date || null,
         notes: values.notes || null,
@@ -73,22 +89,21 @@ export default function NewInvoicePage() {
       </Link>
       <h1 className="mb-4 text-2xl font-semibold">{t("newInvoice")}</h1>
 
+      <div className="mb-4">
+        <DocumentStepper steps={steps} />
+      </div>
+
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4 rounded-xl bg-card p-4 ring-1 ring-foreground/10">
         <div className="grid grid-cols-2 gap-4">
           <Field data-invalid={!!formState.errors.customer_id}>
             <FieldLabel htmlFor="inv-customer">{t("customerLabel")}</FieldLabel>
-            <Select value={customerId} onValueChange={(value) => setValue("customer_id", value)}>
-              <SelectTrigger id="inv-customer" className="w-full">
-                <SelectValue placeholder={t("customerPlaceholder")} />
-              </SelectTrigger>
-              <SelectContent>
-                {customers?.map((customer) => (
-                  <SelectItem key={customer.id} value={customer.id}>
-                    {customer.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <CustomerSelect
+              id="inv-customer"
+              customers={customers}
+              value={customerId}
+              onValueChange={(value) => setValue("customer_id", value, { shouldValidate: true })}
+              placeholder={t("customerPlaceholder")}
+            />
             {formState.errors.customer_id ? <FieldError>{tCommon("required")}</FieldError> : null}
           </Field>
           <Field>
@@ -110,12 +125,33 @@ export default function NewInvoicePage() {
         </div>
         <div className="grid grid-cols-2 gap-4">
           <Field>
-            <FieldLabel htmlFor="inv-issue-date">{t("issueDateLabel")}</FieldLabel>
-            <Input id="inv-issue-date" type="date" {...register("issue_date")} />
+            <FieldLabel htmlFor="inv-offer">{t("offerLabel")}</FieldLabel>
+            <OfferSelect
+              id="inv-offer"
+              offers={offers}
+              value={offerId}
+              onValueChange={(value) => setValue("offer_id", value ?? undefined)}
+              placeholder={t("offerPlaceholder")}
+            />
           </Field>
           <Field>
+            <FieldLabel htmlFor="inv-issue-date">{t("issueDateLabel")}</FieldLabel>
+            <DatePicker
+              id="inv-issue-date"
+              value={issueDate}
+              onChange={(value) => setValue("issue_date", value, { shouldValidate: true })}
+            />
+          </Field>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <Field>
             <FieldLabel htmlFor="inv-due-date">{t("dueDateLabel")}</FieldLabel>
-            <Input id="inv-due-date" type="date" {...register("due_date")} />
+            <DatePicker
+              id="inv-due-date"
+              value={dueDate}
+              onChange={(value) => setValue("due_date", value, { shouldValidate: true })}
+              clearable
+            />
           </Field>
         </div>
         <Field>
@@ -125,7 +161,7 @@ export default function NewInvoicePage() {
         <div className="flex justify-end">
           <Button type="submit" disabled={createInvoice.isPending}>
             {createInvoice.isPending ? <Loader2Icon className="animate-spin" /> : null}
-            {t("createInvoice")}
+            {t("continueToItems")}
           </Button>
         </div>
       </form>

@@ -9,7 +9,7 @@ import { Link, useRouter } from "@/i18n/navigation"
 import { Button } from "@/components/ui/button"
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog"
 import { PartyForm, formValuesToPartyInput, partyToFormValues, type PartyFormValues } from "@/components/party-form"
-import { useCustomers, useDeleteCustomer, useUpdateCustomer } from "@/hooks/use-customers"
+import { useCustomer, useDeleteCustomer, useUpdateCustomer } from "@/hooks/use-customers"
 import { routes } from "@/lib/routes"
 
 export function CustomerDetailClient({ id }: { id: string }) {
@@ -18,12 +18,10 @@ export function CustomerDetailClient({ id }: { id: string }) {
   const tCommon = useTranslations("Common")
   const router = useRouter()
 
-  const { data: customers, isLoading } = useCustomers()
+  const { data: customer, isLoading } = useCustomer(id)
   const updateCustomer = useUpdateCustomer()
   const deleteCustomer = useDeleteCustomer()
   const [confirmDelete, setConfirmDelete] = useState(false)
-
-  const customer = customers?.find((c) => c.id === id)
 
   function onSubmit(values: PartyFormValues) {
     updateCustomer.mutate(

@@ -24,7 +24,10 @@ const organizationSchema = z.object({
   default_currency: z.string().min(1),
   gstin: z.string().optional(),
   state_code: z.string().optional(),
+  pan: z.string().optional(),
   gst_registered: z.boolean(),
+  address: z.string().optional(),
+  phone: z.string().optional(),
   invoice_prefix: z.string().min(1),
   bill_prefix: z.string().min(1),
   credit_note_prefix: z.string().min(1),
@@ -89,7 +92,10 @@ function OrganizationForm({ organization }: { organization: Organization }) {
       default_currency: organization.default_currency,
       gstin: organization.gstin ?? "",
       state_code: organization.state_code ?? "",
+      pan: organization.pan ?? "",
       gst_registered: organization.gst_registered,
+      address: organization.address ?? "",
+      phone: organization.phone ?? "",
       invoice_prefix: organization.invoice_prefix,
       bill_prefix: organization.bill_prefix,
       credit_note_prefix: organization.credit_note_prefix,
@@ -116,6 +122,9 @@ function OrganizationForm({ organization }: { organization: Organization }) {
           billing_email: values.billing_email || null,
           gstin: values.gstin || null,
           state_code: values.state_code || null,
+          pan: values.pan || null,
+          address: values.address || null,
+          phone: values.phone || null,
           pdf_watermark_text: values.pdf_watermark_text || null,
           pdf_logo_url: values.pdf_logo_url || null,
           pdf_footer_notes: values.pdf_footer_notes || null,
@@ -168,6 +177,17 @@ function OrganizationForm({ organization }: { organization: Organization }) {
                 <Input id="org-currency" {...register("default_currency")} />
               </Field>
             </div>
+            <div className="grid grid-cols-2 gap-4">
+              <Field>
+                <FieldLabel htmlFor="org-phone">{t("phoneLabel")}</FieldLabel>
+                <Input id="org-phone" {...register("phone")} />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="org-address">{t("addressLabel")}</FieldLabel>
+                <Input id="org-address" {...register("address")} />
+                <p className="text-xs text-muted-foreground">{t("addressHint")}</p>
+              </Field>
+            </div>
           </FieldGroup>
         </div>
       </div>
@@ -179,10 +199,14 @@ function OrganizationForm({ organization }: { organization: Organization }) {
         </div>
         <div className="p-4">
           <FieldGroup>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <Field>
                 <FieldLabel htmlFor="org-gstin">{t("gstinLabel")}</FieldLabel>
                 <Input id="org-gstin" {...register("gstin")} />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="org-pan">{t("panLabel")}</FieldLabel>
+                <Input id="org-pan" {...register("pan")} />
               </Field>
               <Field>
                 <FieldLabel htmlFor="org-state-code">{t("stateCodeLabel")}</FieldLabel>

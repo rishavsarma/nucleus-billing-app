@@ -15,7 +15,7 @@ import { RecordPaymentDialog } from "@/components/record-payment-dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { StatusBadge } from "@/components/status-badge"
 import { useVendors } from "@/hooks/use-vendors"
-import { usePurchaseBills, useUpdatePurchaseBill } from "@/hooks/use-purchase-bills"
+import { usePurchaseBill, useUpdatePurchaseBill } from "@/hooks/use-purchase-bills"
 import { useCreatePurchasePayment, usePurchasePayments } from "@/hooks/use-purchase-payments"
 import { useWarehouses } from "@/hooks/use-warehouses"
 import { routes } from "@/lib/routes"
@@ -30,7 +30,7 @@ export function PurchaseBillDetailClient({ id }: { id: string }) {
   const tCommon = useTranslations("Common")
   const tMethods = useTranslations("PaymentMethods")
 
-  const { data: bills, isLoading } = usePurchaseBills()
+  const { data: bill, isLoading } = usePurchaseBill(id)
   const { data: vendors } = useVendors()
   const { data: warehouses } = useWarehouses()
   const { data: allPayments } = usePurchasePayments()
@@ -40,7 +40,6 @@ export function PurchaseBillDetailClient({ id }: { id: string }) {
   const [confirmVoid, setConfirmVoid] = useState(false)
   const [showRecordPayment, setShowRecordPayment] = useState(false)
 
-  const bill = bills?.find((b) => b.id === id)
   const payments = allPayments?.filter((p) => p.purchase_bill_id === id) ?? []
 
   if (isLoading) {
@@ -63,14 +62,14 @@ export function PurchaseBillDetailClient({ id }: { id: string }) {
   const isDraft = bill.status === "draft"
   const isVoid = bill.status === "void"
   const isPaid = bill.status === "paid"
+  const isReceivedOrBeyond = !isDraft && !isVoid
   const canRecordPayment = !isDraft && !isVoid
   const balanceDue = bill.total - bill.amount_paid
 
-  const stage = isDraft ? 0 : isPaid ? 2 : 1
   const steps: StepperStep[] = [
-    { label: t("stepDraft"), done: stage > 0, current: stage === 0 },
-    { label: t("stepReceived"), done: stage > 1, current: stage === 1 },
-    { label: t("stepPaid"), done: false, current: stage === 2 },
+    { label: t("stepDraft"), done: !isDraft, current: isDraft },
+    { label: t("stepReceived"), done: isPaid, current: isReceivedOrBeyond && !isPaid },
+    { label: t("stepPaid"), done: isPaid, current: isPaid },
   ]
 
   function confirmBill() {

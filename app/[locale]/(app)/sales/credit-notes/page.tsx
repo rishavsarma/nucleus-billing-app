@@ -6,9 +6,10 @@ import { PlusIcon } from "lucide-react"
 import { Link } from "@/i18n/navigation"
 import { Button } from "@/components/ui/button"
 import { EntityTable, entityColumnHelper } from "@/components/entity-table"
+import { useServerTableParams } from "@/components/server-table"
 import { StatusBadge } from "@/components/status-badge"
 import { useCustomers } from "@/hooks/use-customers"
-import { useCreditNotes } from "@/hooks/use-credit-notes"
+import { useCreditNotesList } from "@/hooks/use-credit-notes"
 import { useInvoices } from "@/hooks/use-invoices"
 import { routes } from "@/lib/routes"
 import type { CreditNote } from "@/lib/database/types"
@@ -19,7 +20,8 @@ const money = (n: number) => "₹" + n.toLocaleString("en-IN", { minimumFraction
 export default function CreditNotesPage() {
   const t = useTranslations("CreditNotes")
   const tStatus = useTranslations("DocStatus")
-  const { data: creditNotes, isLoading } = useCreditNotes()
+  const { params, tableControlProps } = useServerTableParams()
+  const { data: result, isLoading } = useCreditNotesList(params)
   const { data: customers } = useCustomers()
   const { data: invoices } = useInvoices()
 
@@ -71,10 +73,11 @@ export default function CreditNotesPage() {
 
       <EntityTable
         columns={columns}
-        data={creditNotes ?? []}
+        data={result?.data ?? []}
         isLoading={isLoading}
+        totalCount={result?.total ?? 0}
+        {...tableControlProps}
         searchPlaceholder={t("searchPlaceholder")}
-        matchesSearch={(row, query) => (row.credit_note_number?.toLowerCase().includes(query) ?? false)}
         emptyMessage={t("noResults")}
       />
     </div>

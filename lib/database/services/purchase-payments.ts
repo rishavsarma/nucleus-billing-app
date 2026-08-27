@@ -1,8 +1,16 @@
 import { api } from "@/lib/axios"
 import type { PurchasePayment } from "@/lib/database/types"
+import type { ListParams, PaginatedResponse } from "@/lib/database/list-params-types"
 
-export async function fetchPurchasePayments(): Promise<PurchasePayment[]> {
-  const { data } = await api.get<PurchasePayment[]>("/database/purchase_payments")
+/** Fetch all purchasepayments with no pagination — for dropdowns / pickers. */
+export async function fetchPurchasePaymentsAll(): Promise<PurchasePayment[]> {
+  const { data } = await api.get<PurchasePayment[]>("/database/purchase_payments", { params: { page: 1, pageSize: 9999 } })
+  return (data as unknown as PaginatedResponse<PurchasePayment>).data
+}
+
+/** Fetch a paginated + searched page of purchasepayments. */
+export async function fetchPurchasePaymentsPaginated(params: ListParams): Promise<PaginatedResponse<PurchasePayment>> {
+  const { data } = await api.get<PaginatedResponse<PurchasePayment>>("/database/purchase_payments", { params })
   return data
 }
 

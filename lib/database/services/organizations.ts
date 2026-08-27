@@ -1,8 +1,16 @@
 import { api } from "@/lib/axios"
 import type { Organization } from "@/lib/database/types"
+import type { ListParams, PaginatedResponse } from "@/lib/database/list-params-types"
 
-export async function fetchOrganizations(): Promise<Organization[]> {
-  const { data } = await api.get<Organization[]>("/database/organizations")
+/** Fetch all organizations with no pagination — for dropdowns / pickers. */
+export async function fetchOrganizationsAll(): Promise<Organization[]> {
+  const { data } = await api.get<Organization[]>("/database/organizations", { params: { page: 1, pageSize: 9999 } })
+  return (data as unknown as PaginatedResponse<Organization>).data
+}
+
+/** Fetch a paginated + searched page of organizations. */
+export async function fetchOrganizationsPaginated(params: ListParams): Promise<PaginatedResponse<Organization>> {
+  const { data } = await api.get<PaginatedResponse<Organization>>("/database/organizations", { params })
   return data
 }
 

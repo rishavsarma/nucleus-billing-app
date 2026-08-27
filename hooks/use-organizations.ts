@@ -1,17 +1,26 @@
 "use client"
 
+import type { ListParams } from "@/lib/database/list-params-types"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import {
-  fetchOrganizations,
+import { fetchOrganizationsAll, fetchOrganizationsPaginated,
   createOrganization,
   updateOrganization,
 } from "@/lib/database/services/organizations"
 import type { Organization } from "@/lib/database/types"
 
+/** All records — use in dropdowns/pickers where you need every option. */
 export function useOrganizations() {
   return useQuery({
-    queryKey: ["organizations"],
-    queryFn: fetchOrganizations,
+    queryKey: ["organizations", "all"],
+    queryFn: fetchOrganizationsAll,
+  })
+}
+
+/** Paginated + searched list — use in list-view table pages. */
+export function useOrganizationsList(params: ListParams) {
+  return useQuery({
+    queryKey: ["organizations", "list", params],
+    queryFn: () => fetchOrganizationsPaginated(params),
   })
 }
 

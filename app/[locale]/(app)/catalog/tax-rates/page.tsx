@@ -13,10 +13,11 @@ import { Button } from "@/components/ui/button"
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog"
 import { EntityFormDialog } from "@/components/entity-form-dialog"
 import { EntityTable, entityColumnHelper } from "@/components/entity-table"
+import { useServerTableParams } from "@/components/server-table"
 import { Field, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
-import { useCreateTaxRate, useDeleteTaxRate, useTaxRates, useUpdateTaxRate } from "@/hooks/use-tax-rates"
+import { useCreateTaxRate, useDeleteTaxRate, useTaxRatesList, useUpdateTaxRate } from "@/hooks/use-tax-rates"
 import type { TaxRate } from "@/lib/database/types"
 
 const columnHelper = entityColumnHelper<TaxRate>()
@@ -31,7 +32,8 @@ type TaxRateFormValues = z.infer<typeof taxRateSchema>
 export default function TaxRatesPage() {
   const t = useTranslations("TaxRates")
   const tCommon = useTranslations("Common")
-  const { data: taxRates, isLoading } = useTaxRates()
+  const { params, tableControlProps } = useServerTableParams()
+  const { data: result, isLoading } = useTaxRatesList(params)
   const createTaxRate = useCreateTaxRate()
   const updateTaxRate = useUpdateTaxRate()
   const deleteTaxRate = useDeleteTaxRate()
@@ -117,10 +119,11 @@ export default function TaxRatesPage() {
 
       <EntityTable
         columns={columns}
-        data={taxRates ?? []}
+        data={result?.data ?? []}
         isLoading={isLoading}
+        totalCount={result?.total ?? 0}
+        {...tableControlProps}
         searchPlaceholder={t("searchPlaceholder")}
-        matchesSearch={(row, query) => row.name.toLowerCase().includes(query)}
         emptyMessage={t("noResults")}
       />
 

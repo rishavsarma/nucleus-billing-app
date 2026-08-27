@@ -3,10 +3,11 @@
 import { useTranslations } from "next-intl"
 
 import { EntityTable, entityColumnHelper } from "@/components/entity-table"
+import { useServerTableParams } from "@/components/server-table"
 import { Badge } from "@/components/ui/badge"
 import { useCustomers } from "@/hooks/use-customers"
 import { useInvoices } from "@/hooks/use-invoices"
-import { usePayments } from "@/hooks/use-payments"
+import { usePaymentsList } from "@/hooks/use-payments"
 import type { Payment } from "@/lib/database/types"
 
 const columnHelper = entityColumnHelper<Payment>()
@@ -15,7 +16,8 @@ const money = (n: number) => "₹" + n.toLocaleString("en-IN", { minimumFraction
 export default function SalesPaymentsPage() {
   const t = useTranslations("Payments")
   const tMethods = useTranslations("PaymentMethods")
-  const { data: payments, isLoading } = usePayments()
+  const { params, tableControlProps } = useServerTableParams()
+  const { data: result, isLoading } = usePaymentsList(params)
   const { data: invoices } = useInvoices()
   const { data: customers } = useCustomers()
 
@@ -62,10 +64,11 @@ export default function SalesPaymentsPage() {
 
       <EntityTable
         columns={columns}
-        data={payments ?? []}
+        data={result?.data ?? []}
         isLoading={isLoading}
+        totalCount={result?.total ?? 0}
+        {...tableControlProps}
         searchPlaceholder={t("searchPlaceholder")}
-        matchesSearch={(row, query) => (row.reference?.toLowerCase().includes(query) ?? false)}
         emptyMessage={t("noResults")}
       />
     </div>

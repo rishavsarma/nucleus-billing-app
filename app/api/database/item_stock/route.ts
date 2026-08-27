@@ -23,29 +23,71 @@ export async function GET(request: Request) {
     )
   }
 
-  const itemId = new URL(request.url).searchParams.get("item_id")
-  if (!itemId) {
-    return NextResponse.json({ error: 'Query param "item_id" is required' }, { status: 400 })
+  const { searchParams } = new URL(request.url)
+  const itemId = searchParams.get("item_id")
+  const supabase = await createClient()
+
+  // Single item's stock across warehouses — used by the "current quantity on
+  // hand" preview when recording a manual adjustment.
+  if (itemId) {
+    const { ok, error: verifyError } = await verifyItemInOrg(
+      supabase,
+      itemId,
+      auth.orgId,
+      auth.isSuperadmin,
+    )
+    if (verifyError) return NextResponse.json({ error: verifyError.message }, { status: 500 })
+    if (!ok) return NextResponse.json({ error: "Not found" }, { status: 404 })
+
+    const { data, error } = await supabase
+      .schema("billing")
+      .from("item_stock")
+      .select("*")
+      .eq("item_id", itemId)
+
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json(data)
   }
 
-  const supabase = await createClient()
-  const { ok, error: verifyError } = await verifyItemInOrg(
-    supabase,
-    itemId,
-    auth.orgId,
-    auth.isSuperadmin,
-  )
-  if (verifyError) return NextResponse.json({ error: verifyError.message }, { status: 500 })
-  if (!ok) return NextResponse.json({ error: "Not found" }, { status: 404 })
+  // Paginated + searched list — used by the Stock page. item_stock has
+  // neither an org_id nor a name column of its own, so org-scoping and name
+  // search both go through an inner join on items rather than an N+1 of one
+  // item_stock lookup per item.
+  const search = searchParams.get("search")?.trim()
+  const page = Number(searchParams.get("page") ?? 1)
+  const pageSize = Number(searchParams.get("pageSize") ?? 10)
 
-  const { data, error } = await supabase
+  let query = supabase
     .schema("billing")
     .from("item_stock")
-    .select("*")
-    .eq("item_id", itemId)
+    .select("item_id, warehouse_id, quantity_on_hand, items!inner(name, sku, reorder_level, org_id)", {
+      count: "exact",
+    })
 
+  if (!auth.isSuperadmin) query = query.eq("items.org_id", auth.orgId!)
+  if (search) query = query.or(`name.ilike.%${search}%,sku.ilike.%${search}%`, { foreignTable: "items" })
+  query = query.order("name", { foreignTable: "items", ascending: true })
+
+  const from = (page - 1) * pageSize
+  const to = from + pageSize - 1
+  query = query.range(from, to)
+
+  const { data, error, count } = await query
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json(data)
+
+  const rows = (data ?? []).map((row) => {
+    const item = Array.isArray(row.items) ? row.items[0] : row.items
+    return {
+      item_id: row.item_id,
+      warehouse_id: row.warehouse_id,
+      quantity_on_hand: row.quantity_on_hand,
+      item_name: item?.name ?? "—",
+      item_sku: item?.sku ?? null,
+      item_reorder_level: item?.reorder_level ?? 0,
+    }
+  })
+
+  return NextResponse.json({ data: rows, total: count ?? 0 })
 }
 
 // No POST/PUT/DELETE: item_stock is read-only from the API (see

@@ -9,10 +9,12 @@ import { ArrowLeftIcon } from "lucide-react"
 import { z } from "zod"
 
 import { Link, useRouter } from "@/i18n/navigation"
+import { DocumentStepper, type StepperStep } from "@/components/document-stepper"
+import { SearchableSelect } from "@/components/searchable-select"
 import { Button } from "@/components/ui/button"
+import { DatePicker } from "@/components/ui/date-picker"
 import { Field, FieldError, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { useCustomers } from "@/hooks/use-customers"
 import { useCreateCreditNote } from "@/hooks/use-credit-notes"
@@ -42,8 +44,14 @@ export default function NewCreditNotePage() {
   })
   const { register, handleSubmit, formState, setValue, control } = form
   const selectedInvoiceId = useWatch({ control, name: "invoice_id" })
+  const issueDate = useWatch({ control, name: "issue_date" })
   const selectedInvoice = invoices?.find((inv) => inv.id === selectedInvoiceId)
   const customerName = selectedInvoice ? customers?.find((c) => c.id === selectedInvoice.customer_id)?.name : undefined
+
+  const steps: StepperStep[] = [
+    { label: t("stepCreditNoteDetails"), done: false, current: true },
+    { label: t("stepAddItems"), done: false, current: false },
+  ]
 
   function onSubmit(values: NewCreditNoteValues) {
     const invoice = invoices?.find((inv) => inv.id === values.invoice_id)
@@ -75,27 +83,37 @@ export default function NewCreditNotePage() {
       </Link>
       <h1 className="mb-4 text-2xl font-semibold">{t("newCreditNote")}</h1>
 
+      <div className="mb-4">
+        <DocumentStepper steps={steps} />
+      </div>
+
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4 rounded-xl bg-card p-4 ring-1 ring-foreground/10">
         <Field data-invalid={!!formState.errors.invoice_id}>
           <FieldLabel htmlFor="cn-invoice">{t("invoiceLabel")}</FieldLabel>
-          <Select value={selectedInvoiceId} onValueChange={(value) => setValue("invoice_id", value)}>
-            <SelectTrigger id="cn-invoice" className="w-full">
-              <SelectValue placeholder={t("invoicePlaceholder")} />
-            </SelectTrigger>
-            <SelectContent>
-              {returnableInvoices.map((invoice) => (
-                <SelectItem key={invoice.id} value={invoice.id}>
-                  {invoice.invoice_number} — {customers?.find((c) => c.id === invoice.customer_id)?.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <SearchableSelect
+            id="cn-invoice"
+            value={selectedInvoiceId}
+            onValueChange={(value) => setValue("invoice_id", value, { shouldValidate: true })}
+            placeholder={t("invoicePlaceholder")}
+            options={returnableInvoices.map((invoice) => {
+              const customer = customers?.find((c) => c.id === invoice.customer_id)
+              return {
+                value: invoice.id,
+                label: invoice.invoice_number,
+                subtitle: customer?.name ?? undefined,
+                keywords: [customer?.name ?? ""],
+              }
+            })}
+          />
           {formState.errors.invoice_id ? <FieldError>{tCommon("required")}</FieldError> : null}
-          {customerName ? <p className="text-xs text-muted-foreground">{t("columnCustomer")}: {customerName}</p> : null}
         </Field>
         <Field>
           <FieldLabel htmlFor="cn-issue-date">{t("issueDateLabel")}</FieldLabel>
-          <Input id="cn-issue-date" type="date" {...register("issue_date")} />
+          <DatePicker
+            id="cn-issue-date"
+            value={issueDate}
+            onChange={(value) => setValue("issue_date", value, { shouldValidate: true })}
+          />
         </Field>
         <Field>
           <FieldLabel htmlFor="cn-reason">{t("reasonLabel")}</FieldLabel>
@@ -104,7 +122,7 @@ export default function NewCreditNotePage() {
         <div className="flex justify-end">
           <Button type="submit" disabled={createCreditNote.isPending}>
             {createCreditNote.isPending ? <Loader2Icon className="animate-spin" /> : null}
-            {t("createCreditNote")}
+            {t("continueToItems")}
           </Button>
         </div>
       </form>

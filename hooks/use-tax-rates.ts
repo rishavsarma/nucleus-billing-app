@@ -1,18 +1,27 @@
 "use client"
 
+import type { ListParams } from "@/lib/database/list-params-types"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import {
-  fetchTaxRates,
+import { fetchTaxRatesAll, fetchTaxRatesPaginated,
   createTaxRate,
   updateTaxRate,
   deleteTaxRate,
 } from "@/lib/database/services/tax-rates"
 import type { TaxRate } from "@/lib/database/types"
 
+/** All records — use in dropdowns/pickers where you need every option. */
 export function useTaxRates() {
   return useQuery({
-    queryKey: ["tax-rates"],
-    queryFn: fetchTaxRates,
+    queryKey: ["tax-rates", "all"],
+    queryFn: fetchTaxRatesAll,
+  })
+}
+
+/** Paginated + searched list — use in list-view table pages. */
+export function useTaxRatesList(params: ListParams) {
+  return useQuery({
+    queryKey: ["tax-rates", "list", params],
+    queryFn: () => fetchTaxRatesPaginated(params),
   })
 }
 

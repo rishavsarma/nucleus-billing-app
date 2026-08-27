@@ -1,13 +1,23 @@
 "use client"
 
+import type { ListParams } from "@/lib/database/list-params-types"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { fetchPayments, createPayment, updatePayment } from "@/lib/database/services/payments"
+import { fetchPaymentsAll, fetchPaymentsPaginated, createPayment, updatePayment } from "@/lib/database/services/payments"
 import type { Payment } from "@/lib/database/types"
 
+/** All records — use in dropdowns/pickers where you need every option. */
 export function usePayments() {
   return useQuery({
-    queryKey: ["payments"],
-    queryFn: fetchPayments,
+    queryKey: ["payments", "all"],
+    queryFn: fetchPaymentsAll,
+  })
+}
+
+/** Paginated + searched list — use in list-view table pages. */
+export function usePaymentsList(params: ListParams) {
+  return useQuery({
+    queryKey: ["payments", "list", params],
+    queryFn: () => fetchPaymentsPaginated(params),
   })
 }
 

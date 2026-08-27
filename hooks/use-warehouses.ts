@@ -1,18 +1,27 @@
 "use client"
 
+import type { ListParams } from "@/lib/database/list-params-types"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import {
-  fetchWarehouses,
+import { fetchWarehousesAll, fetchWarehousesPaginated,
   createWarehouse,
   updateWarehouse,
   deleteWarehouse,
 } from "@/lib/database/services/warehouses"
 import type { Warehouse } from "@/lib/database/types"
 
+/** All records — use in dropdowns/pickers where you need every option. */
 export function useWarehouses() {
   return useQuery({
-    queryKey: ["warehouses"],
-    queryFn: fetchWarehouses,
+    queryKey: ["warehouses", "all"],
+    queryFn: fetchWarehousesAll,
+  })
+}
+
+/** Paginated + searched list — use in list-view table pages. */
+export function useWarehousesList(params: ListParams) {
+  return useQuery({
+    queryKey: ["warehouses", "list", params],
+    queryFn: () => fetchWarehousesPaginated(params),
   })
 }
 

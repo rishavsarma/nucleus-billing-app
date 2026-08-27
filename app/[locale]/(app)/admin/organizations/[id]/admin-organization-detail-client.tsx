@@ -13,6 +13,7 @@ import { routes } from "@/lib/routes"
 import { AddOrgUserDialog } from "@/components/add-org-user-dialog"
 import { StatusBadge } from "@/components/status-badge"
 import { Button } from "@/components/ui/button"
+import { DatePicker } from "@/components/ui/date-picker"
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -43,7 +44,7 @@ export function AdminOrganizationDetailClient({ id }: { id: string }) {
   const t = useTranslations("AdminOrganizations")
   const tCommon = useTranslations("Common")
   const { data: organizations, isLoading } = useOrganizations()
-  const organization = organizations?.find((org) => org.id === id)
+  const organization = (organizations ?? []).find((org) => org.id === id)
 
   if (isLoading) {
     return <div className="text-sm text-muted-foreground">{tCommon("loading")}</div>
@@ -87,6 +88,7 @@ function AdminOrganizationForm({ organization }: { organization: Organization })
   const { register, handleSubmit, formState, setValue, control } = form
   const isActive = useWatch({ control, name: "is_active" })
   const subscriptionStatus = useWatch({ control, name: "subscription_status" })
+  const subscriptionCurrentPeriodEnd = useWatch({ control, name: "subscription_current_period_end" })
   const [addUserOpen, setAddUserOpen] = useState(false)
 
   function onSubmit(values: AdminOrganizationFormValues) {
@@ -206,7 +208,14 @@ function AdminOrganizationForm({ organization }: { organization: Organization })
                 </Field>
                 <Field>
                   <FieldLabel htmlFor="admin-org-period-end">{t("subscriptionPeriodEndLabel")}</FieldLabel>
-                  <Input id="admin-org-period-end" type="date" {...register("subscription_current_period_end")} />
+                  <DatePicker
+                    id="admin-org-period-end"
+                    value={subscriptionCurrentPeriodEnd}
+                    onChange={(value) =>
+                      setValue("subscription_current_period_end", value, { shouldValidate: true })
+                    }
+                    clearable
+                  />
                 </Field>
               </div>
             </FieldGroup>

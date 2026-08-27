@@ -10,7 +10,8 @@ import { routes } from "@/lib/routes"
 import { Button } from "@/components/ui/button"
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog"
 import { EntityTable, entityColumnHelper } from "@/components/entity-table"
-import { useCustomers, useDeleteCustomer } from "@/hooks/use-customers"
+import { useServerTableParams } from "@/components/server-table"
+import { useCustomersList, useDeleteCustomer } from "@/hooks/use-customers"
 import type { Customer } from "@/lib/database/types"
 
 const columnHelper = entityColumnHelper<Customer>()
@@ -18,7 +19,8 @@ const columnHelper = entityColumnHelper<Customer>()
 export default function CustomersPage() {
   const t = useTranslations("Customers")
   const tCommon = useTranslations("Common")
-  const { data: customers, isLoading } = useCustomers()
+  const { params, tableControlProps } = useServerTableParams()
+  const { data: result, isLoading } = useCustomersList(params)
   const deleteCustomer = useDeleteCustomer()
   const [toDelete, setToDelete] = useState<Customer | null>(null)
 
@@ -95,14 +97,11 @@ export default function CustomersPage() {
 
       <EntityTable
         columns={columns}
-        data={customers ?? []}
+        data={result?.data ?? []}
         isLoading={isLoading}
+        totalCount={result?.total ?? 0}
+        {...tableControlProps}
         searchPlaceholder={t("searchPlaceholder")}
-        matchesSearch={(row, query) =>
-          row.name.toLowerCase().includes(query) ||
-          (row.email?.toLowerCase().includes(query) ?? false) ||
-          (row.phone?.toLowerCase().includes(query) ?? false)
-        }
         emptyMessage={t("noResults")}
       />
 

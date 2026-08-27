@@ -7,8 +7,9 @@ import { Link } from "@/i18n/navigation"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { EntityTable, entityColumnHelper } from "@/components/entity-table"
+import { useServerTableParams } from "@/components/server-table"
 import { useItems } from "@/hooks/use-items"
-import { useStockMovements } from "@/hooks/use-stock-movements"
+import { useStockMovementsList } from "@/hooks/use-stock-movements"
 import { useWarehouses } from "@/hooks/use-warehouses"
 import { routes } from "@/lib/routes"
 import type { StockMovement } from "@/lib/database/types"
@@ -25,7 +26,9 @@ const REFERENCE_ROUTE: Record<string, (id: string) => string> = {
 export default function StockMovementsPage() {
   const t = useTranslations("StockMovements")
   const tTypes = useTranslations("MovementTypes")
-  const { data: movements, isLoading } = useStockMovements()
+  const tReference = useTranslations("ReferenceTypes")
+  const { params, tableControlProps } = useServerTableParams()
+  const { data: result, isLoading } = useStockMovementsList(params)
   const { data: items } = useItems()
   const { data: warehouses } = useWarehouses()
 
@@ -70,11 +73,11 @@ export default function StockMovementsPage() {
         if (routeFn && reference_id) {
           return (
             <Link href={routeFn(reference_id)} className="text-muted-foreground hover:underline">
-              {reference_type}
+              {tReference(reference_type!)}
             </Link>
           )
         }
-        return <span className="text-muted-foreground">{notes ?? reference_type ?? "—"}</span>
+        return <span className="text-muted-foreground">{notes ?? (reference_type ? tReference(reference_type) : "—")}</span>
       },
     }),
   ]
@@ -96,10 +99,11 @@ export default function StockMovementsPage() {
 
       <EntityTable
         columns={columns}
-        data={movements ?? []}
+        data={result?.data ?? []}
         isLoading={isLoading}
+        totalCount={result?.total ?? 0}
+        {...tableControlProps}
         searchPlaceholder={t("searchPlaceholder")}
-        matchesSearch={(row, query) => itemName(row.item_id).toLowerCase().includes(query)}
         emptyMessage={t("noResults")}
       />
     </div>

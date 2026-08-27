@@ -6,41 +6,70 @@ export type StepperStep = {
   label: string
   done: boolean
   current: boolean
+  description?: string
 }
 
 /**
  * Linear status-machine stepper for financial documents (invoices, bills,
- * credit/debit notes). Purely presentational — callers derive `steps` from
- * the document's actual `status` column, since status only ever moves
- * forward per the DB's transition-guard triggers (see CLAUDE.md).
+ * credit/debit notes) and multi-step creation flows.
  */
-export function DocumentStepper({ steps }: { steps: StepperStep[] }) {
+export function DocumentStepper({
+  steps,
+  className,
+}: {
+  steps: StepperStep[]
+  className?: string
+}) {
   return (
-    <div className="flex items-center justify-center gap-0 rounded-xl bg-card p-4 ring-1 ring-foreground/10">
+    <div
+      className={cn(
+        "flex items-center justify-center gap-0 rounded-xl bg-card p-4 ring-1 ring-foreground/10",
+        className
+      )}
+    >
       {steps.map((step, i) => (
         <div key={step.label} className="flex items-center gap-0">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
             <div
               className={cn(
-                "flex size-[22px] shrink-0 items-center justify-center rounded-full text-[11px] font-semibold",
+                "flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold transition-colors",
                 step.done
                   ? "bg-primary text-primary-foreground"
+                  : step.current
+                  ? "bg-primary text-primary-foreground ring-2 ring-primary/30 ring-offset-2 ring-offset-background"
                   : "bg-muted text-muted-foreground"
               )}
             >
-              {step.done ? <CheckIcon className="size-3" /> : i + 1}
+              {step.done ? <CheckIcon className="size-3.5 stroke-[2.5]" /> : i + 1}
             </div>
-            <span
-              className={cn(
-                "text-sm",
-                step.current ? "font-semibold" : "font-medium",
-                step.done || step.current ? "text-foreground" : "text-muted-foreground"
-              )}
-            >
-              {step.label}
-            </span>
+            <div className="flex flex-col">
+              <span
+                className={cn(
+                  "text-sm",
+                  step.current
+                    ? "font-semibold text-foreground"
+                    : step.done
+                    ? "font-medium text-foreground"
+                    : "font-medium text-muted-foreground"
+                )}
+              >
+                {step.label}
+              </span>
+              {step.description ? (
+                <span className="text-xs text-muted-foreground">
+                  {step.description}
+                </span>
+              ) : null}
+            </div>
           </div>
-          {i < steps.length - 1 && <div className="mx-3 h-px w-9 bg-border" />}
+          {i < steps.length - 1 && (
+            <div
+              className={cn(
+                "mx-4 h-0.5 w-12 transition-colors",
+                step.done ? "bg-primary" : "bg-border"
+              )}
+            />
+          )}
         </div>
       ))}
     </div>

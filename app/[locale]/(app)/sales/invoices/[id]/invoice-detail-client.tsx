@@ -4,7 +4,7 @@ import { useState } from "react"
 import { isAxiosError } from "axios"
 import { useTranslations } from "next-intl"
 import { toast } from "sonner"
-import { ArrowLeftIcon, BanknoteIcon, CheckIcon, MoreHorizontalIcon, XIcon } from "lucide-react"
+import { ArrowLeftIcon, BanknoteIcon, CheckIcon, DownloadIcon, Loader2Icon, MoreHorizontalIcon, PrinterIcon, TruckIcon, XIcon } from "lucide-react"
 
 import { Link } from "@/i18n/navigation"
 import { Button } from "@/components/ui/button"
@@ -12,12 +12,20 @@ import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog"
 import { DocumentStepper, type StepperStep } from "@/components/document-stepper"
 import { InvoiceItemsSection } from "@/components/invoice-items-section"
 import { RecordPaymentDialog } from "@/components/record-payment-dialog"
+import { OfferSelect } from "@/components/offer-select"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { StatusBadge } from "@/components/status-badge"
 import { useCustomers } from "@/hooks/use-customers"
-import { useInvoices, useUpdateInvoice } from "@/hooks/use-invoices"
+import { useDeliveryByInvoice, useUpdateDelivery } from "@/hooks/use-deliveries"
+import { useDeliveryPersons } from "@/hooks/use-delivery-persons"
+import { useInvoiceItems } from "@/hooks/use-invoice-items"
+import { useInvoice, useUpdateInvoice } from "@/hooks/use-invoices"
+import { useItems } from "@/hooks/use-items"
+import { useOffers } from "@/hooks/use-offers"
+import { useOrganizations } from "@/hooks/use-organizations"
 import { useCreatePayment, usePayments } from "@/hooks/use-payments"
 import { useWarehouses } from "@/hooks/use-warehouses"
+import { buildInvoicePdfElement, downloadInvoicePdf, printInvoicePdf } from "@/lib/pdf/invoice-pdf"
 import { routes } from "@/lib/routes"
 import type { Payment } from "@/lib/database/types"
 
@@ -29,18 +37,31 @@ export function InvoiceDetailClient({ id }: { id: string }) {
   const tStatus = useTranslations("DocStatus")
   const tCommon = useTranslations("Common")
   const tMethods = useTranslations("PaymentMethods")
+  const tPrint = useTranslations("InvoicePrint")
+  const tDelivery = useTranslations("InvoiceDelivery")
+  const tDeliveryStatus = useTranslations("DeliveryStatus")
+  const tDeliveryPaymentMode = useTranslations("DeliveryPaymentMode")
 
-  const { data: invoices, isLoading } = useInvoices()
+  const { data: invoice, isLoading } = useInvoice(id)
   const { data: customers } = useCustomers()
   const { data: warehouses } = useWarehouses()
+  const { data: offers } = useOffers()
   const { data: allPayments } = usePayments()
+  const { data: organizations } = useOrganizations()
+  const { data: items } = useItems()
+  const { data: invoiceLineItems } = useInvoiceItems(id)
+  const { data: delivery } = useDeliveryByInvoice(id)
+  const { data: deliveryPersons } = useDeliveryPersons()
   const updateInvoice = useUpdateInvoice()
+  const updateDelivery = useUpdateDelivery()
   const createPayment = useCreatePayment()
 
   const [confirmVoid, setConfirmVoid] = useState(false)
   const [showRecordPayment, setShowRecordPayment] = useState(false)
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false)
+  const [isPreparingPrint, setIsPreparingPrint] = useState(false)
 
-  const invoice = invoices?.find((inv) => inv.id === id)
+  const appliedOffer = offers?.find((o) => o.id === invoice?.offer_id)
   const payments = allPayments?.filter((p) => p.invoice_id === id) ?? []
 
   if (isLoading) {
@@ -63,14 +84,14 @@ export function InvoiceDetailClient({ id }: { id: string }) {
   const isDraft = invoice.status === "draft"
   const isVoid = invoice.status === "void"
   const isPaid = invoice.status === "paid"
+  const isSentOrBeyond = !isDraft && !isVoid
   const canRecordPayment = !isDraft && !isVoid
   const balanceDue = invoice.total - invoice.amount_paid
 
-  const stage = isDraft ? 0 : isPaid ? 2 : 1
   const steps: StepperStep[] = [
-    { label: t("stepDraft"), done: stage > 0, current: stage === 0 },
-    { label: t("stepSent"), done: stage > 1, current: stage === 1 },
-    { label: t("stepPaid"), done: false, current: stage === 2 },
+    { label: t("stepDraft"), done: !isDraft, current: isDraft },
+    { label: t("stepSent"), done: isPaid, current: isSentOrBeyond && !isPaid },
+    { label: t("stepPaid"), done: isPaid, current: isPaid },
   ]
 
   function confirmInvoice() {
@@ -99,6 +120,51 @@ export function InvoiceDetailClient({ id }: { id: string }) {
     )
   }
 
+  /** Renders the invoice as an actual PDF file client-side via
+   * @react-pdf/renderer (not a browser print-to-PDF) and downloads it —
+   * pixel-accurate layout and real embedded fonts/colors regardless of the
+   * browser's print settings. */
+  async function downloadPdf() {
+    setIsGeneratingPdf(true)
+    try {
+      const element = await buildInvoicePdfElement({
+        invoice: invoice!,
+        customer,
+        organization: organizations?.[0],
+        lineItems: invoiceLineItems ?? [],
+        items,
+        tPrint,
+      })
+      await downloadInvoicePdf(element, `${invoice!.invoice_number ?? "invoice"}.pdf`)
+    } catch {
+      toast.error(tCommon("genericError"))
+    } finally {
+      setIsGeneratingPdf(false)
+    }
+  }
+
+  /** Same generated PDF, but opened straight into the browser's print
+   * dialog via a hidden iframe instead of downloading — one click to print,
+   * no intermediate "open the file, then print" step. */
+  async function printPdf() {
+    setIsPreparingPrint(true)
+    try {
+      const element = await buildInvoicePdfElement({
+        invoice: invoice!,
+        customer,
+        organization: organizations?.[0],
+        lineItems: invoiceLineItems ?? [],
+        items,
+        tPrint,
+      })
+      await printInvoicePdf(element)
+    } catch {
+      toast.error(tCommon("genericError"))
+    } finally {
+      setIsPreparingPrint(false)
+    }
+  }
+
   return (
     <div className="flex flex-col gap-1">
       <Link href={routes.sales.invoices.list} className="mb-2 flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
@@ -118,6 +184,14 @@ export function InvoiceDetailClient({ id }: { id: string }) {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={printPdf} disabled={isPreparingPrint}>
+            {isPreparingPrint ? <Loader2Icon className="animate-spin" /> : <PrinterIcon />}
+            {tPrint("printButton")}
+          </Button>
+          <Button variant="outline" onClick={downloadPdf} disabled={isGeneratingPdf}>
+            {isGeneratingPdf ? <Loader2Icon className="animate-spin" /> : <DownloadIcon />}
+            {tPrint("downloadPdfButton")}
+          </Button>
           {isDraft ? (
             <Button onClick={confirmInvoice} disabled={updateInvoice.isPending}>
               <CheckIcon />
@@ -158,13 +232,39 @@ export function InvoiceDetailClient({ id }: { id: string }) {
         <div className="flex flex-col gap-5">
           <div className="rounded-xl bg-card p-4 ring-1 ring-foreground/10">
             <h2 className="mb-3 text-sm font-semibold">{t("summaryTitle")}</h2>
+            {isDraft ? (
+              <div className="mb-3">
+                <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                  {t("offerLabel")}
+                </label>
+                <OfferSelect
+                  offers={offers}
+                  value={invoice.offer_id}
+                  onValueChange={(offerId) => {
+                    updateInvoice.mutate(
+                      { id, input: { offer_id: offerId } },
+                      {
+                        onSuccess: () => toast.success(tCommon("updatedSuccess")),
+                        onError: () => toast.error(tCommon("genericError")),
+                      },
+                    )
+                  }}
+                  placeholder={t("offerPlaceholder")}
+                />
+              </div>
+            ) : appliedOffer ? (
+              <div className="mb-3 flex items-center justify-between rounded-lg bg-emerald-50 dark:bg-emerald-950/40 p-2 text-xs text-emerald-800 dark:text-emerald-300 ring-1 ring-emerald-200 dark:ring-emerald-800/50">
+                <span className="font-medium">{t("offerLabel")}</span>
+                <span className="font-semibold">{appliedOffer.name}</span>
+              </div>
+            ) : null}
             <div className="flex flex-col gap-1.5 text-sm">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">{t("subtotalLabel")}</span>
                 <span>{money(invoice.subtotal)}</span>
               </div>
               {invoice.discount_total > 0 ? (
-                <div className="flex justify-between">
+                <div className="flex justify-between text-emerald-600 dark:text-emerald-400 font-medium">
                   <span className="text-muted-foreground">{t("discountLabel")}</span>
                   <span>−{money(invoice.discount_total)}</span>
                 </div>
@@ -253,6 +353,58 @@ export function InvoiceDetailClient({ id }: { id: string }) {
               </div>
             </div>
           </div>
+
+          {delivery ? (
+            <div className="rounded-xl bg-card p-4 ring-1 ring-foreground/10">
+              <h2 className="mb-3 flex items-center gap-1.5 text-sm font-semibold">
+                <TruckIcon className="size-4" />
+                {tDelivery("title")}
+              </h2>
+              <div className="flex flex-col gap-2 text-xs">
+                <div className="flex justify-between gap-3">
+                  <span className="shrink-0 text-muted-foreground">{tDelivery("addressLabel")}</span>
+                  <span className="text-right">
+                    {(delivery.delivery_address as { full_address?: string } | null)?.full_address || "—"}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">{tDelivery("personLabel")}</span>
+                  <span>
+                    {deliveryPersons?.find((p) => p.id === delivery.delivery_person_id)?.name ?? tDelivery("notAssigned")}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">{tDelivery("paymentModeLabel")}</span>
+                  <span>{delivery.payment_mode ? tDeliveryPaymentMode(delivery.payment_mode) : "—"}</span>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <span className="text-muted-foreground">{tDelivery("statusLabel")}</span>
+                  <Select
+                    value={delivery.status}
+                    onValueChange={(value) =>
+                      updateDelivery.mutate({
+                        id: delivery.id,
+                        input: {
+                          status: value as typeof delivery.status,
+                          delivered_at: value === "delivered" ? new Date().toISOString() : delivery.delivered_at,
+                        },
+                      })
+                    }
+                  >
+                    <SelectTrigger className="h-7 w-full text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pending">{tDeliveryStatus("pending")}</SelectItem>
+                      <SelectItem value="out_for_delivery">{tDeliveryStatus("out_for_delivery")}</SelectItem>
+                      <SelectItem value="delivered">{tDeliveryStatus("delivered")}</SelectItem>
+                      <SelectItem value="failed">{tDeliveryStatus("failed")}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+          ) : null}
         </div>
       </div>
 

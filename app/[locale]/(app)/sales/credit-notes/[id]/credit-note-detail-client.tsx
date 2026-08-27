@@ -12,7 +12,7 @@ import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog"
 import { DocumentStepper, type StepperStep } from "@/components/document-stepper"
 import { StatusBadge } from "@/components/status-badge"
 import { useCustomers } from "@/hooks/use-customers"
-import { useCreditNotes, useUpdateCreditNote } from "@/hooks/use-credit-notes"
+import { useCreditNote, useUpdateCreditNote } from "@/hooks/use-credit-notes"
 import { useInvoices } from "@/hooks/use-invoices"
 import { useWarehouses } from "@/hooks/use-warehouses"
 import { routes } from "@/lib/routes"
@@ -24,14 +24,12 @@ export function CreditNoteDetailClient({ id }: { id: string }) {
   const tStatus = useTranslations("DocStatus")
   const tCommon = useTranslations("Common")
 
-  const { data: creditNotes, isLoading } = useCreditNotes()
+  const { data: creditNote, isLoading } = useCreditNote(id)
   const { data: customers } = useCustomers()
   const { data: invoices } = useInvoices()
   const { data: warehouses } = useWarehouses()
   const updateCreditNote = useUpdateCreditNote()
   const [confirmVoid, setConfirmVoid] = useState(false)
-
-  const creditNote = creditNotes?.find((cn) => cn.id === id)
 
   if (isLoading) {
     return <div className="text-sm text-muted-foreground">{tCommon("loading")}</div>
@@ -57,7 +55,7 @@ export function CreditNoteDetailClient({ id }: { id: string }) {
 
   const steps: StepperStep[] = [
     { label: t("stepDraft"), done: !isDraft, current: isDraft },
-    { label: t("stepIssued"), done: false, current: !isDraft },
+    { label: t("stepIssued"), done: !isDraft, current: !isDraft },
   ]
 
   function issueCreditNote() {

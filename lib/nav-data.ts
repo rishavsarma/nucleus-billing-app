@@ -70,6 +70,7 @@ export const NAV_DATA: NavGroupData[] = [
       { titleKey: "items", url: routes.catalog.items.list, icon: Tag },
       { titleKey: "taxRates", url: routes.catalog.taxRates, icon: Percent },
       { titleKey: "warehouses", url: routes.catalog.warehouses, icon: Warehouse },
+      { titleKey: "deliveryPersons", url: routes.catalog.deliveryPersons, icon: Truck },
       { titleKey: "offers", url: routes.catalog.offers.list, icon: Boxes },
     ],
   },

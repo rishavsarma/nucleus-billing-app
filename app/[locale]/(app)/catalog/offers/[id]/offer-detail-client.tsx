@@ -11,7 +11,7 @@ import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog"
 import { Field, FieldLabel } from "@/components/ui/field"
 import { OfferForm, formValuesToOfferInput, offerToFormValues, type OfferFormValues } from "@/components/offer-form"
 import { OfferItemPicker } from "@/components/offer-item-picker"
-import { useDeleteOffer, useOffers, useUpdateOffer } from "@/hooks/use-offers"
+import { useDeleteOffer, useOffer, useUpdateOffer } from "@/hooks/use-offers"
 import { routes } from "@/lib/routes"
 
 export function OfferDetailClient({ id }: { id: string }) {
@@ -19,12 +19,10 @@ export function OfferDetailClient({ id }: { id: string }) {
   const tCommon = useTranslations("Common")
   const router = useRouter()
 
-  const { data: offers, isLoading } = useOffers()
+  const { data: offer, isLoading } = useOffer(id)
   const updateOffer = useUpdateOffer()
   const deleteOffer = useDeleteOffer()
   const [confirmDelete, setConfirmDelete] = useState(false)
-
-  const offer = offers?.find((o) => o.id === id)
 
   function onSubmit(values: OfferFormValues) {
     updateOffer.mutate(

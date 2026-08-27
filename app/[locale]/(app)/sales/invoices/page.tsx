@@ -6,9 +6,10 @@ import { PlusIcon } from "lucide-react"
 import { Link } from "@/i18n/navigation"
 import { Button } from "@/components/ui/button"
 import { EntityTable, entityColumnHelper } from "@/components/entity-table"
+import { useServerTableParams } from "@/components/server-table"
 import { StatusBadge } from "@/components/status-badge"
 import { useCustomers } from "@/hooks/use-customers"
-import { useInvoices } from "@/hooks/use-invoices"
+import { useInvoicesList } from "@/hooks/use-invoices"
 import { routes } from "@/lib/routes"
 import type { Invoice } from "@/lib/database/types"
 
@@ -18,7 +19,8 @@ const money = (n: number) => "₹" + n.toLocaleString("en-IN", { minimumFraction
 export default function InvoicesPage() {
   const t = useTranslations("Invoices")
   const tStatus = useTranslations("DocStatus")
-  const { data: invoices, isLoading } = useInvoices()
+  const { params, tableControlProps } = useServerTableParams()
+  const { data: result, isLoading } = useInvoicesList(params)
   const { data: customers } = useCustomers()
 
   const customerName = (id: string) => customers?.find((c) => c.id === id)?.name ?? "—"
@@ -68,12 +70,11 @@ export default function InvoicesPage() {
 
       <EntityTable
         columns={columns}
-        data={invoices ?? []}
+        data={result?.data ?? []}
         isLoading={isLoading}
+        totalCount={result?.total ?? 0}
+        {...tableControlProps}
         searchPlaceholder={t("searchPlaceholder")}
-        matchesSearch={(row, query) =>
-          (row.invoice_number?.toLowerCase().includes(query) ?? false) || customerName(row.customer_id).toLowerCase().includes(query)
-        }
         emptyMessage={t("noResults")}
       />
     </div>

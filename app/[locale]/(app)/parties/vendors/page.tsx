@@ -10,7 +10,8 @@ import { routes } from "@/lib/routes"
 import { Button } from "@/components/ui/button"
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog"
 import { EntityTable, entityColumnHelper } from "@/components/entity-table"
-import { useVendors, useDeleteVendor } from "@/hooks/use-vendors"
+import { useServerTableParams } from "@/components/server-table"
+import { useVendorsList, useDeleteVendor } from "@/hooks/use-vendors"
 import type { Vendor } from "@/lib/database/types"
 
 const columnHelper = entityColumnHelper<Vendor>()
@@ -18,7 +19,8 @@ const columnHelper = entityColumnHelper<Vendor>()
 export default function VendorsPage() {
   const t = useTranslations("Vendors")
   const tCommon = useTranslations("Common")
-  const { data: vendors, isLoading } = useVendors()
+  const { params, tableControlProps } = useServerTableParams()
+  const { data: result, isLoading } = useVendorsList(params)
   const deleteVendor = useDeleteVendor()
   const [toDelete, setToDelete] = useState<Vendor | null>(null)
 
@@ -95,14 +97,11 @@ export default function VendorsPage() {
 
       <EntityTable
         columns={columns}
-        data={vendors ?? []}
+        data={result?.data ?? []}
         isLoading={isLoading}
+        totalCount={result?.total ?? 0}
+        {...tableControlProps}
         searchPlaceholder={t("searchPlaceholder")}
-        matchesSearch={(row, query) =>
-          row.name.toLowerCase().includes(query) ||
-          (row.email?.toLowerCase().includes(query) ?? false) ||
-          (row.phone?.toLowerCase().includes(query) ?? false)
-        }
         emptyMessage={t("noResults")}
       />
 

@@ -9,7 +9,7 @@ import { Link, useRouter } from "@/i18n/navigation"
 import { Button } from "@/components/ui/button"
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog"
 import { PartyForm, formValuesToPartyInput, partyToFormValues, type PartyFormValues } from "@/components/party-form"
-import { useVendors, useDeleteVendor, useUpdateVendor } from "@/hooks/use-vendors"
+import { useVendor, useDeleteVendor, useUpdateVendor } from "@/hooks/use-vendors"
 import { routes } from "@/lib/routes"
 
 export function VendorDetailClient({ id }: { id: string }) {
@@ -18,12 +18,10 @@ export function VendorDetailClient({ id }: { id: string }) {
   const tCommon = useTranslations("Common")
   const router = useRouter()
 
-  const { data: vendors, isLoading } = useVendors()
+  const { data: vendor, isLoading } = useVendor(id)
   const updateVendor = useUpdateVendor()
   const deleteVendor = useDeleteVendor()
   const [confirmDelete, setConfirmDelete] = useState(false)
-
-  const vendor = vendors?.find((v) => v.id === id)
 
   function onSubmit(values: PartyFormValues) {
     updateVendor.mutate(

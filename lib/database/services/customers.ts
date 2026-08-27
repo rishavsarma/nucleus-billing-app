@@ -1,8 +1,23 @@
 import { api } from "@/lib/axios"
 import type { Customer } from "@/lib/database/types"
+import type { ListParams, PaginatedResponse } from "@/lib/database/list-params-types"
 
-export async function fetchCustomers(): Promise<Customer[]> {
-  const { data } = await api.get<Customer[]>("/database/customers")
+/** Fetch all customers with no pagination — for dropdowns / pickers. */
+export async function fetchCustomersAll(): Promise<Customer[]> {
+  const { data } = await api.get<Customer[]>("/database/customers", { params: { page: 1, pageSize: 9999 } })
+  return (data as unknown as PaginatedResponse<Customer>).data
+}
+
+/** Fetch a single record by id — for detail pages, instead of pulling
+ * every row via fetchCustomersAll() and finding it client-side. */
+export async function fetchCustomerById(id: string): Promise<Customer> {
+  const { data } = await api.get<Customer>("/database/customers", { params: { id } })
+  return data
+}
+
+/** Fetch a paginated + searched page of customers. */
+export async function fetchCustomersPaginated(params: ListParams): Promise<PaginatedResponse<Customer>> {
+  const { data } = await api.get<PaginatedResponse<Customer>>("/database/customers", { params })
   return data
 }
 

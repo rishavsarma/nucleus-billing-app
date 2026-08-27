@@ -3,10 +3,11 @@
 import { useTranslations } from "next-intl"
 
 import { EntityTable, entityColumnHelper } from "@/components/entity-table"
+import { useServerTableParams } from "@/components/server-table"
 import { Badge } from "@/components/ui/badge"
 import { useVendors } from "@/hooks/use-vendors"
 import { usePurchaseBills } from "@/hooks/use-purchase-bills"
-import { usePurchasePayments } from "@/hooks/use-purchase-payments"
+import { usePurchasePaymentsList } from "@/hooks/use-purchase-payments"
 import type { PurchasePayment } from "@/lib/database/types"
 
 const columnHelper = entityColumnHelper<PurchasePayment>()
@@ -15,7 +16,8 @@ const money = (n: number) => "₹" + n.toLocaleString("en-IN", { minimumFraction
 export default function PurchasePaymentsPage() {
   const t = useTranslations("PurchasePayments")
   const tMethods = useTranslations("PaymentMethods")
-  const { data: payments, isLoading } = usePurchasePayments()
+  const { params, tableControlProps } = useServerTableParams()
+  const { data: result, isLoading } = usePurchasePaymentsList(params)
   const { data: bills } = usePurchaseBills()
   const { data: vendors } = useVendors()
 
@@ -62,10 +64,11 @@ export default function PurchasePaymentsPage() {
 
       <EntityTable
         columns={columns}
-        data={payments ?? []}
+        data={result?.data ?? []}
         isLoading={isLoading}
+        totalCount={result?.total ?? 0}
+        {...tableControlProps}
         searchPlaceholder={t("searchPlaceholder")}
-        matchesSearch={(row, query) => (row.reference?.toLowerCase().includes(query) ?? false)}
         emptyMessage={t("noResults")}
       />
     </div>

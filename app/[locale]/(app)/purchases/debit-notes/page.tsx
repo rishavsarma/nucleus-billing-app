@@ -6,9 +6,10 @@ import { PlusIcon } from "lucide-react"
 import { Link } from "@/i18n/navigation"
 import { Button } from "@/components/ui/button"
 import { EntityTable, entityColumnHelper } from "@/components/entity-table"
+import { useServerTableParams } from "@/components/server-table"
 import { StatusBadge } from "@/components/status-badge"
 import { useVendors } from "@/hooks/use-vendors"
-import { useDebitNotes } from "@/hooks/use-debit-notes"
+import { useDebitNotesList } from "@/hooks/use-debit-notes"
 import { usePurchaseBills } from "@/hooks/use-purchase-bills"
 import { routes } from "@/lib/routes"
 import type { DebitNote } from "@/lib/database/types"
@@ -19,7 +20,8 @@ const money = (n: number) => "₹" + n.toLocaleString("en-IN", { minimumFraction
 export default function DebitNotesPage() {
   const t = useTranslations("DebitNotes")
   const tStatus = useTranslations("DocStatus")
-  const { data: debitNotes, isLoading } = useDebitNotes()
+  const { params, tableControlProps } = useServerTableParams()
+  const { data: result, isLoading } = useDebitNotesList(params)
   const { data: vendors } = useVendors()
   const { data: bills } = usePurchaseBills()
 
@@ -71,10 +73,11 @@ export default function DebitNotesPage() {
 
       <EntityTable
         columns={columns}
-        data={debitNotes ?? []}
+        data={result?.data ?? []}
         isLoading={isLoading}
+        totalCount={result?.total ?? 0}
+        {...tableControlProps}
         searchPlaceholder={t("searchPlaceholder")}
-        matchesSearch={(row, query) => (row.debit_note_number?.toLowerCase().includes(query) ?? false)}
         emptyMessage={t("noResults")}
       />
     </div>

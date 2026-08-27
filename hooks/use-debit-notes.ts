@@ -1,13 +1,32 @@
 "use client"
 
+import type { ListParams } from "@/lib/database/list-params-types"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { fetchDebitNotes, createDebitNote, updateDebitNote } from "@/lib/database/services/debit-notes"
+import { fetchDebitNotesAll, fetchDebitNoteById, fetchDebitNotesPaginated, createDebitNote, updateDebitNote } from "@/lib/database/services/debit-notes"
 import type { DebitNote } from "@/lib/database/types"
 
+/** All records — use in dropdowns/pickers where you need every option. */
 export function useDebitNotes() {
   return useQuery({
-    queryKey: ["debit-notes"],
-    queryFn: fetchDebitNotes,
+    queryKey: ["debit-notes", "all"],
+    queryFn: fetchDebitNotesAll,
+  })
+}
+
+/** Paginated + searched list — use in list-view table pages. */
+export function useDebitNotesList(params: ListParams) {
+  return useQuery({
+    queryKey: ["debit-notes", "list", params],
+    queryFn: () => fetchDebitNotesPaginated(params),
+  })
+}
+
+/** Single record by id — for detail pages. */
+export function useDebitNote(id: string) {
+  return useQuery({
+    queryKey: ["debit-notes", "detail", id],
+    queryFn: () => fetchDebitNoteById(id),
+    enabled: !!id,
   })
 }
 

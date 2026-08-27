@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl"
 import { ShieldIcon } from "lucide-react"
 
 import { EntityTable, entityColumnHelper } from "@/components/entity-table"
+import { useServerTableParams } from "@/components/server-table"
 import { useEnrichedSuperadmins } from "@/hooks/use-superadmins-enriched"
 import type { EnrichedSuperadmin } from "@/lib/services/superadmins-enriched"
 
@@ -13,6 +14,7 @@ const columnHelper = entityColumnHelper<SuperadminRow>()
 
 export default function SuperadminsPage() {
   const t = useTranslations("AdminSuperadmins")
+  const { tableControlProps } = useServerTableParams()
   const { data: superadmins, isLoading } = useEnrichedSuperadmins()
 
   const rows: SuperadminRow[] = (superadmins ?? []).map((s) => ({ ...s, id: s.user_id }))
@@ -44,7 +46,15 @@ export default function SuperadminsPage() {
         <p className="text-sm text-muted-foreground">{t("description")}</p>
       </div>
 
-      <EntityTable columns={columns} data={rows} isLoading={isLoading} emptyMessage={t("noResults")} />
+      <EntityTable
+        columns={columns}
+        data={rows}
+        isLoading={isLoading}
+        totalCount={rows.length}
+        {...tableControlProps}
+        showSearch={false}
+        emptyMessage={t("noResults")}
+      />
 
       <p className="mt-2 text-xs text-muted-foreground">{t("noAddUiNote")}</p>
     </div>

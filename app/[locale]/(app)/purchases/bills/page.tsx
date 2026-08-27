@@ -6,9 +6,10 @@ import { PlusIcon } from "lucide-react"
 import { Link } from "@/i18n/navigation"
 import { Button } from "@/components/ui/button"
 import { EntityTable, entityColumnHelper } from "@/components/entity-table"
+import { useServerTableParams } from "@/components/server-table"
 import { StatusBadge } from "@/components/status-badge"
 import { useVendors } from "@/hooks/use-vendors"
-import { usePurchaseBills } from "@/hooks/use-purchase-bills"
+import { usePurchaseBillsList } from "@/hooks/use-purchase-bills"
 import { routes } from "@/lib/routes"
 import type { PurchaseBill } from "@/lib/database/types"
 
@@ -18,7 +19,8 @@ const money = (n: number) => "₹" + n.toLocaleString("en-IN", { minimumFraction
 export default function PurchaseBillsPage() {
   const t = useTranslations("PurchaseBills")
   const tStatus = useTranslations("DocStatus")
-  const { data: bills, isLoading } = usePurchaseBills()
+  const { params, tableControlProps } = useServerTableParams()
+  const { data: result, isLoading } = usePurchaseBillsList(params)
   const { data: vendors } = useVendors()
 
   const vendorName = (id: string) => vendors?.find((v) => v.id === id)?.name ?? "—"
@@ -68,12 +70,11 @@ export default function PurchaseBillsPage() {
 
       <EntityTable
         columns={columns}
-        data={bills ?? []}
+        data={result?.data ?? []}
         isLoading={isLoading}
+        totalCount={result?.total ?? 0}
+        {...tableControlProps}
         searchPlaceholder={t("searchPlaceholder")}
-        matchesSearch={(row, query) =>
-          (row.bill_number?.toLowerCase().includes(query) ?? false) || vendorName(row.vendor_id).toLowerCase().includes(query)
-        }
         emptyMessage={t("noResults")}
       />
     </div>

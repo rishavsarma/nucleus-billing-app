@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl"
 import { z } from "zod"
 
 import { EntityFormDialog } from "@/components/entity-form-dialog"
+import { DatePicker } from "@/components/ui/date-picker"
 import { Field, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -51,6 +52,7 @@ export function RecordPaymentDialog({
   })
   const { register, handleSubmit, formState, setValue, control } = form
   const method = useWatch({ control, name: "method" })
+  const paidAt = useWatch({ control, name: "paid_at" })
 
   return (
     <EntityFormDialog
@@ -85,7 +87,11 @@ export function RecordPaymentDialog({
       </div>
       <Field>
         <FieldLabel htmlFor="pay-date">{t("paidAtLabel")}</FieldLabel>
-        <Input id="pay-date" type="date" {...register("paid_at")} />
+        <DatePicker
+          id="pay-date"
+          value={paidAt}
+          onChange={(value) => setValue("paid_at", value, { shouldValidate: true })}
+        />
       </Field>
       <Field>
         <FieldLabel htmlFor="pay-reference">{t("referenceLabel")}</FieldLabel>

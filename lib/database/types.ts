@@ -15,6 +15,9 @@ export interface Organization {
   gstin: string | null
   gst_registered: boolean
   state_code: string | null
+  pan: string | null
+  address: string | null
+  phone: string | null
   pdf_watermark_text: string | null
   pdf_logo_url: string | null
   pdf_footer_notes: string | null
@@ -356,6 +359,18 @@ export interface ItemStock {
   quantity_on_hand: number
 }
 
+// One row per (item, warehouse) with the item fields the Stock list page
+// needs pre-joined server-side — avoids fetching every item and firing one
+// item_stock lookup per item client-side.
+export interface ItemStockRow {
+  item_id: string
+  warehouse_id: string
+  quantity_on_hand: number
+  item_name: string
+  item_sku: string | null
+  item_reorder_level: number
+}
+
 // One row per purchase receiving event for a track_inventory item —
 // carries both cost and selling price, always entered together at purchase
 // time. quantity_remaining is mutated only by the *_stock_effect() DB
@@ -389,4 +404,31 @@ export interface OrgDocumentCounter {
   org_id: string
   doc_type: "invoice" | "purchase_bill" | "credit_note" | "debit_note"
   next_value: number
+}
+
+// Not tied to auth.users — a name in a dropdown, not a login role.
+export interface DeliveryPerson {
+  id: string
+  org_id: string
+  name: string
+  phone: string | null
+  is_active: boolean
+  created_at: string
+}
+
+// One per invoice — operational tracking, not a financial document, so
+// status moves freely (see db-schema/005_delivery_and_public_pricing.sql).
+export interface Delivery {
+  id: string
+  org_id: string
+  invoice_id: string
+  delivery_address: Record<string, unknown> | null
+  delivery_person_id: string | null
+  payment_mode: "cod" | "prepaid" | null
+  status: "pending" | "out_for_delivery" | "delivered" | "failed"
+  delivered_at: string | null
+  notes: string | null
+  created_by: string | null
+  created_at: string
+  updated_at: string
 }

@@ -7,6 +7,7 @@ import { useTranslations } from "next-intl"
 import { z } from "zod"
 
 import { Button } from "@/components/ui/button"
+import { DatePicker } from "@/components/ui/date-picker"
 import { Field, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
@@ -77,6 +78,8 @@ export function OfferForm({
   const discountType = useWatch({ control, name: "discount_type" })
   const appliesToAll = useWatch({ control, name: "applies_to_all_items" })
   const isActive = useWatch({ control, name: "is_active" })
+  const startsAt = useWatch({ control, name: "starts_at" })
+  const endsAt = useWatch({ control, name: "ends_at" })
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-6">
@@ -143,11 +146,21 @@ export function OfferForm({
           <div className="grid grid-cols-2 gap-4">
             <Field>
               <FieldLabel htmlFor="offer-starts">{t("startsOnLabel")}</FieldLabel>
-              <Input id="offer-starts" type="date" {...register("starts_at")} />
+              <DatePicker
+                id="offer-starts"
+                value={startsAt}
+                onChange={(value) => setValue("starts_at", value, { shouldValidate: true })}
+                clearable
+              />
             </Field>
             <Field>
               <FieldLabel htmlFor="offer-ends">{t("endsOnLabel")}</FieldLabel>
-              <Input id="offer-ends" type="date" {...register("ends_at")} />
+              <DatePicker
+                id="offer-ends"
+                value={endsAt}
+                onChange={(value) => setValue("ends_at", value, { shouldValidate: true })}
+                clearable
+              />
             </Field>
           </div>
           <Field orientation="horizontal">

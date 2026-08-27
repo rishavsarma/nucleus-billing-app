@@ -9,7 +9,7 @@ import { Link, useRouter } from "@/i18n/navigation"
 import { Button } from "@/components/ui/button"
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog"
 import { ItemForm, formValuesToItemInput, itemToFormValues, type ItemFormValues } from "@/components/item-form"
-import { useDeleteItem, useItems, useUpdateItem } from "@/hooks/use-items"
+import { useDeleteItem, useItem, useUpdateItem } from "@/hooks/use-items"
 import { routes } from "@/lib/routes"
 
 export function ItemDetailClient({ id }: { id: string }) {
@@ -17,12 +17,10 @@ export function ItemDetailClient({ id }: { id: string }) {
   const tCommon = useTranslations("Common")
   const router = useRouter()
 
-  const { data: items, isLoading } = useItems()
+  const { data: item, isLoading } = useItem(id)
   const updateItem = useUpdateItem()
   const deleteItem = useDeleteItem()
   const [confirmDelete, setConfirmDelete] = useState(false)
-
-  const item = items?.find((i) => i.id === id)
 
   function onSubmit(values: ItemFormValues) {
     updateItem.mutate(

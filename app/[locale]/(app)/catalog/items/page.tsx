@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { useQueries } from "@tanstack/react-query"
 import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 import { PencilIcon, PlusIcon, TrashIcon } from "lucide-react"
@@ -10,10 +9,11 @@ import { Link } from "@/i18n/navigation"
 import { Button } from "@/components/ui/button"
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog"
 import { EntityTable, entityColumnHelper } from "@/components/entity-table"
+import { useServerTableParams } from "@/components/server-table"
 import { StatusBadge } from "@/components/status-badge"
-import { useDeleteItem, useItems } from "@/hooks/use-items"
+import { useDeleteItem, useItemsList } from "@/hooks/use-items"
+import { useItemVariantsBulk } from "@/hooks/use-item-variants"
 import { useTaxRates } from "@/hooks/use-tax-rates"
-import { fetchItemVariants } from "@/lib/database/services/item-variants"
 import { routes } from "@/lib/routes"
 import type { Item } from "@/lib/database/types"
 
@@ -23,29 +23,23 @@ const money = (n: number) => "₹" + n.toLocaleString("en-IN", { minimumFraction
 export default function ItemsPage() {
   const t = useTranslations("Items")
   const tCommon = useTranslations("Common")
-  const { data: items, isLoading } = useItems()
+  const { params, tableControlProps } = useServerTableParams()
+  const { data: result, isLoading } = useItemsList(params)
   const { data: taxRates } = useTaxRates()
   const deleteItem = useDeleteItem()
   const [toDelete, setToDelete] = useState<Item | null>(null)
 
   // Tracked items carry no price of their own — the list shows the most
-  // recently received variant's selling price instead. No "list all
-  // variants" endpoint exists (item_id is a required query param), so fetch
-  // per tracked item in parallel, same pattern as the Stock page.
-  const trackedItems = (items ?? []).filter((item) => item.track_inventory)
-  const variantQueries = useQueries({
-    queries: trackedItems.map((item) => ({
-      queryKey: ["item-variants", item.id, undefined],
-      queryFn: () => fetchItemVariants(item.id),
-      enabled: !!items,
-    })),
-  })
+  // recently received variant's selling price instead. One bulk request for
+  // every tracked item on the visible page, instead of one per item.
+  const items = result?.data ?? []
+  const trackedItemIds = items.filter((item) => item.track_inventory).map((item) => item.id)
+  const { data: allVariants } = useItemVariantsBulk(trackedItemIds)
   const latestPriceByItemId = new Map<string, number>()
-  trackedItems.forEach((item, index) => {
-    const variants = variantQueries[index]?.data
-    if (variants?.length) {
-      latestPriceByItemId.set(item.id, variants[variants.length - 1].unit_price)
-    }
+  allVariants?.forEach((variant) => {
+    // Rows come back ordered by received_at ascending, so the last one seen
+    // per item is the most recently received.
+    latestPriceByItemId.set(variant.item_id, variant.unit_price)
   })
 
   const taxRateName = (id: string | null) => taxRates?.find((r) => r.id === id)?.name
@@ -139,12 +133,11 @@ export default function ItemsPage() {
 
       <EntityTable
         columns={columns}
-        data={items ?? []}
+        data={result?.data ?? []}
         isLoading={isLoading}
+        totalCount={result?.total ?? 0}
+        {...tableControlProps}
         searchPlaceholder={t("searchPlaceholder")}
-        matchesSearch={(row, query) =>
-          row.name.toLowerCase().includes(query) || (row.sku?.toLowerCase().includes(query) ?? false)
-        }
         emptyMessage={t("noResults")}
       />
 
