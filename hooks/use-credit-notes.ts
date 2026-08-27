@@ -2,16 +2,8 @@
 
 import type { ListParams } from "@/lib/database/list-params-types"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { fetchCreditNotesAll, fetchCreditNoteById, fetchCreditNotesPaginated, createCreditNote, updateCreditNote } from "@/lib/database/services/credit-notes"
+import { fetchCreditNoteById, fetchCreditNotesPaginated, createCreditNote, updateCreditNote } from "@/lib/database/services/credit-notes"
 import type { CreditNote } from "@/lib/database/types"
-
-/** All records — use in dropdowns/pickers where you need every option. */
-export function useCreditNotes() {
-  return useQuery({
-    queryKey: ["credit-notes", "all"],
-    queryFn: fetchCreditNotesAll,
-  })
-}
 
 /** Paginated + searched list — use in list-view table pages. */
 export function useCreditNotesList(params: ListParams) {

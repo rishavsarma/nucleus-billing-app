@@ -2,9 +2,12 @@ import { api } from "@/lib/axios"
 import type { TaxRate } from "@/lib/database/types"
 import type { ListParams, PaginatedResponse } from "@/lib/database/list-params-types"
 
-/** Fetch all taxrates with no pagination — for dropdowns / pickers. */
+/** Fetch all tax rates — for dropdowns/pickers. Capped at 50 rather than
+ * unbounded (9999): tax rates are tied to a jurisdiction's real tax
+ * categories, not to transaction volume or headcount, so 50 is a
+ * comfortable ceiling rather than a claim of zero risk. */
 export async function fetchTaxRatesAll(): Promise<TaxRate[]> {
-  const { data } = await api.get<TaxRate[]>("/database/tax_rates", { params: { page: 1, pageSize: 9999 } })
+  const { data } = await api.get<TaxRate[]>("/database/tax_rates", { params: { page: 1, pageSize: 50 } })
   return (data as unknown as PaginatedResponse<TaxRate>).data
 }
 

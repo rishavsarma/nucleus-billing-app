@@ -8,6 +8,7 @@ import { toast } from "sonner"
 import { ArrowLeftIcon } from "lucide-react"
 import { z } from "zod"
 
+import { useState } from "react"
 import { Link, useRouter } from "@/i18n/navigation"
 import { DocumentStepper, type StepperStep } from "@/components/document-stepper"
 import { SearchableSelect } from "@/components/searchable-select"
@@ -15,9 +16,10 @@ import { Button } from "@/components/ui/button"
 import { DatePicker } from "@/components/ui/date-picker"
 import { Field, FieldError, FieldLabel } from "@/components/ui/field"
 import { Textarea } from "@/components/ui/textarea"
-import { useCustomers } from "@/hooks/use-customers"
+import { useDebouncedValue } from "@/hooks/use-debounced-value"
+import { useCustomer, useCustomersList } from "@/hooks/use-customers"
 import { useCreateCreditNote } from "@/hooks/use-credit-notes"
-import { useInvoices } from "@/hooks/use-invoices"
+import { useInvoice, useInvoicesList } from "@/hooks/use-invoices"
 import { routes } from "@/lib/routes"
 
 const newCreditNoteSchema = z.object({
@@ -35,8 +37,6 @@ export default function NewCreditNotePage() {
   const tCommon = useTranslations("Common")
   const router = useRouter()
   const createCreditNote = useCreateCreditNote()
-  const { data: invoices } = useInvoices()
-  const { data: customers } = useCustomers()
 
   const form = useForm<NewCreditNoteValues>({
     resolver: zodResolver(newCreditNoteSchema),
@@ -47,10 +47,43 @@ export default function NewCreditNotePage() {
   const selectedInvoiceId = useWatch({ control, name: "invoice_id" })
   const issueDate = useWatch({ control, name: "issue_date" })
 
-  const relatedInvoices =
-    invoices?.filter(
-      (inv) => inv.status !== "draft" && inv.status !== "void" && (!selectedCustomerId || inv.customer_id === selectedCustomerId),
-    ) ?? []
+  // Both pickers below search the server instead of fetching every
+  // customer / every invoice in the org (pageSize: 9999 each) and
+  // filtering client-side.
+  const [customerSearch, setCustomerSearch] = useState("")
+  const debouncedCustomerSearch = useDebouncedValue(customerSearch, 300)
+  const { data: customersResult, isFetching: isFetchingCustomers } = useCustomersList({
+    search: debouncedCustomerSearch,
+    page: 1,
+    pageSize: 20,
+  })
+  const { data: selectedCustomer } = useCustomer(selectedCustomerId || undefined)
+  const customerOptions = [
+    ...(selectedCustomer && !customersResult?.data.some((c) => c.id === selectedCustomer.id)
+      ? [{ value: selectedCustomer.id, label: selectedCustomer.name }]
+      : []),
+    ...(customersResult?.data ?? []).map((customer) => ({ value: customer.id, label: customer.name })),
+  ]
+
+  const [invoiceSearch, setInvoiceSearch] = useState("")
+  const debouncedInvoiceSearch = useDebouncedValue(invoiceSearch, 300)
+  const { data: invoicesResult, isFetching: isFetchingInvoices } = useInvoicesList(
+    { search: debouncedInvoiceSearch, page: 1, pageSize: 20, customer_id: selectedCustomerId || undefined },
+    !!selectedCustomerId,
+  )
+  const { data: selectedInvoice } = useInvoice(
+    selectedInvoiceId && selectedInvoiceId !== NO_INVOICE ? selectedInvoiceId : undefined,
+  )
+  const relatedInvoices = (invoicesResult?.data ?? []).filter(
+    (inv) => inv.status !== "draft" && inv.status !== "void",
+  )
+  const invoiceOptions = [
+    { value: NO_INVOICE, label: t("noInvoiceOption") },
+    ...(selectedInvoice && !relatedInvoices.some((inv) => inv.id === selectedInvoice.id)
+      ? [{ value: selectedInvoice.id, label: selectedInvoice.invoice_number }]
+      : []),
+    ...relatedInvoices.map((invoice) => ({ value: invoice.id, label: invoice.invoice_number })),
+  ]
 
   const steps: StepperStep[] = [
     { label: t("stepCreditNoteDetails"), done: false, current: true },
@@ -93,14 +126,15 @@ export default function NewCreditNotePage() {
           <SearchableSelect
             id="cn-customer"
             value={selectedCustomerId}
-            onValueChange={(value) => setValue("customer_id", value, { shouldValidate: true })}
+            onValueChange={(value) => {
+              setValue("customer_id", value, { shouldValidate: true })
+              setValue("invoice_id", undefined)
+            }}
             placeholder={t("customerPlaceholder")}
-            options={
-              customers?.map((customer) => ({
-                value: customer.id,
-                label: customer.name,
-              })) ?? []
-            }
+            options={customerOptions}
+            search={customerSearch}
+            onSearchChange={setCustomerSearch}
+            isLoading={isFetchingCustomers}
           />
           {formState.errors.customer_id ? <FieldError>{tCommon("required")}</FieldError> : null}
         </Field>
@@ -111,13 +145,11 @@ export default function NewCreditNotePage() {
             value={selectedInvoiceId ?? NO_INVOICE}
             onValueChange={(value) => setValue("invoice_id", value === NO_INVOICE ? undefined : value)}
             placeholder={t("invoicePlaceholder")}
-            options={[
-              { value: NO_INVOICE, label: t("noInvoiceOption") },
-              ...relatedInvoices.map((invoice) => ({
-                value: invoice.id,
-                label: invoice.invoice_number,
-              })),
-            ]}
+            disabled={!selectedCustomerId}
+            options={invoiceOptions}
+            search={invoiceSearch}
+            onSearchChange={setInvoiceSearch}
+            isLoading={isFetchingInvoices}
           />
         </Field>
         <Field>

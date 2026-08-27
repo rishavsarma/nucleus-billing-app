@@ -2,10 +2,18 @@ import { api } from "@/lib/axios"
 import type { Organization } from "@/lib/database/types"
 import type { ListParams, PaginatedResponse } from "@/lib/database/list-params-types"
 
-/** Fetch all organizations with no pagination — for dropdowns / pickers. */
-export async function fetchOrganizationsAll(): Promise<Organization[]> {
-  const { data } = await api.get<Organization[]>("/database/organizations", { params: { page: 1, pageSize: 9999 } })
-  return (data as unknown as PaginatedResponse<Organization>).data
+/** Fetch the caller's own organization — a non-superadmin only ever has
+ * one, and the API resolves it server-side (no id needed). */
+export async function fetchCurrentOrganization(): Promise<Organization> {
+  const { data } = await api.get<Organization>("/database/organizations")
+  return data
+}
+
+/** Fetch a single organization by id — for the superadmin admin org-detail
+ * page, instead of pulling every org and finding it client-side. */
+export async function fetchOrganizationById(id: string): Promise<Organization> {
+  const { data } = await api.get<Organization>("/database/organizations", { params: { id } })
+  return data
 }
 
 /** Fetch a paginated + searched page of organizations. */

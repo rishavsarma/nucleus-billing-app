@@ -13,12 +13,27 @@ export async function GET(request: Request) {
   }
 
   const { searchParams } = new URL(request.url)
+  const id = searchParams.get("id")
+
+  const supabase = await createClient()
+
+  // A single-record fetch — used e.g. to resolve a delivery's assigned
+  // staff member for display, instead of pulling every staff row via the
+  // paginated branch below and finding it client-side.
+  if (id) {
+    let recordQuery = supabase.schema("billing").from("staff").select("*").eq("id", id)
+    if (!auth.isSuperadmin) recordQuery = recordQuery.eq("org_id", auth.orgId)
+    const { data, error } = await recordQuery.maybeSingle()
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (!data) return NextResponse.json({ error: "Not found" }, { status: 404 })
+    return NextResponse.json(data)
+  }
+
   const search = searchParams.get("search") ?? undefined
   const role = searchParams.get("role") ?? undefined
   const page = Number(searchParams.get("page") ?? 1)
   const pageSize = Number(searchParams.get("pageSize") ?? 10)
 
-  const supabase = await createClient()
   let query = supabase.schema("billing").from("staff").select("*", { count: "exact" })
   if (!auth.isSuperadmin) query = query.eq("org_id", auth.orgId)
   if (role) query = query.eq("role", role)

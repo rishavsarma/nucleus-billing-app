@@ -2,10 +2,13 @@ import { api } from "@/lib/axios"
 import type { PurchasePayment, PurchasePaymentWithRelations } from "@/lib/database/types"
 import type { ListParams, PaginatedResponse } from "@/lib/database/list-params-types"
 
-/** Fetch all purchasepayments with no pagination — for dropdowns / pickers. */
-export async function fetchPurchasePaymentsAll(): Promise<PurchasePayment[]> {
-  const { data } = await api.get<PurchasePayment[]>("/database/purchase_payments", { params: { page: 1, pageSize: 9999 } })
-  return (data as unknown as PaginatedResponse<PurchasePayment>).data
+/** Fetch just the payments recorded against one purchase bill — for the
+ * bill detail page's payment history, scoped server-side rather than
+ * fetching every purchase payment in the org (pageSize: 9999) and
+ * filtering client-side. */
+export async function fetchPurchasePaymentsByBillId(purchaseBillId: string): Promise<PurchasePayment[]> {
+  const { data } = await api.get<PurchasePayment[]>("/database/purchase_payments", { params: { purchase_bill_id: purchaseBillId } })
+  return data
 }
 
 /** Fetch a paginated + searched page of purchase payments, with each row's

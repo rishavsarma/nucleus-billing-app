@@ -8,6 +8,7 @@ import { toast } from "sonner"
 import { ArrowLeftIcon } from "lucide-react"
 import { z } from "zod"
 
+import { useState } from "react"
 import { Link, useRouter } from "@/i18n/navigation"
 import { DocumentStepper, type StepperStep } from "@/components/document-stepper"
 import { SearchableSelect } from "@/components/searchable-select"
@@ -15,9 +16,10 @@ import { Button } from "@/components/ui/button"
 import { DatePicker } from "@/components/ui/date-picker"
 import { Field, FieldError, FieldLabel } from "@/components/ui/field"
 import { Textarea } from "@/components/ui/textarea"
-import { useVendors } from "@/hooks/use-vendors"
+import { useDebouncedValue } from "@/hooks/use-debounced-value"
+import { useVendor, useVendorsList } from "@/hooks/use-vendors"
 import { useCreateDebitNote } from "@/hooks/use-debit-notes"
-import { usePurchaseBills } from "@/hooks/use-purchase-bills"
+import { usePurchaseBill, usePurchaseBillsList } from "@/hooks/use-purchase-bills"
 import { routes } from "@/lib/routes"
 
 const newDebitNoteSchema = z.object({
@@ -35,8 +37,6 @@ export default function NewDebitNotePage() {
   const tCommon = useTranslations("Common")
   const router = useRouter()
   const createDebitNote = useCreateDebitNote()
-  const { data: bills } = usePurchaseBills()
-  const { data: vendors } = useVendors()
 
   const form = useForm<NewDebitNoteValues>({
     resolver: zodResolver(newDebitNoteSchema),
@@ -47,10 +47,41 @@ export default function NewDebitNotePage() {
   const selectedBillId = useWatch({ control, name: "purchase_bill_id" })
   const issueDate = useWatch({ control, name: "issue_date" })
 
-  const relatedBills =
-    bills?.filter(
-      (b) => b.status !== "draft" && b.status !== "void" && (!selectedVendorId || b.vendor_id === selectedVendorId),
-    ) ?? []
+  // Both pickers below search the server instead of fetching every vendor
+  // / every purchase bill in the org (pageSize: 9999 each) and filtering
+  // client-side.
+  const [vendorSearch, setVendorSearch] = useState("")
+  const debouncedVendorSearch = useDebouncedValue(vendorSearch, 300)
+  const { data: vendorsResult, isFetching: isFetchingVendors } = useVendorsList({
+    search: debouncedVendorSearch,
+    page: 1,
+    pageSize: 20,
+  })
+  const { data: selectedVendor } = useVendor(selectedVendorId || undefined)
+  const vendorOptions = [
+    ...(selectedVendor && !vendorsResult?.data.some((v) => v.id === selectedVendor.id)
+      ? [{ value: selectedVendor.id, label: selectedVendor.name }]
+      : []),
+    ...(vendorsResult?.data ?? []).map((vendor) => ({ value: vendor.id, label: vendor.name })),
+  ]
+
+  const [billSearch, setBillSearch] = useState("")
+  const debouncedBillSearch = useDebouncedValue(billSearch, 300)
+  const { data: billsResult, isFetching: isFetchingBills } = usePurchaseBillsList(
+    { search: debouncedBillSearch, page: 1, pageSize: 20, vendor_id: selectedVendorId || undefined },
+    !!selectedVendorId,
+  )
+  const { data: selectedBill } = usePurchaseBill(
+    selectedBillId && selectedBillId !== NO_BILL ? selectedBillId : undefined,
+  )
+  const relatedBills = (billsResult?.data ?? []).filter((b) => b.status !== "draft" && b.status !== "void")
+  const billOptions = [
+    { value: NO_BILL, label: t("noBillOption") },
+    ...(selectedBill && !relatedBills.some((b) => b.id === selectedBill.id)
+      ? [{ value: selectedBill.id, label: selectedBill.bill_number }]
+      : []),
+    ...relatedBills.map((bill) => ({ value: bill.id, label: bill.bill_number })),
+  ]
 
   const steps: StepperStep[] = [
     { label: t("stepDebitNoteDetails"), done: false, current: true },
@@ -93,14 +124,15 @@ export default function NewDebitNotePage() {
           <SearchableSelect
             id="dn-vendor"
             value={selectedVendorId}
-            onValueChange={(value) => setValue("vendor_id", value, { shouldValidate: true })}
+            onValueChange={(value) => {
+              setValue("vendor_id", value, { shouldValidate: true })
+              setValue("purchase_bill_id", undefined)
+            }}
             placeholder={t("vendorPlaceholder")}
-            options={
-              vendors?.map((vendor) => ({
-                value: vendor.id,
-                label: vendor.name,
-              })) ?? []
-            }
+            options={vendorOptions}
+            search={vendorSearch}
+            onSearchChange={setVendorSearch}
+            isLoading={isFetchingVendors}
           />
           {formState.errors.vendor_id ? <FieldError>{tCommon("required")}</FieldError> : null}
         </Field>
@@ -111,13 +143,11 @@ export default function NewDebitNotePage() {
             value={selectedBillId ?? NO_BILL}
             onValueChange={(value) => setValue("purchase_bill_id", value === NO_BILL ? undefined : value)}
             placeholder={t("billPlaceholder")}
-            options={[
-              { value: NO_BILL, label: t("noBillOption") },
-              ...relatedBills.map((bill) => ({
-                value: bill.id,
-                label: bill.bill_number,
-              })),
-            ]}
+            disabled={!selectedVendorId}
+            options={billOptions}
+            search={billSearch}
+            onSearchChange={setBillSearch}
+            isLoading={isFetchingBills}
           />
         </Field>
         <Field>

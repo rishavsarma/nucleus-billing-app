@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Switch } from "@/components/ui/switch"
-import { useOrganizations, useUpdateOrganization } from "@/hooks/use-organizations"
+import { useCurrentOrganization, useUpdateOrganization } from "@/hooks/use-organizations"
 import type { Organization } from "@/lib/database/types"
 
 const organizationSchema = z.object({
@@ -54,8 +54,7 @@ const SUBSCRIPTION_STATUS_LABEL_KEY = {
 
 export default function OrganizationPage() {
   const t = useTranslations("SettingsOrganization")
-  const { data: organizations, isLoading } = useOrganizations()
-  const organization = organizations?.[0]
+  const { data: organization, isLoading } = useCurrentOrganization()
 
   if (isLoading || !organization) {
     return (

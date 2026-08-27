@@ -3,7 +3,7 @@
 import type { ListParams } from "@/lib/database/list-params-types"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import {
-  fetchStaffAll,
+  fetchStaffById,
   fetchStaffPaginated,
   createStaff,
   updateStaff,
@@ -11,16 +11,19 @@ import {
 } from "@/lib/database/services/staff"
 import type { Staff } from "@/lib/database/types"
 
-/** All records — use in dropdowns/pickers where you need every option. Optionally filter by role. */
-export function useStaff(role?: string) {
+/** Single record by id — for display, e.g. resolving a delivery's
+ * assigned staff member. */
+export function useStaffMember(id: string | undefined) {
   return useQuery({
-    queryKey: ["staff", "all", role ?? null],
-    queryFn: () => fetchStaffAll(role),
+    queryKey: ["staff", "detail", id],
+    queryFn: () => fetchStaffById(id!),
+    enabled: !!id,
   })
 }
 
-/** Paginated + searched list — use in list-view table pages. */
-export function useStaffList(params: ListParams) {
+/** Paginated + searched list — use in list-view table pages, or pass role
+ * to scope to one role (e.g. a delivery-person picker). */
+export function useStaffList(params: ListParams & { role?: string }) {
   return useQuery({
     queryKey: ["staff", "list", params],
     queryFn: () => fetchStaffPaginated(params),

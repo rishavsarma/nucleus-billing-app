@@ -13,15 +13,16 @@ import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog"
 import { EntityFormDialog } from "@/components/entity-form-dialog"
 import { Field, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { SearchableSelect } from "@/components/searchable-select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { useDebouncedValue } from "@/hooks/use-debounced-value"
 import {
   useCreatePurchaseBillItem,
   useDeletePurchaseBillItem,
   usePurchaseBillItems,
   useUpdatePurchaseBillItem,
 } from "@/hooks/use-purchase-bill-items"
-import { useItems } from "@/hooks/use-items"
+import { useItem, useItemsList } from "@/hooks/use-items"
 import { useTaxRates } from "@/hooks/use-tax-rates"
 import type { PurchaseBillItem } from "@/lib/database/types"
 
@@ -44,7 +45,6 @@ export function PurchaseBillItemsSection({ purchaseBillId, editable }: { purchas
   const tCommon = useTranslations("Common")
 
   const { data: lineItems } = usePurchaseBillItems(purchaseBillId)
-  const { data: catalogItems } = useItems()
   const { data: taxRates } = useTaxRates()
   const createLineItem = useCreatePurchaseBillItem()
   const updateLineItem = useUpdatePurchaseBillItem(purchaseBillId)
@@ -52,6 +52,17 @@ export function PurchaseBillItemsSection({ purchaseBillId, editable }: { purchas
 
   const [editing, setEditing] = useState<PurchaseBillItem | "new" | null>(null)
   const [toDelete, setToDelete] = useState<PurchaseBillItem | null>(null)
+
+  // Catalog item picker searches the server instead of fetching every item
+  // in the catalog (pageSize: 9999) and filtering client-side.
+  const [itemSearch, setItemSearch] = useState("")
+  const debouncedItemSearch = useDebouncedValue(itemSearch, 300)
+  const { data: catalogItemsResult, isFetching: isFetchingCatalogItems } = useItemsList({
+    search: debouncedItemSearch,
+    page: 1,
+    pageSize: 30,
+  })
+  const catalogItems = catalogItemsResult?.data ?? []
 
   const form = useForm<LineItemFormValues>({
     resolver: zodResolver(lineItemSchema),
@@ -68,6 +79,10 @@ export function PurchaseBillItemsSection({ purchaseBillId, editable }: { purchas
         : { item_id: undefined, description: "", quantity: 1, unit_cost: 0, unit_price: 0, tax_rate: 0 },
   })
   const selectedItemId = useWatch({ control: form.control, name: "item_id" })
+  // Resolved directly by id rather than found in catalogItems, since the
+  // currently-selected item (e.g. when editing an existing line) may not
+  // be part of the current search page.
+  const { data: selectedItem } = useItem(selectedItemId)
 
   function onPickCatalogItem(itemId: string) {
     if (itemId === NO_ITEM) {
@@ -185,19 +200,22 @@ export function PurchaseBillItemsSection({ purchaseBillId, editable }: { purchas
       >
         <Field>
           <FieldLabel htmlFor="pbi-item">{t("itemLabel")}</FieldLabel>
-          <Select value={selectedItemId ?? NO_ITEM} onValueChange={onPickCatalogItem}>
-            <SelectTrigger id="pbi-item" className="w-full">
-              <SelectValue placeholder={t("itemPlaceholder")} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={NO_ITEM}>{t("itemPlaceholder")}</SelectItem>
-              {catalogItems?.map((item) => (
-                <SelectItem key={item.id} value={item.id}>
-                  {item.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <SearchableSelect
+            id="pbi-item"
+            value={selectedItemId ?? NO_ITEM}
+            onValueChange={onPickCatalogItem}
+            placeholder={t("itemPlaceholder")}
+            options={[
+              { value: NO_ITEM, label: t("itemPlaceholder") },
+              ...(selectedItem && !catalogItems.some((item) => item.id === selectedItem.id)
+                ? [{ value: selectedItem.id, label: selectedItem.name }]
+                : []),
+              ...catalogItems.map((item) => ({ value: item.id, label: item.name })),
+            ]}
+            search={itemSearch}
+            onSearchChange={setItemSearch}
+            isLoading={isFetchingCatalogItems}
+          />
         </Field>
         <Field>
           <FieldLabel htmlFor="pbi-description">{t("descriptionLabel")}</FieldLabel>

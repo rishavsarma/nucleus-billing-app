@@ -18,7 +18,7 @@ import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
-import { useOrganizations, useUpdateOrganization } from "@/hooks/use-organizations"
+import { useOrganization, useUpdateOrganization } from "@/hooks/use-organizations"
 import type { Organization } from "@/lib/database/types"
 
 const adminOrganizationSchema = z.object({
@@ -43,8 +43,7 @@ const STATUS_LABEL_KEY = {
 export function AdminOrganizationDetailClient({ id }: { id: string }) {
   const t = useTranslations("AdminOrganizations")
   const tCommon = useTranslations("Common")
-  const { data: organizations, isLoading } = useOrganizations()
-  const organization = (organizations ?? []).find((org) => org.id === id)
+  const { data: organization, isLoading } = useOrganization(id)
 
   if (isLoading) {
     return <div className="text-sm text-muted-foreground">{tCommon("loading")}</div>

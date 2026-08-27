@@ -2,14 +2,15 @@
 
 import type { ListParams } from "@/lib/database/list-params-types"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { fetchPaymentsAll, fetchPaymentsPaginated, createPayment, updatePayment } from "@/lib/database/services/payments"
+import { fetchPaymentsByInvoiceId, fetchPaymentsPaginated, createPayment, updatePayment } from "@/lib/database/services/payments"
 import type { Payment } from "@/lib/database/types"
 
-/** All records — use in dropdowns/pickers where you need every option. */
-export function usePayments() {
+/** One invoice's payment history — for the invoice detail page. */
+export function usePaymentsByInvoice(invoiceId: string | undefined) {
   return useQuery({
-    queryKey: ["payments", "all"],
-    queryFn: fetchPaymentsAll,
+    queryKey: ["payments", "by-invoice", invoiceId],
+    queryFn: () => fetchPaymentsByInvoiceId(invoiceId!),
+    enabled: !!invoiceId,
   })
 }
 

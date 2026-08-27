@@ -2,10 +2,10 @@ import { api } from "@/lib/axios"
 import type { Warehouse } from "@/lib/database/types"
 import type { ListParams, PaginatedResponse } from "@/lib/database/list-params-types"
 
-/** Fetch all warehouses with no pagination — for dropdowns / pickers. */
-export async function fetchWarehousesAll(): Promise<Warehouse[]> {
-  const { data } = await api.get<Warehouse[]>("/database/warehouses", { params: { page: 1, pageSize: 9999 } })
-  return (data as unknown as PaginatedResponse<Warehouse>).data
+/** Fetch a single warehouse by id — for detail pages. */
+export async function fetchWarehouseById(id: string): Promise<Warehouse> {
+  const { data } = await api.get<Warehouse>("/database/warehouses", { params: { id } })
+  return data
 }
 
 /** Fetch a paginated + searched page of warehouses. */

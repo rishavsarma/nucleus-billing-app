@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useQueries } from "@tanstack/react-query"
 import { isAxiosError } from "axios"
 import { useTranslations } from "next-intl"
 import { toast } from "sonner"
@@ -16,19 +17,20 @@ import { SetupEmiDialog } from "@/components/setup-emi-dialog"
 import { OfferSelect } from "@/components/offer-select"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { StatusBadge } from "@/components/status-badge"
-import { useCustomers } from "@/hooks/use-customers"
+import { useCustomer } from "@/hooks/use-customers"
 import { useDeliveryByInvoice, useUpdateDelivery } from "@/hooks/use-deliveries"
-import { useStaff } from "@/hooks/use-staff"
+import { useStaffMember } from "@/hooks/use-staff"
 import { useCreateInstallmentPlan, useInstallmentPlanByInvoice } from "@/hooks/use-installment-plans"
 import { useCreateInstallment, useInstallmentsByPlan } from "@/hooks/use-installments"
 import { useInvoiceItems } from "@/hooks/use-invoice-items"
 import { useInvoice, useUpdateInvoice } from "@/hooks/use-invoices"
-import { useItems } from "@/hooks/use-items"
-import { useOffers } from "@/hooks/use-offers"
-import { useOrganizations } from "@/hooks/use-organizations"
+import { fetchItemById } from "@/lib/database/services/items"
+import { useOffer } from "@/hooks/use-offers"
+import { useCurrentOrganization } from "@/hooks/use-organizations"
 import { useActivePdfWatermarkText } from "@/hooks/use-pdf-watermarks"
-import { useCreatePayment, usePayments } from "@/hooks/use-payments"
-import { useWarehouses } from "@/hooks/use-warehouses"
+import { useCreatePayment, usePaymentsByInvoice } from "@/hooks/use-payments"
+import { WarehouseSelect } from "@/components/warehouse-select"
+import { useWarehouse } from "@/hooks/use-warehouses"
 import { buildInvoicePdfElement, downloadInvoicePdf, printInvoicePdf } from "@/lib/pdf/invoice-pdf"
 import { routes } from "@/lib/routes"
 import type { Installment, Payment } from "@/lib/database/types"
@@ -48,15 +50,26 @@ export function InvoiceDetailClient({ id }: { id: string }) {
   const tEmi = useTranslations("Emi")
 
   const { data: invoice, isLoading } = useInvoice(id)
-  const { data: customers } = useCustomers()
-  const { data: warehouses } = useWarehouses()
-  const { data: offers } = useOffers()
-  const { data: allPayments } = usePayments()
-  const { data: organizations } = useOrganizations()
-  const { data: items } = useItems()
+  const { data: customer } = useCustomer(invoice?.customer_id)
+  const { data: warehouse } = useWarehouse(invoice?.warehouse_id ?? undefined)
+  const { data: appliedOffer } = useOffer(invoice?.offer_id ?? undefined)
+  const { data: payments } = usePaymentsByInvoice(id)
+  const { data: organization } = useCurrentOrganization()
   const { data: invoiceLineItems } = useInvoiceItems(id)
+  // Only the specific items this invoice's lines reference — not the
+  // whole catalog (pageSize: 9999) — resolved for the PDF's item details.
+  const referencedItemIds = [
+    ...new Set((invoiceLineItems ?? []).map((line) => line.item_id).filter((itemId): itemId is string => !!itemId)),
+  ]
+  const referencedItemQueries = useQueries({
+    queries: referencedItemIds.map((itemId) => ({
+      queryKey: ["items", "detail", itemId],
+      queryFn: () => fetchItemById(itemId),
+    })),
+  })
+  const referencedItems = referencedItemQueries.map((query) => query.data).filter((item) => !!item)
   const { data: delivery } = useDeliveryByInvoice(id)
-  const { data: deliveryPersons } = useStaff("delivery_person")
+  const { data: deliveryPerson } = useStaffMember(delivery?.delivery_person_id ?? undefined)
   const { data: emiPlan } = useInstallmentPlanByInvoice(id)
   const { data: installments } = useInstallmentsByPlan(emiPlan?.id)
   const watermarkText = useActivePdfWatermarkText()
@@ -72,9 +85,6 @@ export function InvoiceDetailClient({ id }: { id: string }) {
   const [payingInstallment, setPayingInstallment] = useState<Installment | null>(null)
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false)
   const [isPreparingPrint, setIsPreparingPrint] = useState(false)
-
-  const appliedOffer = offers?.find((o) => o.id === invoice?.offer_id)
-  const payments = allPayments?.filter((p) => p.invoice_id === id) ?? []
 
   if (isLoading) {
     return <div className="text-sm text-muted-foreground">{tCommon("loading")}</div>
@@ -92,7 +102,6 @@ export function InvoiceDetailClient({ id }: { id: string }) {
     )
   }
 
-  const customer = customers?.find((c) => c.id === invoice.customer_id)
   const isDraft = invoice.status === "draft"
   const isVoid = invoice.status === "void"
   const isPaid = invoice.status === "paid"
@@ -189,9 +198,9 @@ export function InvoiceDetailClient({ id }: { id: string }) {
       const element = await buildInvoicePdfElement({
         invoice: invoice!,
         customer,
-        organization: organizations?.[0],
+        organization,
         lineItems: invoiceLineItems ?? [],
-        items,
+        items: referencedItems,
         tPrint,
         watermarkText,
       })
@@ -212,9 +221,9 @@ export function InvoiceDetailClient({ id }: { id: string }) {
       const element = await buildInvoicePdfElement({
         invoice: invoice!,
         customer,
-        organization: organizations?.[0],
+        organization,
         lineItems: invoiceLineItems ?? [],
-        items,
+        items: referencedItems,
         tPrint,
         watermarkText,
       })
@@ -305,7 +314,6 @@ export function InvoiceDetailClient({ id }: { id: string }) {
                   {t("offerLabel")}
                 </label>
                 <OfferSelect
-                  offers={offers}
                   value={invoice.offer_id}
                   onValueChange={(offerId) => {
                     updateInvoice.mutate(
@@ -358,7 +366,7 @@ export function InvoiceDetailClient({ id }: { id: string }) {
 
           <div className="rounded-xl bg-card p-4 ring-1 ring-foreground/10">
             <h2 className="mb-3 text-sm font-semibold">{t("paymentsTitle")}</h2>
-            {payments.length ? (
+            {payments?.length ? (
               <div className="flex flex-col gap-2">
                 {payments.map((payment) => (
                   <div key={payment.id} className="flex items-center justify-between text-sm">
@@ -438,31 +446,22 @@ export function InvoiceDetailClient({ id }: { id: string }) {
               {isDraft ? (
                 <div className="flex flex-col gap-1">
                   <span className="text-muted-foreground">{t("warehouseLabel")}</span>
-                  <Select
-                    value={invoice.warehouse_id ?? undefined}
+                  <WarehouseSelect
+                    value={invoice.warehouse_id}
                     onValueChange={(value) =>
                       updateInvoice.mutate(
                         { id, input: { warehouse_id: value } },
                         { onError: () => toast.error(tCommon("genericError")) },
                       )
                     }
-                  >
-                    <SelectTrigger className="h-7 w-full text-xs">
-                      <SelectValue placeholder={t("warehousePlaceholder")} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {warehouses?.map((warehouse) => (
-                        <SelectItem key={warehouse.id} value={warehouse.id}>
-                          {warehouse.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    placeholder={t("warehousePlaceholder")}
+                    className="h-7 text-xs"
+                  />
                 </div>
               ) : (
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">{t("warehouseLabel")}</span>
-                  <span>{warehouses?.find((w) => w.id === invoice.warehouse_id)?.name ?? "—"}</span>
+                  <span>{warehouse?.name ?? "—"}</span>
                 </div>
               )}
               <div className="flex justify-between">
@@ -488,7 +487,7 @@ export function InvoiceDetailClient({ id }: { id: string }) {
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">{tDelivery("personLabel")}</span>
                   <span>
-                    {deliveryPersons?.find((p) => p.id === delivery.delivery_person_id)?.name ?? tDelivery("notAssigned")}
+                    {deliveryPerson?.name ?? tDelivery("notAssigned")}
                   </span>
                 </div>
                 <div className="flex justify-between">

@@ -2,9 +2,13 @@ import { api } from "@/lib/axios"
 import type { PdfWatermark } from "@/lib/database/types"
 import type { ListParams, PaginatedResponse } from "@/lib/database/list-params-types"
 
-/** Fetch all watermark presets with no pagination — small lookup table, used to compute today's active one client-side. */
+/** Fetch watermark presets, used to compute today's active one client-side.
+ * Capped at 20 rather than unbounded (9999) — no search/pagination UI for
+ * this yet, so a tenant with more than 20 presets would need that built
+ * (tracked separately); 20 is a safety cap, not a claim this table is
+ * inherently small. */
 export async function fetchPdfWatermarksAll(): Promise<PdfWatermark[]> {
-  const { data } = await api.get<PdfWatermark[]>("/database/pdf_watermarks", { params: { page: 1, pageSize: 9999 } })
+  const { data } = await api.get<PdfWatermark[]>("/database/pdf_watermarks", { params: { page: 1, pageSize: 20 } })
   return (data as unknown as PaginatedResponse<PdfWatermark>).data
 }
 

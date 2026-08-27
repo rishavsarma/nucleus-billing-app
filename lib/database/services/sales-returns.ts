@@ -2,14 +2,7 @@ import { api } from "@/lib/axios"
 import type { SalesReturn, SalesReturnWithRelations } from "@/lib/database/types"
 import type { ListParams, PaginatedResponse } from "@/lib/database/list-params-types"
 
-/** Fetch all sales returns with no pagination — for dropdowns / pickers. */
-export async function fetchSalesReturnsAll(): Promise<SalesReturn[]> {
-  const { data } = await api.get<SalesReturn[]>("/database/sales_returns", { params: { page: 1, pageSize: 9999 } })
-  return (data as unknown as PaginatedResponse<SalesReturn>).data
-}
-
-/** Fetch a single record by id — for detail pages, instead of pulling
- * every row via fetchSalesReturnsAll() and finding it client-side. */
+/** Fetch a single record by id — for detail pages. */
 export async function fetchSalesReturnById(id: string): Promise<SalesReturn> {
   const { data } = await api.get<SalesReturn>("/database/sales_returns", { params: { id } })
   return data

@@ -2,20 +2,12 @@
 
 import type { ListParams } from "@/lib/database/list-params-types"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { fetchVendorsAll, fetchVendorById, fetchVendorsPaginated,
+import { fetchVendorById, fetchVendorsPaginated,
   createVendor,
   updateVendor,
   deleteVendor,
 } from "@/lib/database/services/vendors"
 import type { Vendor } from "@/lib/database/types"
-
-/** All records — use in dropdowns/pickers where you need every option. */
-export function useVendors() {
-  return useQuery({
-    queryKey: ["vendors", "all"],
-    queryFn: fetchVendorsAll,
-  })
-}
 
 /** Paginated + searched list — use in list-view table pages. */
 export function useVendorsList(params: ListParams) {
@@ -26,10 +18,10 @@ export function useVendorsList(params: ListParams) {
 }
 
 /** Single record by id — for detail pages. */
-export function useVendor(id: string) {
+export function useVendor(id: string | undefined) {
   return useQuery({
     queryKey: ["vendors", "detail", id],
-    queryFn: () => fetchVendorById(id),
+    queryFn: () => fetchVendorById(id!),
     enabled: !!id,
   })
 }

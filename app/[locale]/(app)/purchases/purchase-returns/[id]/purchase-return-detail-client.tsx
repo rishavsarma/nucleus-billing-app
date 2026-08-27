@@ -11,10 +11,10 @@ import { PurchaseReturnItemsSection } from "@/components/purchase-return-items-s
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog"
 import { DocumentStepper, type StepperStep } from "@/components/document-stepper"
 import { StatusBadge } from "@/components/status-badge"
-import { useVendors } from "@/hooks/use-vendors"
+import { useVendor } from "@/hooks/use-vendors"
 import { usePurchaseReturn, useUpdatePurchaseReturn } from "@/hooks/use-purchase-returns"
-import { usePurchaseBills } from "@/hooks/use-purchase-bills"
-import { useWarehouses } from "@/hooks/use-warehouses"
+import { usePurchaseBill } from "@/hooks/use-purchase-bills"
+import { useWarehouse } from "@/hooks/use-warehouses"
 import { routes } from "@/lib/routes"
 
 const money = (n: number) => "₹" + n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -25,9 +25,9 @@ export function PurchaseReturnDetailClient({ id }: { id: string }) {
   const tCommon = useTranslations("Common")
 
   const { data: purchaseReturn, isLoading } = usePurchaseReturn(id)
-  const { data: vendors } = useVendors()
-  const { data: bills } = usePurchaseBills()
-  const { data: warehouses } = useWarehouses()
+  const { data: vendor } = useVendor(purchaseReturn?.vendor_id)
+  const { data: originalBill } = usePurchaseBill(purchaseReturn?.purchase_bill_id)
+  const { data: warehouse } = useWarehouse(purchaseReturn?.warehouse_id ?? undefined)
   const updatePurchaseReturn = useUpdatePurchaseReturn()
   const [confirmVoid, setConfirmVoid] = useState(false)
 
@@ -47,9 +47,6 @@ export function PurchaseReturnDetailClient({ id }: { id: string }) {
     )
   }
 
-  const vendor = vendors?.find((v) => v.id === purchaseReturn.vendor_id)
-  const originalBill = bills?.find((b) => b.id === purchaseReturn.purchase_bill_id)
-  const warehouse = warehouses?.find((w) => w.id === purchaseReturn.warehouse_id)
   const isDraft = purchaseReturn.status === "draft"
   const isVoid = purchaseReturn.status === "void"
 

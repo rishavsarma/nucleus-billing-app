@@ -15,14 +15,10 @@ import { DatePicker } from "@/components/ui/date-picker"
 import { VendorSelect } from "@/components/vendor-select"
 import { Field, FieldError, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
-import { useVendors } from "@/hooks/use-vendors"
 import { useCreatePurchaseBill } from "@/hooks/use-purchase-bills"
-import { useWarehouses } from "@/hooks/use-warehouses"
+import { WarehouseSelect } from "@/components/warehouse-select"
 import { routes } from "@/lib/routes"
-
-const NONE = "__none__"
 
 const newBillSchema = z.object({
   vendor_id: z.string().min(1),
@@ -39,8 +35,6 @@ export default function NewPurchaseBillPage() {
   const tCommon = useTranslations("Common")
   const router = useRouter()
   const createBill = useCreatePurchaseBill()
-  const { data: vendors } = useVendors()
-  const { data: warehouses } = useWarehouses()
 
   const form = useForm<NewBillValues>({
     resolver: zodResolver(newBillSchema),
@@ -95,7 +89,6 @@ export default function NewPurchaseBillPage() {
             <FieldLabel htmlFor="pb-vendor">{t("vendorLabel")}</FieldLabel>
             <VendorSelect
               id="pb-vendor"
-              vendors={vendors}
               value={vendorId}
               onValueChange={(value) => setValue("vendor_id", value, { shouldValidate: true })}
               placeholder={t("vendorPlaceholder")}
@@ -104,19 +97,14 @@ export default function NewPurchaseBillPage() {
           </Field>
           <Field>
             <FieldLabel htmlFor="pb-warehouse">{t("warehouseLabel")}</FieldLabel>
-            <Select value={warehouseId ?? NONE} onValueChange={(value) => setValue("warehouse_id", value === NONE ? undefined : value)}>
-              <SelectTrigger id="pb-warehouse" className="w-full">
-                <SelectValue placeholder={t("warehousePlaceholder")} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={NONE}>{t("warehousePlaceholder")}</SelectItem>
-                {warehouses?.map((warehouse) => (
-                  <SelectItem key={warehouse.id} value={warehouse.id}>
-                    {warehouse.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <WarehouseSelect
+              id="pb-warehouse"
+              value={warehouseId}
+              onValueChange={(value) => setValue("warehouse_id", value)}
+              placeholder={t("warehousePlaceholder")}
+              clearable
+              onClear={() => setValue("warehouse_id", undefined)}
+            />
           </Field>
         </div>
         <Field>

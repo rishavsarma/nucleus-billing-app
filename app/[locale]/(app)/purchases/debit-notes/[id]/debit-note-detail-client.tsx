@@ -11,9 +11,9 @@ import { DebitNoteItemsSection } from "@/components/debit-note-items-section"
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog"
 import { DocumentStepper, type StepperStep } from "@/components/document-stepper"
 import { StatusBadge } from "@/components/status-badge"
-import { useVendors } from "@/hooks/use-vendors"
+import { useVendor } from "@/hooks/use-vendors"
 import { useDebitNote, useUpdateDebitNote } from "@/hooks/use-debit-notes"
-import { usePurchaseBills } from "@/hooks/use-purchase-bills"
+import { usePurchaseBill } from "@/hooks/use-purchase-bills"
 import { routes } from "@/lib/routes"
 
 const money = (n: number) => "₹" + n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -24,8 +24,8 @@ export function DebitNoteDetailClient({ id }: { id: string }) {
   const tCommon = useTranslations("Common")
 
   const { data: debitNote, isLoading } = useDebitNote(id)
-  const { data: vendors } = useVendors()
-  const { data: bills } = usePurchaseBills()
+  const { data: vendor } = useVendor(debitNote?.vendor_id)
+  const { data: relatedBill } = usePurchaseBill(debitNote?.purchase_bill_id ?? undefined)
   const updateDebitNote = useUpdateDebitNote()
   const [confirmVoid, setConfirmVoid] = useState(false)
 
@@ -45,8 +45,6 @@ export function DebitNoteDetailClient({ id }: { id: string }) {
     )
   }
 
-  const vendor = vendors?.find((v) => v.id === debitNote.vendor_id)
-  const relatedBill = debitNote.purchase_bill_id ? bills?.find((b) => b.id === debitNote.purchase_bill_id) : undefined
   const isDraft = debitNote.status === "draft"
   const isVoid = debitNote.status === "void"
 

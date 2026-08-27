@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Loader2Icon } from "lucide-react"
 import { useForm, useWatch } from "react-hook-form"
@@ -15,9 +16,10 @@ import { Button } from "@/components/ui/button"
 import { DatePicker } from "@/components/ui/date-picker"
 import { Field, FieldError, FieldLabel } from "@/components/ui/field"
 import { Textarea } from "@/components/ui/textarea"
-import { useCustomers } from "@/hooks/use-customers"
+import { useDebouncedValue } from "@/hooks/use-debounced-value"
 import { useCreateSalesReturn } from "@/hooks/use-sales-returns"
-import { useInvoices } from "@/hooks/use-invoices"
+import { useInvoice, useInvoicesList } from "@/hooks/use-invoices"
+import { fetchInvoiceById } from "@/lib/database/services/invoices"
 import { routes } from "@/lib/routes"
 
 const newSalesReturnSchema = z.object({
@@ -32,10 +34,6 @@ export default function NewSalesReturnPage() {
   const tCommon = useTranslations("Common")
   const router = useRouter()
   const createSalesReturn = useCreateSalesReturn()
-  const { data: invoices } = useInvoices()
-  const { data: customers } = useCustomers()
-
-  const returnableInvoices = invoices?.filter((inv) => inv.status !== "draft" && inv.status !== "void") ?? []
 
   const form = useForm<NewSalesReturnValues>({
     resolver: zodResolver(newSalesReturnSchema),
@@ -45,13 +43,46 @@ export default function NewSalesReturnPage() {
   const selectedInvoiceId = useWatch({ control, name: "invoice_id" })
   const issueDate = useWatch({ control, name: "issue_date" })
 
+  // Server-searched instead of fetching every invoice and every customer
+  // (pageSize: 9999 each) to build this dropdown — the paginated endpoint
+  // already embeds the customer name via a join.
+  const [invoiceSearch, setInvoiceSearch] = useState("")
+  const debouncedInvoiceSearch = useDebouncedValue(invoiceSearch, 300)
+  const { data: invoicesResult, isFetching: isFetchingInvoices } = useInvoicesList({
+    search: debouncedInvoiceSearch,
+    page: 1,
+    pageSize: 20,
+  })
+  const returnableInvoices = (invoicesResult?.data ?? []).filter(
+    (inv) => inv.status !== "draft" && inv.status !== "void",
+  )
+  // Keeps the trigger button showing the right invoice number even once
+  // the dropdown closes and the search resets — the selection might no
+  // longer be part of the current (empty-search) page.
+  const { data: selectedInvoice } = useInvoice(selectedInvoiceId || undefined)
+  const invoiceOptions = [
+    ...(selectedInvoice && !returnableInvoices.some((inv) => inv.id === selectedInvoice.id)
+      ? [{ value: selectedInvoice.id, label: selectedInvoice.invoice_number }]
+      : []),
+    ...returnableInvoices.map((invoice) => ({
+      value: invoice.id,
+      label: invoice.invoice_number,
+      subtitle: invoice.customer?.name ?? undefined,
+      keywords: [invoice.customer?.name ?? ""],
+    })),
+  ]
+
   const steps: StepperStep[] = [
     { label: t("stepSalesReturnDetails"), done: false, current: true },
     { label: t("stepAddItems"), done: false, current: false },
   ]
 
-  function onSubmit(values: NewSalesReturnValues) {
-    const invoice = invoices?.find((inv) => inv.id === values.invoice_id)
+  async function onSubmit(values: NewSalesReturnValues) {
+    // selectedInvoice tracks the same id as values.invoice_id (both derive
+    // from the same form field), but re-fetch directly in case it hasn't
+    // settled yet — this only ever resolves the one selected invoice, not
+    // the whole list.
+    const invoice = selectedInvoice?.id === values.invoice_id ? selectedInvoice : await fetchInvoiceById(values.invoice_id)
     if (!invoice) return
 
     createSalesReturn.mutate(
@@ -92,15 +123,10 @@ export default function NewSalesReturnPage() {
             value={selectedInvoiceId}
             onValueChange={(value) => setValue("invoice_id", value, { shouldValidate: true })}
             placeholder={t("invoicePlaceholder")}
-            options={returnableInvoices.map((invoice) => {
-              const customer = customers?.find((c) => c.id === invoice.customer_id)
-              return {
-                value: invoice.id,
-                label: invoice.invoice_number,
-                subtitle: customer?.name ?? undefined,
-                keywords: [customer?.name ?? ""],
-              }
-            })}
+            options={invoiceOptions}
+            search={invoiceSearch}
+            onSearchChange={setInvoiceSearch}
+            isLoading={isFetchingInvoices}
           />
           {formState.errors.invoice_id ? <FieldError>{tCommon("required")}</FieldError> : null}
         </Field>

@@ -2,18 +2,19 @@
 
 import type { ListParams } from "@/lib/database/list-params-types"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { fetchWarehousesAll, fetchWarehousesPaginated,
+import { fetchWarehouseById, fetchWarehousesPaginated,
   createWarehouse,
   updateWarehouse,
   deleteWarehouse,
 } from "@/lib/database/services/warehouses"
 import type { Warehouse } from "@/lib/database/types"
 
-/** All records — use in dropdowns/pickers where you need every option. */
-export function useWarehouses() {
+/** Single record by id — for detail pages. */
+export function useWarehouse(id: string | undefined) {
   return useQuery({
-    queryKey: ["warehouses", "all"],
-    queryFn: fetchWarehousesAll,
+    queryKey: ["warehouses", "detail", id],
+    queryFn: () => fetchWarehouseById(id!),
+    enabled: !!id,
   })
 }
 

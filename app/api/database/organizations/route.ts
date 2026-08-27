@@ -13,13 +13,34 @@ export async function GET(request: Request) {
   }
 
   const { searchParams } = new URL(request.url)
+  const id = searchParams.get("id")
+  const supabase = await createClient()
+
+  // Single org — either an explicit lookup (id given; the superadmin admin
+  // org-detail page) or, for a non-superadmin caller with no id, always
+  // their own org (a non-superadmin never has any other org to fetch).
+  // Every non-admin usage of "the current org" (org settings, subscription
+  // page, invoice PDF letterhead, the sidebar — rendered on every
+  // authenticated page) used to go through the paginated fetch-all
+  // (pageSize: 9999) and take organizations?.[0], and the admin org-detail
+  // page fetched every org and .find()'d the one it needed. Both are now a
+  // single-row fetch instead.
+  if (id || !auth.isSuperadmin) {
+    const query = supabase.schema("billing").from("organizations").select("*").eq("id", id ?? auth.orgId!)
+    const { data, error } = await query.maybeSingle()
+
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json(data)
+  }
+
+  // Paginated list — superadmin only in practice (a non-superadmin caller
+  // is always short-circuited above to their own single org), for the
+  // Admin > All Organizations list page.
   const search = searchParams.get("search") ?? undefined
   const page = Number(searchParams.get("page") ?? 1)
   const pageSize = Number(searchParams.get("pageSize") ?? 10)
 
-  const supabase = await createClient()
   let query = supabase.schema("billing").from("organizations").select("*", { count: "exact" })
-  if (!auth.isSuperadmin) query = query.eq("id", auth.orgId)
   query = applyListParams(query, ["name"], { search, page, pageSize })
   const { data, error, count } = await query
 

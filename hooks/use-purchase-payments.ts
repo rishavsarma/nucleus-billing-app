@@ -2,17 +2,18 @@
 
 import type { ListParams } from "@/lib/database/list-params-types"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { fetchPurchasePaymentsAll, fetchPurchasePaymentsPaginated,
+import { fetchPurchasePaymentsByBillId, fetchPurchasePaymentsPaginated,
   createPurchasePayment,
   updatePurchasePayment,
 } from "@/lib/database/services/purchase-payments"
 import type { PurchasePayment } from "@/lib/database/types"
 
-/** All records — use in dropdowns/pickers where you need every option. */
-export function usePurchasePayments() {
+/** One purchase bill's payment history — for the bill detail page. */
+export function usePurchasePaymentsByBill(purchaseBillId: string | undefined) {
   return useQuery({
-    queryKey: ["purchase-payments", "all"],
-    queryFn: fetchPurchasePaymentsAll,
+    queryKey: ["purchase-payments", "by-bill", purchaseBillId],
+    queryFn: () => fetchPurchasePaymentsByBillId(purchaseBillId!),
+    enabled: !!purchaseBillId,
   })
 }
 

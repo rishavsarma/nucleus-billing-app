@@ -13,11 +13,33 @@ export async function GET(request: Request) {
   }
 
   const { searchParams } = new URL(request.url)
+  const invoiceId = searchParams.get("invoice_id")
+  const supabase = await createClient()
+
+  // Scoped to one invoice — used by the invoice detail page's payment
+  // history. Was previously fetched via the "all payments" endpoint
+  // (pageSize: 9999, every payment in the org) and filtered client-side to
+  // this one invoice_id — that scaled with total org payment volume on
+  // every single invoice view, not just list views. This scopes the query
+  // itself instead.
+  if (invoiceId) {
+    let query = supabase
+      .schema("billing")
+      .from("payments")
+      .select("*")
+      .eq("invoice_id", invoiceId)
+      .order("paid_at", { ascending: false })
+    if (!auth.isSuperadmin) query = query.eq("org_id", auth.orgId!)
+    const { data, error } = await query
+
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json(data)
+  }
+
   const search = searchParams.get("search") ?? undefined
   const page = Number(searchParams.get("page") ?? 1)
   const pageSize = Number(searchParams.get("pageSize") ?? 10)
 
-  const supabase = await createClient()
   // Embeds the invoice number and (nested one level further) the customer
   // name via invoice_id — avoids the list page separately fetching every
   // invoice and every customer (pageSize: 9999 each) to resolve these.

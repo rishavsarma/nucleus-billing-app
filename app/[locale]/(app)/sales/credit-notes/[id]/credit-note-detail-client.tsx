@@ -11,9 +11,9 @@ import { CreditNoteItemsSection } from "@/components/credit-note-items-section"
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog"
 import { DocumentStepper, type StepperStep } from "@/components/document-stepper"
 import { StatusBadge } from "@/components/status-badge"
-import { useCustomers } from "@/hooks/use-customers"
+import { useCustomer } from "@/hooks/use-customers"
 import { useCreditNote, useUpdateCreditNote } from "@/hooks/use-credit-notes"
-import { useInvoices } from "@/hooks/use-invoices"
+import { useInvoice } from "@/hooks/use-invoices"
 import { routes } from "@/lib/routes"
 
 const money = (n: number) => "₹" + n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -24,8 +24,8 @@ export function CreditNoteDetailClient({ id }: { id: string }) {
   const tCommon = useTranslations("Common")
 
   const { data: creditNote, isLoading } = useCreditNote(id)
-  const { data: customers } = useCustomers()
-  const { data: invoices } = useInvoices()
+  const { data: customer } = useCustomer(creditNote?.customer_id)
+  const { data: relatedInvoice } = useInvoice(creditNote?.invoice_id ?? undefined)
   const updateCreditNote = useUpdateCreditNote()
   const [confirmVoid, setConfirmVoid] = useState(false)
 
@@ -45,8 +45,6 @@ export function CreditNoteDetailClient({ id }: { id: string }) {
     )
   }
 
-  const customer = customers?.find((c) => c.id === creditNote.customer_id)
-  const relatedInvoice = creditNote.invoice_id ? invoices?.find((inv) => inv.id === creditNote.invoice_id) : undefined
   const isDraft = creditNote.status === "draft"
   const isVoid = creditNote.status === "void"
 

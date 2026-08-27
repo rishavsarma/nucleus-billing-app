@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Check, ChevronsUpDown, type LucideIcon } from "lucide-react"
+import { Check, ChevronsUpDown, Loader2, type LucideIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -36,6 +36,16 @@ export interface SearchableSelectProps {
   /** Portal target for the dropdown — defaults to document.body. Pass e.g.
    * a fullscreened element's ref so it still renders during Fullscreen. */
   container?: HTMLElement | null
+  /** Controlled search text — when provided (together with onSearchChange),
+   * `options` is trusted to already be filtered server-side (e.g. a
+   * debounced paginated fetch), and the built-in client-side filter is
+   * skipped entirely. Omit both for the original fully-client-side mode
+   * (filter every option in `options` locally). */
+  search?: string
+  onSearchChange?: (search: string) => void
+  /** Shows a spinner in place of the list while a server-driven search is
+   * in flight. Only meaningful together with search/onSearchChange. */
+  isLoading?: boolean
 }
 
 export function SearchableSelect({
@@ -50,8 +60,12 @@ export function SearchableSelect({
   className,
   icon: Icon,
   container,
+  search,
+  onSearchChange,
+  isLoading = false,
 }: SearchableSelectProps) {
   const [open, setOpen] = React.useState(false)
+  const isServerSearch = onSearchChange !== undefined
 
   const selectedOption = React.useMemo(
     () => options.find((o) => o.value === value),
@@ -59,7 +73,13 @@ export function SearchableSelect({
   )
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover
+      open={open}
+      onOpenChange={(next) => {
+        setOpen(next)
+        if (!next && isServerSearch) onSearchChange?.("")
+      }}
+    >
       <PopoverTrigger asChild>
         <Button
           id={id}
@@ -89,19 +109,34 @@ export function SearchableSelect({
         container={container}
       >
         <Command
-          filter={(itemValue, search) => {
-            const opt = options.find((o) => o.value === itemValue)
-            if (!opt) return 0
-            const query = search.toLowerCase().trim()
-            const matchLabel = (opt.label ?? "").toLowerCase().includes(query)
-            const matchSub = (opt.subtitle ?? "").toLowerCase().includes(query)
-            const matchKeywords = opt.keywords?.some((k) => k.toLowerCase().includes(query)) ?? false
-            return matchLabel || matchSub || matchKeywords ? 1 : 0
-          }}
+          shouldFilter={!isServerSearch}
+          filter={
+            isServerSearch
+              ? undefined
+              : (itemValue, search) => {
+                  const opt = options.find((o) => o.value === itemValue)
+                  if (!opt) return 0
+                  const query = search.toLowerCase().trim()
+                  const matchLabel = (opt.label ?? "").toLowerCase().includes(query)
+                  const matchSub = (opt.subtitle ?? "").toLowerCase().includes(query)
+                  const matchKeywords = opt.keywords?.some((k) => k.toLowerCase().includes(query)) ?? false
+                  return matchLabel || matchSub || matchKeywords ? 1 : 0
+                }
+          }
         >
-          <CommandInput placeholder={searchPlaceholder} />
+          {isServerSearch ? (
+            <CommandInput value={search} onValueChange={onSearchChange} placeholder={searchPlaceholder} />
+          ) : (
+            <CommandInput placeholder={searchPlaceholder} />
+          )}
           <CommandList className="max-h-60">
-            <CommandEmpty>{emptyMessage}</CommandEmpty>
+            {isServerSearch && isLoading ? (
+              <div className="flex items-center justify-center py-6 text-muted-foreground">
+                <Loader2 className="size-4 animate-spin" />
+              </div>
+            ) : options.length === 0 ? (
+              <CommandEmpty>{emptyMessage}</CommandEmpty>
+            ) : (
             <CommandGroup>
               {options.map((option) => (
                 <CommandItem
@@ -130,6 +165,7 @@ export function SearchableSelect({
                 </CommandItem>
               ))}
             </CommandGroup>
+            )}
           </CommandList>
         </Command>
       </PopoverContent>

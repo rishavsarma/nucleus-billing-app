@@ -31,11 +31,16 @@ export async function GET(request: Request) {
   const search = searchParams.get("search") ?? undefined
   const page = Number(searchParams.get("page") ?? 1)
   const pageSize = Number(searchParams.get("pageSize") ?? 10)
+  const vendorId = searchParams.get("vendor_id")
 
   // Embeds the vendor's name via vendor_id — avoids the list page
   // separately fetching every vendor (pageSize: 9999) to resolve it.
   let query = supabase.schema("billing").from("purchase_bills").select("*, vendor:vendors(name)", { count: "exact" })
   if (!auth.isSuperadmin) query = query.eq("org_id", auth.orgId)
+  // Scopes to one vendor — e.g. the "which bill is this debit note
+  // against" picker, instead of filtering a fetch-everything array
+  // client-side.
+  if (vendorId) query = query.eq("vendor_id", vendorId)
   query = applyListParams(query, ["bill_number", "vendor_invoice_number"], { search, page, pageSize })
   const { data, error, count } = await query
 

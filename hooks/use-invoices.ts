@@ -2,30 +2,26 @@
 
 import type { ListParams } from "@/lib/database/list-params-types"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { fetchInvoicesAll, fetchInvoiceById, fetchInvoicesPaginated, createInvoice, updateInvoice } from "@/lib/database/services/invoices"
+import { fetchInvoiceById, fetchInvoicesPaginated, createInvoice, updateInvoice } from "@/lib/database/services/invoices"
 import type { Invoice } from "@/lib/database/types"
 
-/** All records — use in dropdowns/pickers where you need every option. */
-export function useInvoices() {
-  return useQuery({
-    queryKey: ["invoices", "all"],
-    queryFn: fetchInvoicesAll,
-  })
-}
-
-/** Paginated + searched list — use in list-view table pages. */
-export function useInvoicesList(params: ListParams) {
+/** Paginated + searched list — use in list-view table pages, or pass
+ * customer_id to scope to one customer's invoices (e.g. a picker). `enabled`
+ * lets a caller hold off fetching until e.g. a customer is actually chosen,
+ * rather than fetching unscoped in the meantime. */
+export function useInvoicesList(params: ListParams & { customer_id?: string }, enabled = true) {
   return useQuery({
     queryKey: ["invoices", "list", params],
     queryFn: () => fetchInvoicesPaginated(params),
+    enabled,
   })
 }
 
 /** Single record by id — for detail pages. */
-export function useInvoice(id: string) {
+export function useInvoice(id: string | undefined) {
   return useQuery({
     queryKey: ["invoices", "detail", id],
-    queryFn: () => fetchInvoiceById(id),
+    queryFn: () => fetchInvoiceById(id!),
     enabled: !!id,
   })
 }

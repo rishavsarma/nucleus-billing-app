@@ -2,14 +2,16 @@ import { api } from "@/lib/axios"
 import type { Staff } from "@/lib/database/types"
 import type { ListParams, PaginatedResponse } from "@/lib/database/list-params-types"
 
-/** Fetch all staff with no pagination — for dropdowns/pickers. Optionally filter by role. */
-export async function fetchStaffAll(role?: string): Promise<Staff[]> {
-  const { data } = await api.get<Staff[]>("/database/staff", { params: { page: 1, pageSize: 9999, role } })
-  return (data as unknown as PaginatedResponse<Staff>).data
+/** Fetch a single staff member by id — for display (e.g. resolving a
+ * delivery's assigned staff member) instead of pulling every row. */
+export async function fetchStaffById(id: string): Promise<Staff> {
+  const { data } = await api.get<Staff>("/database/staff", { params: { id } })
+  return data
 }
 
-/** Fetch a paginated + searched page of staff. */
-export async function fetchStaffPaginated(params: ListParams): Promise<PaginatedResponse<Staff>> {
+/** Fetch a paginated + searched page of staff, optionally filtered by
+ * role (e.g. delivery_person). */
+export async function fetchStaffPaginated(params: ListParams & { role?: string }): Promise<PaginatedResponse<Staff>> {
   const { data } = await api.get<PaginatedResponse<Staff>>("/database/staff", { params })
   return data
 }

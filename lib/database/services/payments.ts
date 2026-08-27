@@ -2,10 +2,12 @@ import { api } from "@/lib/axios"
 import type { Payment, PaymentWithRelations } from "@/lib/database/types"
 import type { ListParams, PaginatedResponse } from "@/lib/database/list-params-types"
 
-/** Fetch all payments with no pagination — for dropdowns / pickers. */
-export async function fetchPaymentsAll(): Promise<Payment[]> {
-  const { data } = await api.get<Payment[]>("/database/payments", { params: { page: 1, pageSize: 9999 } })
-  return (data as unknown as PaginatedResponse<Payment>).data
+/** Fetch just the payments recorded against one invoice — for the invoice
+ * detail page's payment history, scoped server-side rather than fetching
+ * every payment in the org (pageSize: 9999) and filtering client-side. */
+export async function fetchPaymentsByInvoiceId(invoiceId: string): Promise<Payment[]> {
+  const { data } = await api.get<Payment[]>("/database/payments", { params: { invoice_id: invoiceId } })
+  return data
 }
 
 /** Fetch a paginated + searched page of payments, with each row's invoice

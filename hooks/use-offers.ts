@@ -2,16 +2,8 @@
 
 import type { ListParams } from "@/lib/database/list-params-types"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { fetchOffersAll, fetchOfferById, fetchOffersPaginated, createOffer, updateOffer, deleteOffer } from "@/lib/database/services/offers"
+import { fetchOfferById, fetchOffersPaginated, createOffer, updateOffer, deleteOffer } from "@/lib/database/services/offers"
 import type { Offer } from "@/lib/database/types"
-
-/** All records — use in dropdowns/pickers where you need every option. */
-export function useOffers() {
-  return useQuery({
-    queryKey: ["offers", "all"],
-    queryFn: fetchOffersAll,
-  })
-}
 
 /** Paginated + searched list — use in list-view table pages. */
 export function useOffersList(params: ListParams) {
@@ -22,10 +14,10 @@ export function useOffersList(params: ListParams) {
 }
 
 /** Single record by id — for detail pages. */
-export function useOffer(id: string) {
+export function useOffer(id: string | undefined) {
   return useQuery({
     queryKey: ["offers", "detail", id],
-    queryFn: () => fetchOfferById(id),
+    queryFn: () => fetchOfferById(id!),
     enabled: !!id,
   })
 }

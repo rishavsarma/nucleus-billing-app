@@ -2,14 +2,7 @@ import { api } from "@/lib/axios"
 import type { Item, ItemWithTaxRate } from "@/lib/database/types"
 import type { ListParams, PaginatedResponse } from "@/lib/database/list-params-types"
 
-/** Fetch all items with no pagination — for dropdowns / pickers. */
-export async function fetchItemsAll(): Promise<Item[]> {
-  const { data } = await api.get<Item[]>("/database/items", { params: { page: 1, pageSize: 9999 } })
-  return (data as unknown as PaginatedResponse<Item>).data
-}
-
-/** Fetch a single record by id — for detail pages, instead of pulling
- * every row via fetchItemsAll() and finding it client-side. */
+/** Fetch a single record by id — for detail pages. */
 export async function fetchItemById(id: string): Promise<Item> {
   const { data } = await api.get<Item>("/database/items", { params: { id } })
   return data

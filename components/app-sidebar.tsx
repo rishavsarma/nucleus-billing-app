@@ -6,7 +6,7 @@ import { useTranslations } from "next-intl"
 import { Link, usePathname } from "@/i18n/navigation"
 import { NavUser } from "@/components/nav-user"
 import { useMe } from "@/hooks/use-me"
-import { useOrganizations } from "@/hooks/use-organizations"
+import { useCurrentOrganization } from "@/hooks/use-organizations"
 import { NAV_DATA } from "@/lib/nav-data"
 import {
   Sidebar,
@@ -26,8 +26,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname()
   const t = useTranslations("Sidebar")
   const { data: me } = useMe()
-  const { data: organizations } = useOrganizations()
-  const organization = organizations?.[0]
+  const { data: organization } = useCurrentOrganization()
 
   const navGroups = NAV_DATA.filter((group) => group.labelKey !== "admin" || me?.isSuperadmin).map(
     (group) => ({

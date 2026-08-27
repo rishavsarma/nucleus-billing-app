@@ -11,10 +11,10 @@ import { SalesReturnItemsSection } from "@/components/sales-return-items-section
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog"
 import { DocumentStepper, type StepperStep } from "@/components/document-stepper"
 import { StatusBadge } from "@/components/status-badge"
-import { useCustomers } from "@/hooks/use-customers"
+import { useCustomer } from "@/hooks/use-customers"
 import { useSalesReturn, useUpdateSalesReturn } from "@/hooks/use-sales-returns"
-import { useInvoices } from "@/hooks/use-invoices"
-import { useWarehouses } from "@/hooks/use-warehouses"
+import { useInvoice } from "@/hooks/use-invoices"
+import { useWarehouse } from "@/hooks/use-warehouses"
 import { routes } from "@/lib/routes"
 
 const money = (n: number) => "₹" + n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -25,9 +25,9 @@ export function SalesReturnDetailClient({ id }: { id: string }) {
   const tCommon = useTranslations("Common")
 
   const { data: salesReturn, isLoading } = useSalesReturn(id)
-  const { data: customers } = useCustomers()
-  const { data: invoices } = useInvoices()
-  const { data: warehouses } = useWarehouses()
+  const { data: customer } = useCustomer(salesReturn?.customer_id)
+  const { data: originalInvoice } = useInvoice(salesReturn?.invoice_id ?? undefined)
+  const { data: warehouse } = useWarehouse(salesReturn?.warehouse_id ?? undefined)
   const updateSalesReturn = useUpdateSalesReturn()
   const [confirmVoid, setConfirmVoid] = useState(false)
 
@@ -47,9 +47,6 @@ export function SalesReturnDetailClient({ id }: { id: string }) {
     )
   }
 
-  const customer = customers?.find((c) => c.id === salesReturn.customer_id)
-  const originalInvoice = invoices?.find((inv) => inv.id === salesReturn.invoice_id)
-  const warehouse = warehouses?.find((w) => w.id === salesReturn.warehouse_id)
   const isDraft = salesReturn.status === "draft"
   const isVoid = salesReturn.status === "void"
 

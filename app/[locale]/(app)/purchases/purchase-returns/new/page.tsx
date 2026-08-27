@@ -8,6 +8,7 @@ import { toast } from "sonner"
 import { ArrowLeftIcon } from "lucide-react"
 import { z } from "zod"
 
+import { useState } from "react"
 import { Link, useRouter } from "@/i18n/navigation"
 import { DocumentStepper, type StepperStep } from "@/components/document-stepper"
 import { SearchableSelect } from "@/components/searchable-select"
@@ -15,9 +16,10 @@ import { Button } from "@/components/ui/button"
 import { DatePicker } from "@/components/ui/date-picker"
 import { Field, FieldError, FieldLabel } from "@/components/ui/field"
 import { Textarea } from "@/components/ui/textarea"
-import { useVendors } from "@/hooks/use-vendors"
+import { useDebouncedValue } from "@/hooks/use-debounced-value"
 import { useCreatePurchaseReturn } from "@/hooks/use-purchase-returns"
-import { usePurchaseBills } from "@/hooks/use-purchase-bills"
+import { usePurchaseBill, usePurchaseBillsList } from "@/hooks/use-purchase-bills"
+import { fetchPurchaseBillById } from "@/lib/database/services/purchase-bills"
 import { routes } from "@/lib/routes"
 
 const newPurchaseReturnSchema = z.object({
@@ -32,10 +34,6 @@ export default function NewPurchaseReturnPage() {
   const tCommon = useTranslations("Common")
   const router = useRouter()
   const createPurchaseReturn = useCreatePurchaseReturn()
-  const { data: bills } = usePurchaseBills()
-  const { data: vendors } = useVendors()
-
-  const returnableBills = bills?.filter((b) => b.status !== "draft" && b.status !== "void") ?? []
 
   const form = useForm<NewPurchaseReturnValues>({
     resolver: zodResolver(newPurchaseReturnSchema),
@@ -45,13 +43,37 @@ export default function NewPurchaseReturnPage() {
   const selectedBillId = useWatch({ control, name: "purchase_bill_id" })
   const issueDate = useWatch({ control, name: "issue_date" })
 
+  // Server-searched instead of fetching every purchase bill and every
+  // vendor (pageSize: 9999 each) to build this dropdown — the paginated
+  // endpoint already embeds the vendor name via a join.
+  const [billSearch, setBillSearch] = useState("")
+  const debouncedBillSearch = useDebouncedValue(billSearch, 300)
+  const { data: billsResult, isFetching: isFetchingBills } = usePurchaseBillsList({
+    search: debouncedBillSearch,
+    page: 1,
+    pageSize: 20,
+  })
+  const returnableBills = (billsResult?.data ?? []).filter((b) => b.status !== "draft" && b.status !== "void")
+  const { data: selectedBill } = usePurchaseBill(selectedBillId || undefined)
+  const billOptions = [
+    ...(selectedBill && !returnableBills.some((b) => b.id === selectedBill.id)
+      ? [{ value: selectedBill.id, label: selectedBill.bill_number }]
+      : []),
+    ...returnableBills.map((bill) => ({
+      value: bill.id,
+      label: bill.bill_number,
+      subtitle: bill.vendor?.name ?? undefined,
+      keywords: [bill.vendor?.name ?? ""],
+    })),
+  ]
+
   const steps: StepperStep[] = [
     { label: t("stepPurchaseReturnDetails"), done: false, current: true },
     { label: t("stepAddItems"), done: false, current: false },
   ]
 
-  function onSubmit(values: NewPurchaseReturnValues) {
-    const bill = bills?.find((b) => b.id === values.purchase_bill_id)
+  async function onSubmit(values: NewPurchaseReturnValues) {
+    const bill = selectedBill?.id === values.purchase_bill_id ? selectedBill : await fetchPurchaseBillById(values.purchase_bill_id)
     if (!bill) return
 
     createPurchaseReturn.mutate(
@@ -92,15 +114,10 @@ export default function NewPurchaseReturnPage() {
             value={selectedBillId}
             onValueChange={(value) => setValue("purchase_bill_id", value, { shouldValidate: true })}
             placeholder={t("billPlaceholder")}
-            options={returnableBills.map((bill) => {
-              const vendor = vendors?.find((v) => v.id === bill.vendor_id)
-              return {
-                value: bill.id,
-                label: bill.bill_number,
-                subtitle: vendor?.name ?? undefined,
-                keywords: [vendor?.name ?? ""],
-              }
-            })}
+            options={billOptions}
+            search={billSearch}
+            onSearchChange={setBillSearch}
+            isLoading={isFetchingBills}
           />
           {formState.errors.purchase_bill_id ? <FieldError>{tCommon("required")}</FieldError> : null}
         </Field>

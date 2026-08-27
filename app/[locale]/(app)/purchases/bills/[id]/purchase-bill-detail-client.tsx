@@ -12,12 +12,12 @@ import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog"
 import { DocumentStepper, type StepperStep } from "@/components/document-stepper"
 import { PurchaseBillItemsSection } from "@/components/purchase-bill-items-section"
 import { RecordPaymentDialog } from "@/components/record-payment-dialog"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { StatusBadge } from "@/components/status-badge"
-import { useVendors } from "@/hooks/use-vendors"
+import { useVendor } from "@/hooks/use-vendors"
 import { usePurchaseBill, useUpdatePurchaseBill } from "@/hooks/use-purchase-bills"
-import { useCreatePurchasePayment, usePurchasePayments } from "@/hooks/use-purchase-payments"
-import { useWarehouses } from "@/hooks/use-warehouses"
+import { useCreatePurchasePayment, usePurchasePaymentsByBill } from "@/hooks/use-purchase-payments"
+import { WarehouseSelect } from "@/components/warehouse-select"
+import { useWarehouse } from "@/hooks/use-warehouses"
 import { routes } from "@/lib/routes"
 import type { PurchasePayment } from "@/lib/database/types"
 
@@ -31,16 +31,14 @@ export function PurchaseBillDetailClient({ id }: { id: string }) {
   const tMethods = useTranslations("PaymentMethods")
 
   const { data: bill, isLoading } = usePurchaseBill(id)
-  const { data: vendors } = useVendors()
-  const { data: warehouses } = useWarehouses()
-  const { data: allPayments } = usePurchasePayments()
+  const { data: vendor } = useVendor(bill?.vendor_id)
+  const { data: warehouse } = useWarehouse(bill?.warehouse_id ?? undefined)
+  const { data: payments } = usePurchasePaymentsByBill(id)
   const updateBill = useUpdatePurchaseBill()
   const createPayment = useCreatePurchasePayment()
 
   const [confirmVoid, setConfirmVoid] = useState(false)
   const [showRecordPayment, setShowRecordPayment] = useState(false)
-
-  const payments = allPayments?.filter((p) => p.purchase_bill_id === id) ?? []
 
   if (isLoading) {
     return <div className="text-sm text-muted-foreground">{tCommon("loading")}</div>
@@ -58,7 +56,6 @@ export function PurchaseBillDetailClient({ id }: { id: string }) {
     )
   }
 
-  const vendor = vendors?.find((v) => v.id === bill.vendor_id)
   const isDraft = bill.status === "draft"
   const isVoid = bill.status === "void"
   const isPaid = bill.status === "paid"
@@ -186,7 +183,7 @@ export function PurchaseBillDetailClient({ id }: { id: string }) {
 
           <div className="rounded-xl bg-card p-4 ring-1 ring-foreground/10">
             <h2 className="mb-3 text-sm font-semibold">{t("paymentsTitle")}</h2>
-            {payments.length ? (
+            {payments?.length ? (
               <div className="flex flex-col gap-2">
                 {payments.map((payment) => (
                   <div key={payment.id} className="flex items-center justify-between text-sm">
@@ -215,31 +212,22 @@ export function PurchaseBillDetailClient({ id }: { id: string }) {
               {isDraft ? (
                 <div className="flex flex-col gap-1">
                   <span className="text-muted-foreground">{t("warehouseLabel")}</span>
-                  <Select
-                    value={bill.warehouse_id ?? undefined}
+                  <WarehouseSelect
+                    value={bill.warehouse_id}
                     onValueChange={(value) =>
                       updateBill.mutate(
                         { id, input: { warehouse_id: value } },
                         { onError: () => toast.error(tCommon("genericError")) },
                       )
                     }
-                  >
-                    <SelectTrigger className="h-7 w-full text-xs">
-                      <SelectValue placeholder={t("warehousePlaceholder")} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {warehouses?.map((warehouse) => (
-                        <SelectItem key={warehouse.id} value={warehouse.id}>
-                          {warehouse.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    placeholder={t("warehousePlaceholder")}
+                    className="h-7 text-xs"
+                  />
                 </div>
               ) : (
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">{t("warehouseLabel")}</span>
-                  <span>{warehouses?.find((w) => w.id === bill.warehouse_id)?.name ?? "—"}</span>
+                  <span>{warehouse?.name ?? "—"}</span>
                 </div>
               )}
               <div className="flex justify-between">

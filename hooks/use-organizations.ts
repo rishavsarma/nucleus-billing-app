@@ -2,17 +2,27 @@
 
 import type { ListParams } from "@/lib/database/list-params-types"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { fetchOrganizationsAll, fetchOrganizationsPaginated,
+import { fetchCurrentOrganization, fetchOrganizationById, fetchOrganizationsPaginated,
   createOrganization,
   updateOrganization,
 } from "@/lib/database/services/organizations"
 import type { Organization } from "@/lib/database/types"
 
-/** All records — use in dropdowns/pickers where you need every option. */
-export function useOrganizations() {
+/** The caller's own organization — use for "my org" everywhere (org
+ * settings, subscription page, invoice PDF letterhead, the sidebar). */
+export function useCurrentOrganization() {
   return useQuery({
-    queryKey: ["organizations", "all"],
-    queryFn: fetchOrganizationsAll,
+    queryKey: ["organizations", "current"],
+    queryFn: fetchCurrentOrganization,
+  })
+}
+
+/** A single organization by id — for the superadmin admin org-detail page. */
+export function useOrganization(id: string | undefined) {
+  return useQuery({
+    queryKey: ["organizations", "detail", id],
+    queryFn: () => fetchOrganizationById(id!),
+    enabled: !!id,
   })
 }
 

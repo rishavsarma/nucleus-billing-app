@@ -2,14 +2,7 @@ import { api } from "@/lib/axios"
 import type { PurchaseReturn, PurchaseReturnWithRelations } from "@/lib/database/types"
 import type { ListParams, PaginatedResponse } from "@/lib/database/list-params-types"
 
-/** Fetch all purchase returns with no pagination — for dropdowns / pickers. */
-export async function fetchPurchaseReturnsAll(): Promise<PurchaseReturn[]> {
-  const { data } = await api.get<PurchaseReturn[]>("/database/purchase_returns", { params: { page: 1, pageSize: 9999 } })
-  return (data as unknown as PaginatedResponse<PurchaseReturn>).data
-}
-
-/** Fetch a single record by id — for detail pages, instead of pulling
- * every row via fetchPurchaseReturnsAll() and finding it client-side. */
+/** Fetch a single record by id — for detail pages. */
 export async function fetchPurchaseReturnById(id: string): Promise<PurchaseReturn> {
   const { data } = await api.get<PurchaseReturn>("/database/purchase_returns", { params: { id } })
   return data

@@ -16,15 +16,10 @@ import { Button } from "@/components/ui/button"
 import { DatePicker } from "@/components/ui/date-picker"
 import { Field, FieldError, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
-import { useCustomers } from "@/hooks/use-customers"
 import { useCreateInvoice } from "@/hooks/use-invoices"
-import { useOffers } from "@/hooks/use-offers"
-import { useWarehouses } from "@/hooks/use-warehouses"
+import { WarehouseSelect } from "@/components/warehouse-select"
 import { routes } from "@/lib/routes"
-
-const NONE = "__none__"
 
 const newInvoiceSchema = z.object({
   customer_id: z.string().min(1),
@@ -41,9 +36,6 @@ export default function NewInvoicePage() {
   const tCommon = useTranslations("Common")
   const router = useRouter()
   const createInvoice = useCreateInvoice()
-  const { data: customers } = useCustomers()
-  const { data: warehouses } = useWarehouses()
-  const { data: offers } = useOffers()
 
   const form = useForm<NewInvoiceValues>({
     resolver: zodResolver(newInvoiceSchema),
@@ -99,7 +91,6 @@ export default function NewInvoicePage() {
             <FieldLabel htmlFor="inv-customer">{t("customerLabel")}</FieldLabel>
             <CustomerSelect
               id="inv-customer"
-              customers={customers}
               value={customerId}
               onValueChange={(value) => setValue("customer_id", value, { shouldValidate: true })}
               placeholder={t("customerPlaceholder")}
@@ -108,19 +99,14 @@ export default function NewInvoicePage() {
           </Field>
           <Field>
             <FieldLabel htmlFor="inv-warehouse">{t("warehouseLabel")}</FieldLabel>
-            <Select value={warehouseId ?? NONE} onValueChange={(value) => setValue("warehouse_id", value === NONE ? undefined : value)}>
-              <SelectTrigger id="inv-warehouse" className="w-full">
-                <SelectValue placeholder={t("warehousePlaceholder")} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={NONE}>{t("warehousePlaceholder")}</SelectItem>
-                {warehouses?.map((warehouse) => (
-                  <SelectItem key={warehouse.id} value={warehouse.id}>
-                    {warehouse.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <WarehouseSelect
+              id="inv-warehouse"
+              value={warehouseId}
+              onValueChange={(value) => setValue("warehouse_id", value)}
+              placeholder={t("warehousePlaceholder")}
+              clearable
+              onClear={() => setValue("warehouse_id", undefined)}
+            />
           </Field>
         </div>
         <div className="grid grid-cols-2 gap-4">
@@ -128,7 +114,6 @@ export default function NewInvoicePage() {
             <FieldLabel htmlFor="inv-offer">{t("offerLabel")}</FieldLabel>
             <OfferSelect
               id="inv-offer"
-              offers={offers}
               value={offerId}
               onValueChange={(value) => setValue("offer_id", value ?? undefined)}
               placeholder={t("offerPlaceholder")}

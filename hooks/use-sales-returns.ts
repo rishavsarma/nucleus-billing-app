@@ -2,16 +2,8 @@
 
 import type { ListParams } from "@/lib/database/list-params-types"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { fetchSalesReturnsAll, fetchSalesReturnById, fetchSalesReturnsPaginated, createSalesReturn, updateSalesReturn } from "@/lib/database/services/sales-returns"
+import { fetchSalesReturnById, fetchSalesReturnsPaginated, createSalesReturn, updateSalesReturn } from "@/lib/database/services/sales-returns"
 import type { SalesReturn } from "@/lib/database/types"
-
-/** All records — use in dropdowns/pickers where you need every option. */
-export function useSalesReturns() {
-  return useQuery({
-    queryKey: ["sales-returns", "all"],
-    queryFn: fetchSalesReturnsAll,
-  })
-}
 
 /** Paginated + searched list — use in list-view table pages. */
 export function useSalesReturnsList(params: ListParams) {

@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Check, ChevronsUpDown, Loader2, Plus, User } from "lucide-react"
+import { Check, ChevronsUpDown, Loader2, UserRoundIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -12,55 +12,50 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-  CommandSeparator,
 } from "@/components/ui/command"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { useCustomer, useCustomersList } from "@/hooks/use-customers"
+import { useStaffList, useStaffMember } from "@/hooks/use-staff"
 import { useDebouncedValue } from "@/hooks/use-debounced-value"
 
-export interface CustomerSelectProps {
+export interface StaffSelectProps {
   id?: string
   value?: string | null
   onValueChange?: (value: string) => void
+  /** Scopes the picker to one staff role (e.g. "delivery_person"). */
+  role?: string
   placeholder?: string
   searchPlaceholder?: string
   emptyMessage?: string
   disabled?: boolean
   className?: string
-  /** When provided, renders an "add new customer" row at the bottom of the list, below a separator. */
-  onAddNew?: () => void
-  addNewLabel?: string
   /** Portal target for the dropdown — defaults to document.body. Pass e.g.
    * a fullscreened element's ref so it still renders during Fullscreen. */
   container?: HTMLElement | null
 }
 
-/** Customer picker — searches the server as you type instead of filtering a
- * pre-loaded list, so it works the same whether the org has 10 customers or
- * 10,000 (a client-side-filtered full fetch caps out and silently drops
- * anything past the page size). The trigger button resolves the selected
- * customer's name via a single-row fetch, independent of whatever's
- * currently in the search results. */
-export function CustomerSelect({
+/** Staff picker (e.g. delivery persons) — searches the server as you type
+ * instead of fetching every staff row in the org and filtering client-side.
+ * A small headcount is common but not guaranteed, especially for a
+ * distributed business with drivers/movers across many locations. */
+export function StaffSelect({
   id,
   value,
   onValueChange,
-  placeholder = "Select a customer…",
-  searchPlaceholder = "Search customer…",
-  emptyMessage = "No customer found.",
+  role,
+  placeholder = "Select a staff member…",
+  searchPlaceholder = "Search staff…",
+  emptyMessage = "No staff found.",
   disabled = false,
   className,
-  onAddNew,
-  addNewLabel = "Add new customer",
   container,
-}: CustomerSelectProps) {
+}: StaffSelectProps) {
   const [open, setOpen] = React.useState(false)
   const [search, setSearch] = React.useState("")
   const debouncedSearch = useDebouncedValue(search, 300)
 
-  const { data: selectedCustomer } = useCustomer(value ?? undefined)
-  const { data: result, isLoading } = useCustomersList({ search: debouncedSearch, page: 1, pageSize: 20 })
-  const customers = result?.data ?? []
+  const { data: selectedStaff } = useStaffMember(value ?? undefined)
+  const { data: result, isLoading } = useStaffList({ search: debouncedSearch, page: 1, pageSize: 20, role })
+  const staff = (result?.data ?? []).filter((person) => person.is_active)
 
   return (
     <Popover
@@ -80,14 +75,14 @@ export function CustomerSelect({
           disabled={disabled}
           className={cn(
             "w-full justify-between font-normal h-9 px-3 text-start",
-            !selectedCustomer && "text-muted-foreground",
+            !selectedStaff && "text-muted-foreground",
             className
           )}
         >
           <span className="flex min-w-0 items-center gap-2 truncate">
-            <User className="size-4 shrink-0 text-muted-foreground" />
+            <UserRoundIcon className="size-4 shrink-0 text-muted-foreground" />
             <span className="truncate">
-              {selectedCustomer ? selectedCustomer.name : placeholder}
+              {selectedStaff ? selectedStaff.name : placeholder}
             </span>
           </span>
           <ChevronsUpDown className="ms-2 size-4 shrink-0 opacity-50" />
@@ -105,56 +100,31 @@ export function CustomerSelect({
               <div className="flex items-center justify-center py-6 text-muted-foreground">
                 <Loader2 className="size-4 animate-spin" />
               </div>
-            ) : customers.length === 0 ? (
+            ) : staff.length === 0 ? (
               <CommandEmpty>{emptyMessage}</CommandEmpty>
             ) : (
               <CommandGroup>
-                {customers.map((customer) => (
+                {staff.map((person) => (
                   <CommandItem
-                    key={customer.id}
-                    value={customer.id}
+                    key={person.id}
+                    value={person.id}
                     onSelect={(currentValue) => {
                       onValueChange?.(currentValue)
                       setOpen(false)
                     }}
                     className="flex items-center justify-between py-2 cursor-pointer"
                   >
-                    <div className="flex flex-col min-w-0">
-                      <span className="font-medium truncate">{customer.name}</span>
-                      {(customer.email || customer.phone) && (
-                        <span className="text-xs text-muted-foreground truncate">
-                          {[customer.email, customer.phone].filter(Boolean).join(" • ")}
-                        </span>
-                      )}
-                    </div>
+                    <span className="truncate font-medium">{person.name}</span>
                     <Check
                       className={cn(
                         "ms-2 size-4 shrink-0",
-                        value === customer.id ? "opacity-100 text-primary" : "opacity-0"
+                        value === person.id ? "opacity-100 text-primary" : "opacity-0"
                       )}
                     />
                   </CommandItem>
                 ))}
               </CommandGroup>
             )}
-            {onAddNew ? (
-              <>
-                <CommandSeparator />
-                <CommandGroup>
-                  <CommandItem
-                    value="__add_new_customer__"
-                    onSelect={() => {
-                      setOpen(false)
-                      onAddNew()
-                    }}
-                    className="cursor-pointer text-primary"
-                  >
-                    <Plus className="size-4" />
-                    <span>{addNewLabel}</span>
-                  </CommandItem>
-                </CommandGroup>
-              </>
-            ) : null}
           </CommandList>
         </Command>
       </PopoverContent>

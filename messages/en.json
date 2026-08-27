@@ -862,6 +862,8 @@
     "endsOnLabel": "Ends On",
     "activeLabel": "Active",
     "activeHint": "Inactive offers can't be attached to new documents.",
+    "searchItemsPlaceholder": "Search items…",
+    "loadingItems": "Searching…",
     "noItemsToPick": "No items in your catalog yet.",
     "deleteDescription": "Invoices that already used this offer keep their applied discount — this only removes it from future use."
   },

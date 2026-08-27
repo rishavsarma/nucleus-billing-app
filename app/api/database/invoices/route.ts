@@ -31,12 +31,18 @@ export async function GET(request: Request) {
   const search = searchParams.get("search") ?? undefined
   const page = Number(searchParams.get("page") ?? 1)
   const pageSize = Number(searchParams.get("pageSize") ?? 10)
+  const customerId = searchParams.get("customer_id")
 
   // Embeds the customer's name via the customer_id FK in one query — the
   // list page used to separately fetch every customer (pageSize: 9999) just
   // to resolve this by id client-side.
   let query = supabase.schema("billing").from("invoices").select("*, customer:customers(name)", { count: "exact" })
   if (!auth.isSuperadmin) query = query.eq("org_id", auth.orgId)
+  // Scopes to one customer — e.g. the "which invoice is this credit note
+  // against" picker, which used to filter a fetch-everything array
+  // client-side instead of asking the server for just this customer's
+  // invoices.
+  if (customerId) query = query.eq("customer_id", customerId)
   query = applyListParams(query, ["invoice_number"], { search, page, pageSize })
   const { data, error, count } = await query
 

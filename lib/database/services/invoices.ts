@@ -2,14 +2,7 @@ import { api } from "@/lib/axios"
 import type { Invoice, InvoiceWithCustomer } from "@/lib/database/types"
 import type { ListParams, PaginatedResponse } from "@/lib/database/list-params-types"
 
-/** Fetch all invoices with no pagination — for dropdowns / pickers. */
-export async function fetchInvoicesAll(): Promise<Invoice[]> {
-  const { data } = await api.get<Invoice[]>("/database/invoices", { params: { page: 1, pageSize: 9999 } })
-  return (data as unknown as PaginatedResponse<Invoice>).data
-}
-
-/** Fetch a single record by id — for detail pages, instead of pulling
- * every row via fetchInvoicesAll() and finding it client-side. */
+/** Fetch a single record by id — for detail pages. */
 export async function fetchInvoiceById(id: string): Promise<Invoice> {
   const { data } = await api.get<Invoice>("/database/invoices", { params: { id } })
   return data
@@ -17,8 +10,13 @@ export async function fetchInvoiceById(id: string): Promise<Invoice> {
 
 /** Fetch a paginated + searched page of invoices, with each row's customer
  * name embedded (a real server-side join over customer_id) — no separate
- * fetch-every-customer call needed to resolve it for display. */
-export async function fetchInvoicesPaginated(params: ListParams): Promise<PaginatedResponse<InvoiceWithCustomer>> {
+ * fetch-every-customer call needed to resolve it for display. Optionally
+ * scoped to one customer (e.g. the "which invoice is this against" picker
+ * on the new credit note / sales return forms), instead of fetching every
+ * invoice in the org and filtering client-side. */
+export async function fetchInvoicesPaginated(
+  params: ListParams & { customer_id?: string },
+): Promise<PaginatedResponse<InvoiceWithCustomer>> {
   const { data } = await api.get<PaginatedResponse<InvoiceWithCustomer>>("/database/invoices", { params })
   return data
 }

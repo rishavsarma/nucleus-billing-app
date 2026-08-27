@@ -2,20 +2,12 @@
 
 import type { ListParams } from "@/lib/database/list-params-types"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { fetchCustomersAll, fetchCustomerById, fetchCustomersPaginated,
+import { fetchCustomerById, fetchCustomersPaginated,
   createCustomer,
   updateCustomer,
   deleteCustomer,
 } from "@/lib/database/services/customers"
 import type { Customer } from "@/lib/database/types"
-
-/** All records — use in dropdowns/pickers where you need every option. */
-export function useCustomers() {
-  return useQuery({
-    queryKey: ["customers", "all"],
-    queryFn: fetchCustomersAll,
-  })
-}
 
 /** Paginated + searched list — use in list-view table pages. */
 export function useCustomersList(params: ListParams) {
@@ -26,10 +18,10 @@ export function useCustomersList(params: ListParams) {
 }
 
 /** Single record by id — for detail pages. */
-export function useCustomer(id: string) {
+export function useCustomer(id: string | undefined) {
   return useQuery({
     queryKey: ["customers", "detail", id],
-    queryFn: () => fetchCustomerById(id),
+    queryFn: () => fetchCustomerById(id!),
     enabled: !!id,
   })
 }

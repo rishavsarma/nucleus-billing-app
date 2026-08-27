@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
+import { useQueries } from "@tanstack/react-query"
 import { isAxiosError } from "axios"
 import { useTranslations } from "next-intl"
 import { toast } from "sonner"
@@ -9,6 +10,7 @@ import {
   CalendarClockIcon,
   CreditCardIcon,
   LandmarkIcon,
+  Loader2Icon,
   Maximize2Icon,
   Minimize2Icon,
   MinusIcon,
@@ -36,23 +38,25 @@ import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
 import { calculateOfferDiscount } from "@/lib/calculate-offer"
 import { cn } from "@/lib/utils"
-import { useCreateCustomer, useCustomers } from "@/hooks/use-customers"
+import { useCreateCustomer } from "@/hooks/use-customers"
+import { fetchCustomerById, fetchCustomersPaginated } from "@/lib/database/services/customers"
 import { useCreateDelivery, useDeliveryByInvoice, useUpdateDelivery } from "@/hooks/use-deliveries"
-import { useStaff } from "@/hooks/use-staff"
+import { StaffSelect } from "@/components/staff-select"
 import { fetchInvoiceItems } from "@/lib/database/services/invoice-items"
 import { fetchInvoiceById } from "@/lib/database/services/invoices"
+import { fetchItemById, fetchItemsPaginated } from "@/lib/database/services/items"
 import { useCreateInstallment } from "@/hooks/use-installments"
 import { useCreateInstallmentPlan } from "@/hooks/use-installment-plans"
 import { useCreateInvoiceItem, useDeleteInvoiceItem, useInvoiceItems, useUpdateInvoiceItem } from "@/hooks/use-invoice-items"
-import { useCreateInvoice, useInvoices, useUpdateInvoice } from "@/hooks/use-invoices"
-import { useItems } from "@/hooks/use-items"
+import { useCreateInvoice, useInvoice, useUpdateInvoice } from "@/hooks/use-invoices"
+import { useDebouncedValue } from "@/hooks/use-debounced-value"
 import { useItemVariantsBulk } from "@/hooks/use-item-variants"
-import { useOffers } from "@/hooks/use-offers"
-import { useOrganizations } from "@/hooks/use-organizations"
+import { useOffer } from "@/hooks/use-offers"
+import { useCurrentOrganization } from "@/hooks/use-organizations"
 import { useActivePdfWatermarkText } from "@/hooks/use-pdf-watermarks"
 import { useCreatePayment } from "@/hooks/use-payments"
 import { useTaxRates } from "@/hooks/use-tax-rates"
-import { useWarehouses } from "@/hooks/use-warehouses"
+import { WarehouseSelect } from "@/components/warehouse-select"
 import { buildInvoicePdfElement, downloadInvoicePdf } from "@/lib/pdf/invoice-pdf"
 import type { Item, ItemVariant, Payment } from "@/lib/database/types"
 
@@ -266,14 +270,8 @@ export default function BillingPosPage() {
   const tEmi = useTranslations("Emi")
   const router = useRouter()
 
-  const { data: items } = useItems()
-  const { data: customers } = useCustomers()
-  const { data: warehouses } = useWarehouses()
   const { data: taxRates } = useTaxRates()
-  const { data: offers } = useOffers()
-  const { data: invoices } = useInvoices()
-  const { data: deliveryPersons } = useStaff("delivery_person")
-  const { data: organizations } = useOrganizations()
+  const { data: organization } = useCurrentOrganization()
   const watermarkText = useActivePdfWatermarkText()
   const createInvoice = useCreateInvoice()
   const createInvoiceItem = useCreateInvoiceItem()
@@ -290,6 +288,54 @@ export default function BillingPosPage() {
   const [tabs, setTabs] = useState<PosTab[]>([newTab()])
   const [activeKey, setActiveKey] = useState(tabs[0].key)
   const [search, setSearch] = useState("")
+  // The item grid searches the server as you type and loads further pages
+  // on scroll, instead of fetching the entire catalog up front and
+  // filtering it in the browser — that both silently dropped anything past
+  // the old pageSize:9999 cap and shipped every item on every POS load
+  // regardless of catalog size.
+  const debouncedItemSearch = useDebouncedValue(search, 300)
+  const [itemsPage, setItemsPage] = useState(1)
+  // Resets the loaded page count back to 1 the moment the (debounced)
+  // search term changes — the "adjust state during render" pattern
+  // (react.dev/learn/you-might-not-need-an-effect) rather than an effect,
+  // since this needs to happen before the extra pages' queries below fire
+  // for a search term they no longer match.
+  const [itemSearchForPage, setItemSearchForPage] = useState(debouncedItemSearch)
+  if (debouncedItemSearch !== itemSearchForPage) {
+    setItemSearchForPage(debouncedItemSearch)
+    setItemsPage(1)
+  }
+  // One query per loaded page (1..itemsPage), each cached under the same
+  // queryKey shape useItemsList uses — scrolling back up never re-fetches
+  // a page already seen, and every page is capped at 60 rows instead of
+  // the old pageSize:9999 "fetch the whole catalog" approach.
+  const itemPageQueries = useQueries({
+    queries: Array.from({ length: itemsPage }, (_, index) => {
+      const page = index + 1
+      const params = { search: debouncedItemSearch, page, pageSize: 60 }
+      return { queryKey: ["items", "list", params], queryFn: () => fetchItemsPaginated(params) }
+    }),
+  })
+  const loadedItems = itemPageQueries.flatMap((query) => query.data?.data ?? [])
+  const lastLoadedItemsPage = itemPageQueries[itemPageQueries.length - 1]?.data
+  const hasMoreItems = lastLoadedItemsPage ? loadedItems.length < lastLoadedItemsPage.total : false
+  const isFetchingItems = itemPageQueries.some((query) => query.isFetching)
+  const loadMoreItemsRef = useRef<HTMLDivElement | null>(null)
+  useEffect(() => {
+    const el = loadMoreItemsRef.current
+    if (!el) return
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting && hasMoreItems && !isFetchingItems) {
+          setItemsPage((page) => page + 1)
+        }
+      },
+      { threshold: 0.1 },
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [hasMoreItems, isFetchingItems])
+
   const [showAddCustomer, setShowAddCustomer] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [isClearing, setIsClearing] = useState(false)
@@ -338,13 +384,29 @@ export default function BillingPosPage() {
   // removes tabs, and it's written to keep both in sync, but this keeps a
   // future regression of that class from taking the whole page down).
   const activeTab = tabs.find((tab) => tab.key === activeKey) ?? tabs[0]
-  const activeInvoice = invoices?.find((inv) => inv.id === activeTab.invoiceId)
+  const { data: activeInvoice } = useInvoice(activeTab.invoiceId ?? undefined)
+
+  // Resolves each open tab's customer name for its tab label — a handful
+  // of single-row lookups scoped to whatever's actually open right now,
+  // not the whole customer table (queryKey matches useCustomer's own, so
+  // this shares cache with it rather than double-fetching).
+  const tabCustomerIds = [...new Set(tabs.map((tab) => tab.customerId).filter((id): id is string => !!id))]
+  const tabCustomerQueries = useQueries({
+    queries: tabCustomerIds.map((customerId) => ({
+      queryKey: ["customers", "detail", customerId],
+      queryFn: () => fetchCustomerById(customerId),
+    })),
+  })
+  const tabCustomerNameById = new Map(
+    tabCustomerIds.map((customerId, index) => [customerId, tabCustomerQueries[index]?.data?.name]),
+  )
+
   const { data: savedCartItems } = useInvoiceItems(activeTab.invoiceId ?? undefined)
   const { data: existingDelivery } = useDeliveryByInvoice(activeTab.invoiceId ?? undefined)
   const isDraftSaved = !!activeTab.invoiceId
 
   const selectedOfferId = isDraftSaved ? (activeInvoice?.offer_id ?? null) : activeTab.offerId
-  const selectedOffer = offers?.find((o) => o.id === selectedOfferId)
+  const { data: selectedOffer } = useOffer(selectedOfferId ?? undefined)
 
   const localTotals = lineTotals(activeTab.lines)
   const blendedSubtotal = isDraftSaved ? (activeInvoice?.subtotal ?? 0) : localTotals.subtotal
@@ -663,7 +725,11 @@ export default function BillingPosPage() {
 
   async function resolveCustomerId(): Promise<string> {
     if (activeTab.customerId) return activeTab.customerId
-    const existingGuest = customers?.find((c) => c.name === GUEST_CUSTOMER_NAME)
+    // Search-scoped instead of pulling every customer to find this one by
+    // exact name — the search itself is a substring match, so still
+    // confirm an exact match among the (small) results before reusing it.
+    const { data: matches } = await fetchCustomersPaginated({ search: GUEST_CUSTOMER_NAME, pageSize: 10 })
+    const existingGuest = matches.find((c) => c.name === GUEST_CUSTOMER_NAME)
     if (existingGuest) return existingGuest.id
     const guest = await createCustomer.mutateAsync({ name: GUEST_CUSTOMER_NAME })
     return guest.id
@@ -744,12 +810,19 @@ export default function BillingPosPage() {
         fetchInvoiceById(invoiceId),
         fetchInvoiceItems(invoiceId),
       ])
+      // Only the specific items this sale's lines reference — not the
+      // whole catalog — resolved for the PDF's item name/details.
+      const referencedItemIds = [...new Set(lineItems.map((line) => line.item_id).filter((id): id is string => !!id))]
+      const [customer, referencedItems] = await Promise.all([
+        fetchCustomerById(invoiceData.customer_id),
+        Promise.all(referencedItemIds.map((itemId) => fetchItemById(itemId))),
+      ])
       const element = await buildInvoicePdfElement({
         invoice: invoiceData,
-        customer: customers?.find((c) => c.id === invoiceData.customer_id),
-        organization: organizations?.[0],
+        customer,
+        organization,
         lineItems,
-        items,
+        items: referencedItems,
         tPrint,
         watermarkText,
       })
@@ -866,17 +939,18 @@ export default function BillingPosPage() {
     }
   }
 
-  const filteredItems = (items ?? []).filter(
-    (item) => item.is_active && item.name.toLowerCase().includes(search.trim().toLowerCase()),
-  )
+  // Name/SKU matching already happened server-side (debouncedItemSearch is
+  // passed to useItemsList above) — this just drops inactive items from
+  // whatever page(s) are already loaded.
+  const filteredItems = loadedItems.filter((item) => item.is_active)
 
   const warehouseChosen = !!activeTab.warehouseId
 
-  // One bulk request for every tracked item's variants at the chosen
-  // warehouse, instead of one request per visible tile. Scoped to all
-  // tracked items (not just the search-filtered subset) so typing in the
-  // search box doesn't trigger a refetch on every keystroke.
-  const trackedItemIds = (items ?? []).filter((item) => item.track_inventory).map((item) => item.id)
+  // One bulk request for every tracked item's variants among the
+  // currently-loaded page(s), instead of one request per visible tile (and
+  // instead of every tracked item in the whole catalog, now that the grid
+  // itself is paginated).
+  const trackedItemIds = loadedItems.filter((item) => item.track_inventory).map((item) => item.id)
   const { data: allVariants } = useItemVariantsBulk(trackedItemIds, activeTab.warehouseId ?? undefined)
   const variantsByItemId = new Map<string, ItemVariant[]>()
   allVariants?.forEach((variant) => {
@@ -910,7 +984,7 @@ export default function BillingPosPage() {
         {/* Browser-style bill tabs */}
         <div className="flex items-end gap-1 overflow-x-auto border-b bg-muted/40 px-2 pt-2">
           {tabs.map((tab, index) => {
-            const label = customers?.find((c) => c.id === tab.customerId)?.name || `${t("newTab")} ${index + 1}`
+            const label = (tab.customerId && tabCustomerNameById.get(tab.customerId)) || `${t("newTab")} ${index + 1}`
             const active = tab.key === activeKey
             return (
               <div
@@ -954,22 +1028,14 @@ export default function BillingPosPage() {
         <div className="grid min-h-0 flex-1 grid-cols-[minmax(260px,340px)_minmax(400px,1fr)_minmax(260px,320px)] divide-x divide-border overflow-x-auto overflow-y-hidden">
           {/* Column 1 — warehouse, search + item grid */}
           <div className="flex min-h-0 min-w-0 flex-col p-4">
-            <Select
-              value={activeTab.warehouseId ?? undefined}
+            <WarehouseSelect
+              value={activeTab.warehouseId}
               onValueChange={(value) => updateTab(activeTab.key, { warehouseId: value })}
               disabled={isDraftSaved || activeTab.lines.length > 0}
-            >
-              <SelectTrigger className="mb-3 w-full">
-                <SelectValue placeholder={t("warehousePlaceholder")} />
-              </SelectTrigger>
-              <SelectContent container={posContainerEl}>
-                {warehouses?.map((warehouse) => (
-                  <SelectItem key={warehouse.id} value={warehouse.id}>
-                    {warehouse.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              placeholder={t("warehousePlaceholder")}
+              className="mb-3"
+              container={posContainerEl}
+            />
             {warehouseChosen ? (
               <>
                 <div className="relative mb-3">
@@ -983,9 +1049,20 @@ export default function BillingPosPage() {
                 </div>
                 <div className="grid flex-1 auto-rows-min grid-cols-2 gap-2.5 overflow-y-auto pr-1">
                   {filteredItems.length ? (
-                    filteredItems.map((item) => (
-                      <ItemTile key={item.id} item={item} variants={variantsByItemId.get(item.id)} onAdd={addItemToCart} />
-                    ))
+                    <>
+                      {filteredItems.map((item) => (
+                        <ItemTile key={item.id} item={item} variants={variantsByItemId.get(item.id)} onAdd={addItemToCart} />
+                      ))}
+                      {hasMoreItems ? (
+                        <div ref={loadMoreItemsRef} className="col-span-2 flex justify-center py-3">
+                          <Loader2Icon className="size-4 animate-spin text-muted-foreground" />
+                        </div>
+                      ) : null}
+                    </>
+                  ) : isFetchingItems ? (
+                    <div className="col-span-2 flex justify-center py-8">
+                      <Loader2Icon className="size-4 animate-spin text-muted-foreground" />
+                    </div>
                   ) : (
                     <p className="col-span-2 py-8 text-center text-sm text-muted-foreground">{t("noItems")}</p>
                   )}
@@ -1102,7 +1179,6 @@ export default function BillingPosPage() {
 
             <div className="mt-3 flex flex-col gap-2 border-t pt-3">
               <OfferSelect
-                offers={offers}
                 value={selectedOfferId}
                 onValueChange={handleOfferChange}
                 placeholder={t("offerPlaceholder")}
@@ -1122,7 +1198,6 @@ export default function BillingPosPage() {
           {/* Column 3 — payment section: customer, delivery, totals, payment method, actions */}
           <div className="flex min-h-0 min-w-0 flex-col gap-3 overflow-y-auto p-4">
             <CustomerSelect
-              customers={customers}
               value={activeTab.customerId}
               onValueChange={(value) => updateTab(activeTab.key, { customerId: value })}
               disabled={isDraftSaved}
@@ -1156,25 +1231,15 @@ export default function BillingPosPage() {
                       updateTab(activeTab.key, { delivery: { ...activeTab.delivery, address: event.target.value } })
                     }
                   />
-                  <Select
-                    value={activeTab.delivery.deliveryPersonId ?? undefined}
+                  <StaffSelect
+                    role="delivery_person"
+                    value={activeTab.delivery.deliveryPersonId}
                     onValueChange={(value) =>
                       updateTab(activeTab.key, { delivery: { ...activeTab.delivery, deliveryPersonId: value } })
                     }
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder={t("deliveryPersonPlaceholder")} />
-                    </SelectTrigger>
-                    <SelectContent container={posContainerEl}>
-                      {deliveryPersons
-                        ?.filter((person) => person.is_active)
-                        .map((person) => (
-                          <SelectItem key={person.id} value={person.id}>
-                            {person.name}
-                          </SelectItem>
-                        ))}
-                    </SelectContent>
-                  </Select>
+                    placeholder={t("deliveryPersonPlaceholder")}
+                    container={posContainerEl}
+                  />
                   <Input
                     key={activeTab.invoiceId ?? activeTab.key}
                     type="number"

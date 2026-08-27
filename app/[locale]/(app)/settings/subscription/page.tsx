@@ -4,7 +4,7 @@ import { useTranslations } from "next-intl"
 
 import { StatusBadge } from "@/components/status-badge"
 import { Skeleton } from "@/components/ui/skeleton"
-import { useOrganizations } from "@/hooks/use-organizations"
+import { useCurrentOrganization } from "@/hooks/use-organizations"
 
 const STATUS_LABEL_KEY = {
   trialing: "statusTrialing",
@@ -15,8 +15,7 @@ const STATUS_LABEL_KEY = {
 
 export default function SubscriptionPage() {
   const t = useTranslations("Subscription")
-  const { data: organizations, isLoading } = useOrganizations()
-  const organization = organizations?.[0]
+  const { data: organization, isLoading } = useCurrentOrganization()
 
   const renewsAt = organization?.subscription_current_period_end
     ? new Date(organization.subscription_current_period_end).toLocaleDateString()

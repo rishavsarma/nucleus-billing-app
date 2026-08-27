@@ -13,11 +13,33 @@ export async function GET(request: Request) {
   }
 
   const { searchParams } = new URL(request.url)
+  const purchaseBillId = searchParams.get("purchase_bill_id")
+  const supabase = await createClient()
+
+  // Scoped to one bill — used by the purchase bill detail page's payment
+  // history. Was previously fetched via the "all purchase payments"
+  // endpoint (pageSize: 9999, every payment in the org) and filtered
+  // client-side to this one purchase_bill_id — that scaled with total org
+  // payment volume on every single bill view, not just list views. This
+  // scopes the query itself instead.
+  if (purchaseBillId) {
+    let query = supabase
+      .schema("billing")
+      .from("purchase_payments")
+      .select("*")
+      .eq("purchase_bill_id", purchaseBillId)
+      .order("paid_at", { ascending: false })
+    if (!auth.isSuperadmin) query = query.eq("org_id", auth.orgId!)
+    const { data, error } = await query
+
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json(data)
+  }
+
   const search = searchParams.get("search") ?? undefined
   const page = Number(searchParams.get("page") ?? 1)
   const pageSize = Number(searchParams.get("pageSize") ?? 10)
 
-  const supabase = await createClient()
   // Embeds the bill number and (nested one level further) the vendor name
   // via purchase_bill_id — avoids the list page separately fetching every
   // bill and every vendor (pageSize: 9999 each) to resolve these.

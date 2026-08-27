@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Loader2Icon } from "lucide-react"
@@ -13,12 +14,13 @@ import { Link, useRouter } from "@/i18n/navigation"
 import { Button } from "@/components/ui/button"
 import { Field, FieldError, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { SearchableSelect } from "@/components/searchable-select"
 import { Textarea } from "@/components/ui/textarea"
-import { useItems } from "@/hooks/use-items"
+import { useDebouncedValue } from "@/hooks/use-debounced-value"
+import { useItem, useItemsList } from "@/hooks/use-items"
 import { fetchItemStock } from "@/lib/database/services/item-stock"
 import { useCreateStockMovement } from "@/hooks/use-stock-movements"
-import { useWarehouses } from "@/hooks/use-warehouses"
+import { WarehouseSelect } from "@/components/warehouse-select"
 import { routes } from "@/lib/routes"
 
 const adjustmentSchema = z.object({
@@ -34,8 +36,6 @@ export default function NewStockMovementPage() {
   const tCommon = useTranslations("Common")
   const router = useRouter()
   const createMovement = useCreateStockMovement()
-  const { data: items } = useItems()
-  const { data: warehouses } = useWarehouses()
 
   const form = useForm<AdjustmentValues>({
     resolver: zodResolver(adjustmentSchema),
@@ -45,6 +45,24 @@ export default function NewStockMovementPage() {
   const itemId = useWatch({ control, name: "item_id" })
   const warehouseId = useWatch({ control, name: "warehouse_id" })
   const quantityDelta = useWatch({ control, name: "quantity_delta" })
+
+  // Item picker searches the server instead of fetching the entire
+  // catalog (pageSize: 9999) and filtering client-side.
+  const [itemSearch, setItemSearch] = useState("")
+  const debouncedItemSearch = useDebouncedValue(itemSearch, 300)
+  const { data: itemsResult, isFetching: isFetchingItems } = useItemsList({
+    search: debouncedItemSearch,
+    page: 1,
+    pageSize: 30,
+  })
+  const trackedItems = (itemsResult?.data ?? []).filter((item) => item.track_inventory)
+  const { data: selectedItem } = useItem(itemId)
+  const itemOptions = [
+    ...(selectedItem?.track_inventory && !trackedItems.some((item) => item.id === selectedItem.id)
+      ? [{ value: selectedItem.id, label: selectedItem.name }]
+      : []),
+    ...trackedItems.map((item) => ({ value: item.id, label: item.name })),
+  ]
 
   const { data: itemStockRows } = useQuery({
     queryKey: ["item-stock", itemId],
@@ -83,34 +101,26 @@ export default function NewStockMovementPage() {
         <div className="grid grid-cols-2 gap-4">
           <Field data-invalid={!!formState.errors.item_id}>
             <FieldLabel htmlFor="sm-item">{t("itemLabel")}</FieldLabel>
-            <Select value={itemId} onValueChange={(value) => setValue("item_id", value)}>
-              <SelectTrigger id="sm-item" className="w-full">
-                <SelectValue placeholder={t("itemPlaceholder")} />
-              </SelectTrigger>
-              <SelectContent>
-                {items?.filter((i) => i.track_inventory).map((item) => (
-                  <SelectItem key={item.id} value={item.id}>
-                    {item.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <SearchableSelect
+              id="sm-item"
+              value={itemId}
+              onValueChange={(value) => setValue("item_id", value)}
+              placeholder={t("itemPlaceholder")}
+              options={itemOptions}
+              search={itemSearch}
+              onSearchChange={setItemSearch}
+              isLoading={isFetchingItems}
+            />
             {formState.errors.item_id ? <FieldError>{tCommon("required")}</FieldError> : null}
           </Field>
           <Field data-invalid={!!formState.errors.warehouse_id}>
             <FieldLabel htmlFor="sm-warehouse">{t("warehouseLabel")}</FieldLabel>
-            <Select value={warehouseId} onValueChange={(value) => setValue("warehouse_id", value)}>
-              <SelectTrigger id="sm-warehouse" className="w-full">
-                <SelectValue placeholder={t("warehousePlaceholder")} />
-              </SelectTrigger>
-              <SelectContent>
-                {warehouses?.map((warehouse) => (
-                  <SelectItem key={warehouse.id} value={warehouse.id}>
-                    {warehouse.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <WarehouseSelect
+              id="sm-warehouse"
+              value={warehouseId}
+              onValueChange={(value) => setValue("warehouse_id", value, { shouldValidate: true })}
+              placeholder={t("warehousePlaceholder")}
+            />
             {formState.errors.warehouse_id ? <FieldError>{tCommon("required")}</FieldError> : null}
           </Field>
         </div>
