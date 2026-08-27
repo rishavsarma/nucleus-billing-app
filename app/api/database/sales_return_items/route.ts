@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
-import { requireOrgId, verifyBelongsToOrg } from "@/lib/database/require-org"
+import { requireOrgId, verifyBelongsToOrg, verifyChildBelongsToOrg } from "@/lib/database/require-org"
 
 async function verifySalesReturnInOrg(
   supabase: Awaited<ReturnType<typeof createClient>>,
@@ -82,7 +82,15 @@ export async function POST(request: Request) {
   }
   if (
     body.invoice_item_id &&
-    !(await verifyBelongsToOrg(supabase, "invoice_items", body.invoice_item_id, auth.orgId, auth.isSuperadmin))
+    !(await verifyChildBelongsToOrg(
+      supabase,
+      "invoice_items",
+      body.invoice_item_id,
+      "invoice_id",
+      "invoices",
+      auth.orgId,
+      auth.isSuperadmin,
+    ))
   ) {
     return NextResponse.json({ error: "invoice_item_id does not belong to this org" }, { status: 400 })
   }

@@ -8,7 +8,10 @@ export type OrgStatus = {
 
 export type Me = {
   userId: string
+  email: string | null
+  name: string | null
   orgId: string | null
+  role: "owner" | "admin" | "member" | null
   isSuperadmin: boolean
   orgStatus: OrgStatus | null
 }

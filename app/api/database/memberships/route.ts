@@ -50,7 +50,14 @@ export async function POST(request: Request) {
     .select()
     .single()
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) {
+    // Stable code for membership_limit_guard (011_staff_and_membership_limit.sql)
+    // so the client can show a translated message instead of the raw trigger text.
+    if (error.message.includes("membership_limit_reached")) {
+      return NextResponse.json({ error: error.message, code: "membership_limit_reached" }, { status: 422 })
+    }
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
   return NextResponse.json(data, { status: 201 })
 }
 

@@ -63,13 +63,14 @@
       "movements": "Movements",
       "organization": "Organization",
       "members": "Members",
+      "myProfile": "My Profile",
       "organizations": "Organizations",
       "superadmins": "Superadmins",
       "billing": "Billing",
       "subscription": "Subscription",
       "addons": "Add-ons",
       "appSettings": "App Settings",
-      "deliveryPersons": "Delivery Persons",
+      "staff": "Staff",
       "installments": "Installments",
       "pdfWatermarks": "PDF Watermarks"
     }
@@ -116,7 +117,8 @@
   "Roles": {
     "owner": "Owner",
     "admin": "Admin",
-    "member": "Member"
+    "member": "Member",
+    "superadmin": "Superadmin"
   },
   "DocStatus": {
     "draft": "Draft",
@@ -598,6 +600,26 @@
     "activeLabel": "Active",
     "subscriptionStatusLabel": "Subscription Status"
   },
+  "Profile": {
+    "title": "My Profile",
+    "description": "Your personal account details — separate from organization settings.",
+    "detailsTitle": "Details",
+    "detailsDescription": "Your name and phone number.",
+    "nameLabel": "Name",
+    "emailTitle": "Email",
+    "emailDescription": "Changing your email sends a confirmation link to the new address before it takes effect.",
+    "changeEmail": "Change Email",
+    "emailChangeConfirmSent": "Check your new email address for a confirmation link.",
+    "invalidEmail": "Enter a valid email address.",
+    "passwordTitle": "Password",
+    "passwordDescription": "Choose a new password for your account.",
+    "newPasswordLabel": "New Password",
+    "confirmPasswordLabel": "Confirm Password",
+    "changePassword": "Change Password",
+    "passwordChanged": "Password updated.",
+    "passwordTooShort": "Password must be at least 8 characters.",
+    "passwordsDontMatch": "Passwords don't match."
+  },
   "SettingsMembers": {
     "title": "Members",
     "description": "People with access to this organization.",
@@ -611,7 +633,9 @@
     "removeConfirmDescription": "They'll immediately lose access to this organization.",
     "inviteDialogTitle": "Invite Member",
     "inviteNotWiredUp": "Inviting new members isn't wired up yet — that needs a real email-invite flow (send a link, create their account on acceptance, then add the membership). For now, a superadmin can add a membership directly.",
-    "close": "Close"
+    "close": "Close",
+    "seatsUsed": "{count} of {limit} seats used",
+    "seatsLimitReached": "You've reached the {limit}-member limit for this organization."
   },
   "AppSettingsPage": {
     "title": "App Settings",
@@ -973,23 +997,32 @@
     "downloadPdfButton": "Download PDF",
     "printButton": "Print"
   },
-  "DeliveryPersons": {
-    "title": "Delivery Persons",
-    "description": "People who deliver orders for your organization.",
-    "searchPlaceholder": "Search delivery persons…",
-    "newDeliveryPerson": "New Delivery Person",
-    "editDeliveryPerson": "Edit Delivery Person",
-    "newDescription": "Add a delivery person for your organization.",
-    "editDescription": "Update this delivery person.",
-    "noResults": "No delivery persons yet.",
+  "Staff": {
+    "title": "Staff",
+    "description": "People who work for your organization but don't need to log in — delivery persons, movers, and other record-only roles.",
+    "searchPlaceholder": "Search staff…",
+    "newStaff": "New Staff",
+    "editStaff": "Edit Staff",
+    "newDescription": "Add a staff member for your organization.",
+    "editDescription": "Update this staff member.",
+    "noResults": "No staff yet.",
     "columnName": "Name",
+    "columnRole": "Role",
     "columnPhone": "Phone",
     "columnStatus": "Status",
     "nameLabel": "Name",
+    "roleLabel": "Role",
+    "roleLabelFieldLabel": "Role Label",
+    "roleLabelPlaceholder": "e.g. Warehouse helper",
     "activeLabel": "Active",
     "statusActive": "Active",
     "statusInactive": "Inactive",
     "deleteDescription": "Past deliveries assigned to this person are kept, but they'll no longer be selectable on new deliveries."
+  },
+  "StaffRoles": {
+    "delivery_person": "Delivery Person",
+    "mover": "Mover",
+    "other": "Other"
   },
   "DeliveryStatus": {
     "pending": "Pending",

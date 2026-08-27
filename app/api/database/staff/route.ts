@@ -14,12 +14,14 @@ export async function GET(request: Request) {
 
   const { searchParams } = new URL(request.url)
   const search = searchParams.get("search") ?? undefined
+  const role = searchParams.get("role") ?? undefined
   const page = Number(searchParams.get("page") ?? 1)
   const pageSize = Number(searchParams.get("pageSize") ?? 10)
 
   const supabase = await createClient()
-  let query = supabase.schema("billing").from("delivery_persons").select("*", { count: "exact" })
+  let query = supabase.schema("billing").from("staff").select("*", { count: "exact" })
   if (!auth.isSuperadmin) query = query.eq("org_id", auth.orgId)
+  if (role) query = query.eq("role", role)
   query = applyListParams(query, ["name"], { search, page, pageSize })
   const { data, error, count } = await query
 
@@ -45,7 +47,7 @@ export async function POST(request: Request) {
   const supabase = await createClient()
   const { data, error } = await supabase
     .schema("billing")
-    .from("delivery_persons")
+    .from("staff")
     .insert({ ...body, org_id: orgId })
     .select()
     .single()
@@ -70,7 +72,7 @@ export async function PUT(request: Request) {
 
   const body = await request.json()
   const supabase = await createClient()
-  let query = supabase.schema("billing").from("delivery_persons").update(body).eq("id", id)
+  let query = supabase.schema("billing").from("staff").update(body).eq("id", id)
   if (!auth.isSuperadmin) query = query.eq("org_id", auth.orgId)
   const { data, error } = await query.select().maybeSingle()
 
@@ -94,7 +96,7 @@ export async function DELETE(request: Request) {
   }
 
   const supabase = await createClient()
-  let query = supabase.schema("billing").from("delivery_persons").delete().eq("id", id)
+  let query = supabase.schema("billing").from("staff").delete().eq("id", id)
   if (!auth.isSuperadmin) query = query.eq("org_id", auth.orgId)
   const { error } = await query
 

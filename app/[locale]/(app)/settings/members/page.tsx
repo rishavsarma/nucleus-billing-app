@@ -25,6 +25,7 @@ import type { OrgMember } from "@/lib/services/org-members"
 const columnHelper = entityColumnHelper<OrgMember>()
 
 const ROLE_LABEL_KEY = { owner: "owner", admin: "admin", member: "member" } as const
+const MEMBERSHIP_LIMIT = 3
 
 export default function MembersPage() {
   const t = useTranslations("SettingsMembers")
@@ -37,6 +38,9 @@ export default function MembersPage() {
 
   const [toRemove, setToRemove] = useState<OrgMember | null>(null)
   const [inviteOpen, setInviteOpen] = useState(false)
+
+  const seatsUsed = members?.length ?? 0
+  const atLimit = seatsUsed >= MEMBERSHIP_LIMIT
 
   const columns = [
     columnHelper.accessor("email", {
@@ -103,8 +107,11 @@ export default function MembersPage() {
         <div>
           <h1 className="text-2xl font-semibold">{t("title")}</h1>
           <p className="text-sm text-muted-foreground">{t("description")}</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {t("seatsUsed", { count: seatsUsed, limit: MEMBERSHIP_LIMIT })}
+          </p>
         </div>
-        <Button onClick={() => setInviteOpen(true)}>
+        <Button onClick={() => setInviteOpen(true)} disabled={atLimit} title={atLimit ? t("seatsLimitReached", { limit: MEMBERSHIP_LIMIT }) : undefined}>
           <PlusIcon />
           {t("inviteMember")}
         </Button>

@@ -63,13 +63,14 @@
       "movements": "গতিবিধি",
       "organization": "সংস্থা",
       "members": "সদস্য",
+      "myProfile": "মোৰ প্ৰ'ফাইল",
       "organizations": "সংস্থা",
       "superadmins": "সুপাৰএডমিন",
       "billing": "বিলিং",
       "subscription": "চাঁদা",
       "addons": "এড-অন",
       "appSettings": "এপ ছেটিংছ",
-      "deliveryPersons": "ডেলিভাৰী কৰ্মী",
+      "staff": "কৰ্মচাৰী",
       "installments": "কিস্তি",
       "pdfWatermarks": "PDF ৱাটাৰমাৰ্ক"
     }
@@ -116,7 +117,8 @@
   "Roles": {
     "owner": "গৰাকী",
     "admin": "এডমিন",
-    "member": "সদস্য"
+    "member": "সদস্য",
+    "superadmin": "ছুপাৰএডমিন"
   },
   "DocStatus": {
     "draft": "ড্ৰাফ্ট",
@@ -598,6 +600,26 @@
     "activeLabel": "সক্ৰিয়",
     "subscriptionStatusLabel": "চাঁদাৰ অৱস্থা"
   },
+  "Profile": {
+    "title": "মোৰ প্ৰ'ফাইল",
+    "description": "আপোনাৰ ব্যক্তিগত একাউণ্টৰ বিৱৰণ — সংস্থাৰ ছেটিংছৰ পৰা পৃথক।",
+    "detailsTitle": "বিৱৰণ",
+    "detailsDescription": "আপোনাৰ নাম আৰু ফোন নম্বৰ।",
+    "nameLabel": "নাম",
+    "emailTitle": "ইমেইল",
+    "emailDescription": "আপোনাৰ ইমেইল সলনি কৰিলে নতুন ঠিকনালৈ এটা নিশ্চিতকৰণ লিংক পঠোৱা হয়, তাৰ পিছতহে ইয়াক কাৰ্যকৰী হয়।",
+    "changeEmail": "ইমেইল সলনি কৰক",
+    "emailChangeConfirmSent": "নিশ্চিতকৰণ লিংকৰ বাবে আপোনাৰ নতুন ইমেইল ঠিকনা চাওক।",
+    "invalidEmail": "এটা বৈধ ইমেইল ঠিকনা দিয়ক।",
+    "passwordTitle": "পাছৱৰ্ড",
+    "passwordDescription": "আপোনাৰ একাউণ্টৰ বাবে এটা নতুন পাছৱৰ্ড বাছক।",
+    "newPasswordLabel": "নতুন পাছৱৰ্ড",
+    "confirmPasswordLabel": "পাছৱৰ্ড নিশ্চিত কৰক",
+    "changePassword": "পাছৱৰ্ড সলনি কৰক",
+    "passwordChanged": "পাছৱৰ্ড আপডেট কৰা হ'ল।",
+    "passwordTooShort": "পাছৱৰ্ড কমেও 8 আখৰৰ হ'ব লাগিব।",
+    "passwordsDontMatch": "পাছৱৰ্ড মিলা নাই।"
+  },
   "SettingsMembers": {
     "title": "সদস্য",
     "description": "এই সংস্থাত প্ৰৱেশাধিকাৰ থকা লোকসকল।",
@@ -611,7 +633,9 @@
     "removeConfirmDescription": "তেওঁলোকে তৎক্ষণাৎ এই সংস্থাৰ প্ৰৱেশাধিকাৰ হেৰুৱাব।",
     "inviteDialogTitle": "সদস্য আমন্ত্ৰণ কৰক",
     "inviteNotWiredUp": "নতুন সদস্য আমন্ত্ৰণ কৰাটো এতিয়াও প্ৰস্তুত হোৱা নাই — ইয়াৰ বাবে এটা প্ৰকৃত ইমেইল-আমন্ত্ৰণ প্ৰক্ৰিয়া লাগে (লিংক পঠিওৱা, গ্ৰহণ কৰাত একাউণ্ট সৃষ্টি কৰা, তাৰ পিছত সদস্যপদ যোগ কৰা)। এতিয়াৰ বাবে, এজন সুপাৰএডমিনে পোনপটীয়াকৈ সদস্যপদ যোগ কৰিব পাৰে।",
-    "close": "বন্ধ কৰক"
+    "close": "বন্ধ কৰক",
+    "seatsUsed": "{limit} ৰ {count} ছিট ব্যৱহাৰ হৈছে",
+    "seatsLimitReached": "আপুনি এই প্ৰতিষ্ঠানৰ বাবে {limit}-সদস্যৰ সীমাত উপনীত হৈছে।"
   },
   "AppSettingsPage": {
     "title": "এপ ছেটিংছ",
@@ -973,23 +997,32 @@
     "downloadPdfButton": "PDF ডাউনলোড কৰক",
     "printButton": "প্ৰিণ্ট কৰক"
   },
-  "DeliveryPersons": {
-    "title": "ডেলিভাৰী কৰ্মী",
-    "description": "আপোনাৰ প্ৰতিষ্ঠানৰ বাবে অৰ্ডাৰ ডেলিভাৰী কৰা লোকসকল।",
-    "searchPlaceholder": "ডেলিভাৰী কৰ্মী বিচাৰক…",
-    "newDeliveryPerson": "নতুন ডেলিভাৰী কৰ্মী",
-    "editDeliveryPerson": "ডেলিভাৰী কৰ্মী সম্পাদনা কৰক",
-    "newDescription": "আপোনাৰ প্ৰতিষ্ঠানৰ বাবে এজন ডেলিভাৰী কৰ্মী যোগ কৰক।",
-    "editDescription": "এই ডেলিভাৰী কৰ্মীজনক আপডেট কৰক।",
-    "noResults": "এতিয়ালৈকে কোনো ডেলিভাৰী কৰ্মী নাই।",
+  "Staff": {
+    "title": "কৰ্মচাৰী",
+    "description": "যিসকল লোকে আপোনাৰ প্ৰতিষ্ঠানৰ বাবে কাম কৰে কিন্তু লগইন কৰাৰ প্ৰয়োজন নাই — ডেলিভাৰী কৰ্মী, মুভাৰ, আৰু অন্য কেৱল-ৰেকৰ্ড ভূমিকা।",
+    "searchPlaceholder": "কৰ্মচাৰী বিচাৰক…",
+    "newStaff": "নতুন কৰ্মচাৰী",
+    "editStaff": "কৰ্মচাৰী সম্পাদনা কৰক",
+    "newDescription": "আপোনাৰ প্ৰতিষ্ঠানৰ বাবে এজন কৰ্মচাৰী যোগ কৰক।",
+    "editDescription": "এই কৰ্মচাৰীজনক আপডেট কৰক।",
+    "noResults": "এতিয়ালৈকে কোনো কৰ্মচাৰী নাই।",
     "columnName": "নাম",
+    "columnRole": "ভূমিকা",
     "columnPhone": "ফোন",
     "columnStatus": "স্থিতি",
     "nameLabel": "নাম",
+    "roleLabel": "ভূমিকা",
+    "roleLabelFieldLabel": "ভূমিকা লেবেল",
+    "roleLabelPlaceholder": "যেনে গুদাম সহায়ক",
     "activeLabel": "সক্ৰিয়",
     "statusActive": "সক্ৰিয়",
     "statusInactive": "নিষ্ক্ৰিয়",
     "deleteDescription": "এই ব্যক্তিক নিযুক্ত কৰা পূৰ্বৰ ডেলিভাৰীসমূহ ৰক্ষিত থাকিব, কিন্তু নতুন ডেলিভাৰীৰ বাবে সিহঁতক নিৰ্বাচন কৰিব নোৱাৰি।"
+  },
+  "StaffRoles": {
+    "delivery_person": "ডেলিভাৰী কৰ্মী",
+    "mover": "মুভাৰ",
+    "other": "অন্য"
   },
   "DeliveryStatus": {
     "pending": "মুলতুবি",

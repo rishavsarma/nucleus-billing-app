@@ -128,6 +128,34 @@ export async function verifyBelongsToOrg(
   return !!data
 }
 
+/**
+ * Same purpose as verifyBelongsToOrg, but for a foreign key that points at
+ * a *child* table with no org_id column of its own (e.g. invoice_items,
+ * purchase_bill_items) — verifyBelongsToOrg's `.eq("org_id", orgId)` would
+ * always fail against a table like that, since the column doesn't exist.
+ * Resolves the child row's own parent-FK column, then checks that parent
+ * (which does have org_id) via verifyBelongsToOrg.
+ */
+export async function verifyChildBelongsToOrg(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  childTable: string,
+  childId: string,
+  parentFkColumn: string,
+  parentTable: string,
+  orgId: string | null,
+  isSuperadmin: boolean,
+): Promise<boolean> {
+  const { data: child } = await supabase
+    .schema("billing")
+    .from(childTable)
+    .select(parentFkColumn)
+    .eq("id", childId)
+    .maybeSingle()
+  if (!child) return false
+  const parentId = (child as unknown as Record<string, string>)[parentFkColumn]
+  return verifyBelongsToOrg(supabase, parentTable, parentId, orgId, isSuperadmin)
+}
+
 /** Verifies the requesting user is listed in billing.superadmins (a global, non-org-scoped role). */
 export async function requireSuperadmin(): Promise<RequireUserResult> {
   const supabase = await createClient()

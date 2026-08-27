@@ -60,7 +60,7 @@ export const routes = {
     },
     taxRates: "/catalog/tax-rates",
     warehouses: "/catalog/warehouses",
-    deliveryPersons: "/catalog/delivery-persons",
+    staff: "/catalog/staff",
     offers: {
       list: "/catalog/offers",
       new: "/catalog/offers/new",
@@ -96,6 +96,7 @@ export const routes = {
     addons: "/settings/addons",
     appSettings: "/settings/app-settings",
     pdfWatermarks: "/settings/pdf-watermarks",
+    profile: "/settings/profile",
   },
 
   admin: {

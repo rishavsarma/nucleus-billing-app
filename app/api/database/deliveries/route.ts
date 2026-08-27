@@ -55,7 +55,7 @@ export async function POST(request: Request) {
   }
   if (
     body.delivery_person_id &&
-    !(await verifyBelongsToOrg(supabase, "delivery_persons", body.delivery_person_id, orgId, auth.isSuperadmin))
+    !(await verifyBelongsToOrg(supabase, "staff", body.delivery_person_id, orgId, auth.isSuperadmin))
   ) {
     return NextResponse.json({ error: "delivery_person_id does not belong to this org" }, { status: 400 })
   }
@@ -89,7 +89,7 @@ export async function PUT(request: Request) {
   const supabase = await createClient()
   if (
     body.delivery_person_id &&
-    !(await verifyBelongsToOrg(supabase, "delivery_persons", body.delivery_person_id, auth.orgId, auth.isSuperadmin))
+    !(await verifyBelongsToOrg(supabase, "staff", body.delivery_person_id, auth.orgId, auth.isSuperadmin))
   ) {
     return NextResponse.json({ error: "delivery_person_id does not belong to this org" }, { status: 400 })
   }

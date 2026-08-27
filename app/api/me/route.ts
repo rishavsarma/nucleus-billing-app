@@ -33,6 +33,7 @@ export async function GET() {
   const isSuperadmin = !!superadminRow
 
   let orgId: string | null = null
+  let role: "owner" | "admin" | "member" | null = null
   let orgStatus: {
     isActive: boolean
     subscriptionStatus: "trialing" | "active" | "past_due" | "cancelled"
@@ -43,7 +44,7 @@ export async function GET() {
     const { data: membership } = await admin
       .schema("billing")
       .from("memberships")
-      .select("org_id")
+      .select("org_id, role")
       .eq("user_id", user.id)
       .limit(1)
       .maybeSingle()
@@ -52,6 +53,7 @@ export async function GET() {
       return NextResponse.json({ error: "no_org" }, { status: 403 })
     }
     orgId = membership.org_id
+    role = membership.role
 
     const { data: org } = await admin
       .schema("billing")
@@ -71,7 +73,10 @@ export async function GET() {
 
   return NextResponse.json({
     userId: user.id,
+    email: user.email ?? null,
+    name: (user.user_metadata?.full_name as string | undefined) ?? null,
     orgId,
+    role,
     isSuperadmin,
     orgStatus,
   })

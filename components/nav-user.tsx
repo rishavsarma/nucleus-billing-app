@@ -1,14 +1,15 @@
 "use client"
 
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@/components/ui/avatar"
+import { useTranslations } from "next-intl"
+import { toast } from "sonner"
+import { CircleUserRoundIcon, CreditCardIcon, EllipsisVerticalIcon, LogOutIcon, SettingsIcon } from "lucide-react"
+
+import { Link, useRouter } from "@/i18n/navigation"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Badge } from "@/components/ui/badge"
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -20,18 +21,30 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
-import { EllipsisVerticalIcon, CircleUserRoundIcon, CreditCardIcon, BellIcon, LogOutIcon } from "lucide-react"
+import { useLogout } from "@/hooks/use-logout"
+import { routes } from "@/lib/routes"
+import type { Me } from "@/lib/services/me"
 
-export function NavUser({
-  user,
-}: {
-  user: {
-    name: string
-    email: string
-    avatar: string
+function initials(name: string | null, email: string | null): string {
+  if (name) {
+    const parts = name.trim().split(/\s+/)
+    return parts.length > 1 ? (parts[0][0] + parts[1][0]).toUpperCase() : parts[0].slice(0, 2).toUpperCase()
   }
-}) {
+  if (email) return email.split("@")[0].slice(0, 2).toUpperCase()
+  return "?"
+}
+
+export function NavUser({ me }: { me: Me }) {
   const { isMobile } = useSidebar()
+  const t = useTranslations("Sidebar")
+  const tRoles = useTranslations("Roles")
+  const tCommon = useTranslations("Common")
+  const router = useRouter()
+  const logout = useLogout()
+
+  const roleLabel = me.isSuperadmin ? tRoles("superadmin") : me.role ? tRoles(me.role) : null
+  const primaryLabel = me.name || me.email || "—"
+  const initialsLabel = initials(me.name, me.email)
 
   return (
     <SidebarMenu>
@@ -42,15 +55,14 @@ export function NavUser({
               size="lg"
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
-              <Avatar className="h-8 w-8 rounded-lg grayscale">
-                <AvatarImage src={user.avatar} alt={user.name} />
-                <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+              <Avatar className="h-8 w-8 rounded-lg">
+                <AvatarFallback className="rounded-lg">{initialsLabel}</AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-start text-sm leading-tight">
-                <span className="truncate font-medium">{user.name}</span>
-                <span className="truncate text-xs text-muted-foreground">
-                  {user.email}
-                </span>
+                <span className="truncate font-medium">{primaryLabel}</span>
+                {roleLabel ? (
+                  <span className="truncate text-xs text-muted-foreground">{roleLabel}</span>
+                ) : null}
               </div>
               <EllipsisVerticalIcon className="ms-auto size-4" />
             </SidebarMenuButton>
@@ -64,40 +76,55 @@ export function NavUser({
             <DropdownMenuLabel className="p-0 font-normal">
               <div className="flex items-center gap-2 px-1 py-1.5 text-start text-sm">
                 <Avatar className="h-8 w-8 rounded-lg">
-                  <AvatarImage src={user.avatar} alt={user.name} />
-                  <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+                  <AvatarFallback className="rounded-lg">{initialsLabel}</AvatarFallback>
                 </Avatar>
                 <div className="grid flex-1 text-start text-sm leading-tight">
-                  <span className="truncate font-medium">{user.name}</span>
-                  <span className="truncate text-xs text-muted-foreground">
-                    {user.email}
-                  </span>
+                  <span className="truncate font-medium">{primaryLabel}</span>
+                  {me.name && me.email ? (
+                    <span className="truncate text-xs text-muted-foreground">{me.email}</span>
+                  ) : null}
+                  {roleLabel ? (
+                    <Badge variant="secondary" className="mt-0.5 w-fit text-xs">
+                      {roleLabel}
+                    </Badge>
+                  ) : null}
                 </div>
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <CircleUserRoundIcon
-                />
-                Account
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <CreditCardIcon
-                />
-                Billing
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <BellIcon
-                />
-                Notifications
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
+            <DropdownMenuItem asChild>
+              <Link href={routes.settings.profile}>
+                <CircleUserRoundIcon />
+                {t("items.myProfile")}
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href={routes.settings.subscription}>
+                <CreditCardIcon />
+                {t("items.subscription")}
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href={routes.settings.appSettings}>
+                <SettingsIcon />
+                {t("items.appSettings")}
+              </Link>
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
-              <LogOutIcon
-              />
-              Log out
+            <DropdownMenuItem
+              onClick={() =>
+                logout.mutate(undefined, {
+                  onSuccess: () => {
+                    router.push("/login")
+                    router.refresh()
+                  },
+                  onError: () => toast.error(tCommon("genericError")),
+                })
+              }
+              disabled={logout.isPending}
+            >
+              <LogOutIcon />
+              {t("logOut")}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

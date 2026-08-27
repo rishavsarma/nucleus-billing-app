@@ -63,13 +63,14 @@
       "movements": "मूवमेंट",
       "organization": "संगठन",
       "members": "सदस्य",
+      "myProfile": "मेरी प्रोफ़ाइल",
       "organizations": "संगठन",
       "superadmins": "सुपरएडमिन",
       "billing": "बिलिंग",
       "subscription": "सदस्यता",
       "addons": "ऐड-ऑन",
       "appSettings": "ऐप सेटिंग्स",
-      "deliveryPersons": "डिलीवरी कर्मी",
+      "staff": "स्टाफ़",
       "installments": "किश्तें",
       "pdfWatermarks": "PDF वॉटरमार्क"
     }
@@ -116,7 +117,8 @@
   "Roles": {
     "owner": "स्वामी",
     "admin": "एडमिन",
-    "member": "सदस्य"
+    "member": "सदस्य",
+    "superadmin": "सुपरएडमिन"
   },
   "DocStatus": {
     "draft": "ड्राफ़्ट",
@@ -598,6 +600,26 @@
     "activeLabel": "सक्रिय",
     "subscriptionStatusLabel": "सदस्यता स्थिति"
   },
+  "Profile": {
+    "title": "मेरी प्रोफ़ाइल",
+    "description": "आपके व्यक्तिगत खाते का विवरण — संगठन सेटिंग्स से अलग।",
+    "detailsTitle": "विवरण",
+    "detailsDescription": "आपका नाम और फ़ोन नंबर।",
+    "nameLabel": "नाम",
+    "emailTitle": "ईमेल",
+    "emailDescription": "अपना ईमेल बदलने पर नए पते पर एक पुष्टिकरण लिंक भेजा जाता है, जिसके बाद ही यह प्रभावी होता है।",
+    "changeEmail": "ईमेल बदलें",
+    "emailChangeConfirmSent": "पुष्टिकरण लिंक के लिए अपना नया ईमेल पता जांचें।",
+    "invalidEmail": "एक मान्य ईमेल पता दर्ज करें।",
+    "passwordTitle": "पासवर्ड",
+    "passwordDescription": "अपने खाते के लिए एक नया पासवर्ड चुनें।",
+    "newPasswordLabel": "नया पासवर्ड",
+    "confirmPasswordLabel": "पासवर्ड की पुष्टि करें",
+    "changePassword": "पासवर्ड बदलें",
+    "passwordChanged": "पासवर्ड अपडेट किया गया।",
+    "passwordTooShort": "पासवर्ड कम से कम 8 अक्षरों का होना चाहिए।",
+    "passwordsDontMatch": "पासवर्ड मेल नहीं खाते।"
+  },
   "SettingsMembers": {
     "title": "सदस्य",
     "description": "इस संगठन तक पहुंच रखने वाले लोग।",
@@ -611,7 +633,9 @@
     "removeConfirmDescription": "वे तुरंत इस संगठन तक पहुंच खो देंगे।",
     "inviteDialogTitle": "सदस्य आमंत्रित करें",
     "inviteNotWiredUp": "नए सदस्यों को आमंत्रित करना अभी लागू नहीं है — इसके लिए एक वास्तविक ईमेल-आमंत्रण प्रवाह चाहिए (लिंक भेजना, स्वीकृति पर खाता बनाना, फिर सदस्यता जोड़ना)। अभी के लिए, एक सुपरएडमिन सीधे सदस्यता जोड़ सकता है।",
-    "close": "बंद करें"
+    "close": "बंद करें",
+    "seatsUsed": "{limit} में से {count} सीटें उपयोग में हैं",
+    "seatsLimitReached": "आप इस संगठन के लिए {limit}-सदस्य की सीमा तक पहुंच गए हैं।"
   },
   "AppSettingsPage": {
     "title": "ऐप सेटिंग्स",
@@ -973,23 +997,32 @@
     "downloadPdfButton": "पीडीएफ डाउनलोड करें",
     "printButton": "प्रिंट करें"
   },
-  "DeliveryPersons": {
-    "title": "डिलीवरी कर्मी",
-    "description": "आपके संगठन के लिए ऑर्डर डिलीवर करने वाले लोग।",
-    "searchPlaceholder": "डिलीवरी कर्मी खोजें…",
-    "newDeliveryPerson": "नया डिलीवरी कर्मी",
-    "editDeliveryPerson": "डिलीवरी कर्मी संपादित करें",
-    "newDescription": "अपने संगठन के लिए एक डिलीवरी कर्मी जोड़ें।",
-    "editDescription": "इस डिलीवरी कर्मी को अपडेट करें।",
-    "noResults": "अभी तक कोई डिलीवरी कर्मी नहीं।",
+  "Staff": {
+    "title": "स्टाफ़",
+    "description": "वे लोग जो आपके संगठन के लिए काम करते हैं पर लॉग इन करने की ज़रूरत नहीं — डिलीवरी कर्मी, मूवर, और अन्य केवल-रिकॉर्ड भूमिकाएं।",
+    "searchPlaceholder": "स्टाफ़ खोजें…",
+    "newStaff": "नया स्टाफ़",
+    "editStaff": "स्टाफ़ संपादित करें",
+    "newDescription": "अपने संगठन के लिए एक स्टाफ़ सदस्य जोड़ें।",
+    "editDescription": "इस स्टाफ़ सदस्य को अपडेट करें।",
+    "noResults": "अभी तक कोई स्टाफ़ नहीं।",
     "columnName": "नाम",
+    "columnRole": "भूमिका",
     "columnPhone": "फ़ोन",
     "columnStatus": "स्थिति",
     "nameLabel": "नाम",
+    "roleLabel": "भूमिका",
+    "roleLabelFieldLabel": "भूमिका लेबल",
+    "roleLabelPlaceholder": "जैसे गोदाम सहायक",
     "activeLabel": "सक्रिय",
     "statusActive": "सक्रिय",
     "statusInactive": "निष्क्रिय",
     "deleteDescription": "इस व्यक्ति को सौंपी गई पिछली डिलीवरी सुरक्षित रहेंगी, लेकिन नई डिलीवरी के लिए इन्हें चुना नहीं जा सकेगा।"
+  },
+  "StaffRoles": {
+    "delivery_person": "डिलीवरी कर्मी",
+    "mover": "मूवर",
+    "other": "अन्य"
   },
   "DeliveryStatus": {
     "pending": "लंबित",

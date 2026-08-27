@@ -18,7 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { StatusBadge } from "@/components/status-badge"
 import { useCustomers } from "@/hooks/use-customers"
 import { useDeliveryByInvoice, useUpdateDelivery } from "@/hooks/use-deliveries"
-import { useDeliveryPersons } from "@/hooks/use-delivery-persons"
+import { useStaff } from "@/hooks/use-staff"
 import { useCreateInstallmentPlan, useInstallmentPlanByInvoice } from "@/hooks/use-installment-plans"
 import { useCreateInstallment, useInstallmentsByPlan } from "@/hooks/use-installments"
 import { useInvoiceItems } from "@/hooks/use-invoice-items"
@@ -56,7 +56,7 @@ export function InvoiceDetailClient({ id }: { id: string }) {
   const { data: items } = useItems()
   const { data: invoiceLineItems } = useInvoiceItems(id)
   const { data: delivery } = useDeliveryByInvoice(id)
-  const { data: deliveryPersons } = useDeliveryPersons()
+  const { data: deliveryPersons } = useStaff("delivery_person")
   const { data: emiPlan } = useInstallmentPlanByInvoice(id)
   const { data: installments } = useInstallmentsByPlan(emiPlan?.id)
   const watermarkText = useActivePdfWatermarkText()

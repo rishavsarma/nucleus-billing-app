@@ -1,12 +1,12 @@
 "use client"
 
-import { LayoutDashboard, LogOutIcon } from "lucide-react"
+import { LayoutDashboard } from "lucide-react"
 import { useTranslations } from "next-intl"
-import { toast } from "sonner"
 
-import { Link, usePathname, useRouter } from "@/i18n/navigation"
-import { useLogout } from "@/hooks/use-logout"
+import { Link, usePathname } from "@/i18n/navigation"
+import { NavUser } from "@/components/nav-user"
 import { useMe } from "@/hooks/use-me"
+import { useOrganizations } from "@/hooks/use-organizations"
 import { NAV_DATA } from "@/lib/nav-data"
 import {
   Sidebar,
@@ -24,11 +24,10 @@ import {
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname()
-  const router = useRouter()
   const t = useTranslations("Sidebar")
-  const tCommon = useTranslations("Common")
   const { data: me } = useMe()
-  const logout = useLogout()
+  const { data: organizations } = useOrganizations()
+  const organization = organizations?.[0]
 
   const navGroups = NAV_DATA.filter((group) => group.labelKey !== "admin" || me?.isSuperadmin).map(
     (group) => ({
@@ -48,8 +47,17 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <SidebarMenuItem>
             <SidebarMenuButton asChild>
               <Link href="/">
-                <LayoutDashboard />
-                <span className="font-medium">{t("brand")}</span>
+                {organization?.pdf_logo_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element -- store logo is an arbitrary external URL, not a local/optimizable asset
+                  <img
+                    src={organization.pdf_logo_url}
+                    alt={organization.name}
+                    className="size-4 shrink-0 rounded-sm object-contain"
+                  />
+                ) : (
+                  <LayoutDashboard />
+                )}
+                <span className="truncate font-medium">{organization?.name ?? t("brand")}</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -76,27 +84,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </SidebarGroup>
         ))}
       </SidebarContent>
-      <SidebarFooter>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              onClick={() =>
-                logout.mutate(undefined, {
-                  onSuccess: () => {
-                    router.push("/login")
-                    router.refresh()
-                  },
-                  onError: () => toast.error(tCommon("genericError")),
-                })
-              }
-              disabled={logout.isPending}
-            >
-              <LogOutIcon />
-              <span>{t("logOut")}</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarFooter>
+      <SidebarFooter>{me ? <NavUser me={me} /> : null}</SidebarFooter>
       <SidebarRail />
     </Sidebar>
   )

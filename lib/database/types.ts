@@ -485,11 +485,15 @@ export interface OrgDocumentCounter {
 }
 
 // Not tied to auth.users — a name in a dropdown, not a login role.
-export interface DeliveryPerson {
+// Record-only roster of people with no login (delivery persons, movers,
+// etc.) — distinct from Membership, which is a real authenticated user.
+export interface Staff {
   id: string
   org_id: string
   name: string
   phone: string | null
+  role: "delivery_person" | "mover" | "other"
+  role_label: string | null // only meaningful when role === "other"
   is_active: boolean
   created_at: string
 }

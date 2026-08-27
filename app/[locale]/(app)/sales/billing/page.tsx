@@ -33,7 +33,7 @@ import { calculateOfferDiscount } from "@/lib/calculate-offer"
 import { cn } from "@/lib/utils"
 import { useCreateCustomer, useCustomers } from "@/hooks/use-customers"
 import { useCreateDelivery, useDeliveryByInvoice, useUpdateDelivery } from "@/hooks/use-deliveries"
-import { useDeliveryPersons } from "@/hooks/use-delivery-persons"
+import { useStaff } from "@/hooks/use-staff"
 import { fetchInvoiceItems } from "@/lib/database/services/invoice-items"
 import { fetchInvoiceById } from "@/lib/database/services/invoices"
 import { useCreateInvoiceItem, useDeleteInvoiceItem, useInvoiceItems, useUpdateInvoiceItem } from "@/hooks/use-invoice-items"
@@ -252,7 +252,7 @@ export default function BillingPosPage() {
   const { data: taxRates } = useTaxRates()
   const { data: offers } = useOffers()
   const { data: invoices } = useInvoices()
-  const { data: deliveryPersons } = useDeliveryPersons()
+  const { data: deliveryPersons } = useStaff("delivery_person")
   const { data: organizations } = useOrganizations()
   const watermarkText = useActivePdfWatermarkText()
   const createInvoice = useCreateInvoice()
