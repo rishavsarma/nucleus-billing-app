@@ -40,7 +40,12 @@ export async function GET(request: Request) {
   const from = (page - 1) * pageSize
   const to = from + pageSize - 1
 
-  let query = supabase.schema("billing").from("installments").select("*", { count: "exact" })
+  // Embeds the invoice number via invoice_id — avoids the list page
+  // separately fetching every invoice (pageSize: 9999) to resolve it.
+  let query = supabase
+    .schema("billing")
+    .from("installments")
+    .select("*, invoice:invoices(invoice_number)", { count: "exact" })
   if (!auth.isSuperadmin) query = query.eq("org_id", auth.orgId)
   query = query.order("due_date", { ascending: true }).range(from, to)
   const { data, error, count } = await query

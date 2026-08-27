@@ -13,11 +13,10 @@ import { useServerTableParams } from "@/components/server-table"
 import { StatusBadge } from "@/components/status-badge"
 import { useDeleteItem, useItemsList } from "@/hooks/use-items"
 import { useItemVariantsBulk } from "@/hooks/use-item-variants"
-import { useTaxRates } from "@/hooks/use-tax-rates"
 import { routes } from "@/lib/routes"
-import type { Item } from "@/lib/database/types"
+import type { ItemWithTaxRate } from "@/lib/database/types"
 
-const columnHelper = entityColumnHelper<Item>()
+const columnHelper = entityColumnHelper<ItemWithTaxRate>()
 const money = (n: number) => "₹" + n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
 export default function ItemsPage() {
@@ -25,9 +24,8 @@ export default function ItemsPage() {
   const tCommon = useTranslations("Common")
   const { params, tableControlProps } = useServerTableParams()
   const { data: result, isLoading } = useItemsList(params)
-  const { data: taxRates } = useTaxRates()
   const deleteItem = useDeleteItem()
-  const [toDelete, setToDelete] = useState<Item | null>(null)
+  const [toDelete, setToDelete] = useState<ItemWithTaxRate | null>(null)
 
   // Tracked items carry no price of their own — the list shows the most
   // recently received variant's selling price instead. One bulk request for
@@ -41,8 +39,6 @@ export default function ItemsPage() {
     // per item is the most recently received.
     latestPriceByItemId.set(variant.item_id, variant.unit_price)
   })
-
-  const taxRateName = (id: string | null) => taxRates?.find((r) => r.id === id)?.name
 
   const columns = [
     columnHelper.accessor("name", {
@@ -79,9 +75,10 @@ export default function ItemsPage() {
       header: t("columnCostPrice"),
       cell: ({ getValue }) => <span className="text-muted-foreground">{money(getValue())}</span>,
     }),
-    columnHelper.accessor("tax_rate_id", {
+    columnHelper.accessor("tax_rate.name", {
+      id: "tax_rate_id",
       header: t("columnTax"),
-      cell: ({ getValue }) => <span className="text-muted-foreground">{taxRateName(getValue()) ?? "—"}</span>,
+      cell: ({ getValue }) => <span className="text-muted-foreground">{getValue() ?? "—"}</span>,
     }),
     columnHelper.accessor("is_active", {
       header: t("columnStatus"),

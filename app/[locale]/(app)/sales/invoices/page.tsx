@@ -1,29 +1,26 @@
 "use client"
 
 import { useTranslations } from "next-intl"
-import { PlusIcon } from "lucide-react"
+import { EyeIcon, PlusIcon } from "lucide-react"
 
 import { Link } from "@/i18n/navigation"
 import { Button } from "@/components/ui/button"
 import { EntityTable, entityColumnHelper } from "@/components/entity-table"
 import { useServerTableParams } from "@/components/server-table"
 import { StatusBadge } from "@/components/status-badge"
-import { useCustomers } from "@/hooks/use-customers"
 import { useInvoicesList } from "@/hooks/use-invoices"
 import { routes } from "@/lib/routes"
-import type { Invoice } from "@/lib/database/types"
+import type { InvoiceWithCustomer } from "@/lib/database/types"
 
-const columnHelper = entityColumnHelper<Invoice>()
+const columnHelper = entityColumnHelper<InvoiceWithCustomer>()
 const money = (n: number) => "₹" + n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
 export default function InvoicesPage() {
   const t = useTranslations("Invoices")
   const tStatus = useTranslations("DocStatus")
+  const tCommon = useTranslations("Common")
   const { params, tableControlProps } = useServerTableParams()
   const { data: result, isLoading } = useInvoicesList(params)
-  const { data: customers } = useCustomers()
-
-  const customerName = (id: string) => customers?.find((c) => c.id === id)?.name ?? "—"
 
   const columns = [
     columnHelper.accessor("invoice_number", {
@@ -34,9 +31,10 @@ export default function InvoicesPage() {
         </Link>
       ),
     }),
-    columnHelper.accessor("customer_id", {
+    columnHelper.accessor("customer.name", {
+      id: "customer_id",
       header: t("columnCustomer"),
-      cell: ({ getValue }) => customerName(getValue()),
+      cell: ({ getValue }) => getValue() ?? "—",
     }),
     columnHelper.accessor("issue_date", { header: t("columnIssueDate") }),
     columnHelper.accessor("due_date", {
@@ -50,6 +48,23 @@ export default function InvoicesPage() {
     columnHelper.accessor("total", {
       header: t("columnTotal"),
       cell: ({ getValue }) => <span className="font-medium">{money(getValue())}</span>,
+    }),
+    columnHelper.display({
+      id: "actions",
+      header: () => null,
+      cell: ({ row }) => (
+        <div className="flex justify-end">
+          <Button variant="ghost" size="icon-sm" asChild>
+            <Link
+              href={routes.sales.invoices.detail(row.original.id)}
+              aria-label={tCommon("view")}
+              onClick={(event) => event.stopPropagation()}
+            >
+              <EyeIcon />
+            </Link>
+          </Button>
+        </div>
+      ),
     }),
   ]
 

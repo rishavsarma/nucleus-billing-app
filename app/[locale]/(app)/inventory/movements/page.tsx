@@ -8,13 +8,11 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { EntityTable, entityColumnHelper } from "@/components/entity-table"
 import { useServerTableParams } from "@/components/server-table"
-import { useItems } from "@/hooks/use-items"
 import { useStockMovementsList } from "@/hooks/use-stock-movements"
-import { useWarehouses } from "@/hooks/use-warehouses"
 import { routes } from "@/lib/routes"
-import type { StockMovement } from "@/lib/database/types"
+import type { StockMovementWithRelations } from "@/lib/database/types"
 
-const columnHelper = entityColumnHelper<StockMovement>()
+const columnHelper = entityColumnHelper<StockMovementWithRelations>()
 
 // credit_note/debit_note reference_type values only ever existed on rows
 // written before db-schema/010_returns_split.sql, which renamed the
@@ -37,11 +35,6 @@ export default function StockMovementsPage() {
   const tReference = useTranslations("ReferenceTypes")
   const { params, tableControlProps } = useServerTableParams()
   const { data: result, isLoading } = useStockMovementsList(params)
-  const { data: items } = useItems()
-  const { data: warehouses } = useWarehouses()
-
-  const itemName = (id: string) => items?.find((i) => i.id === id)?.name ?? "—"
-  const warehouseName = (id: string) => warehouses?.find((w) => w.id === id)?.name ?? "—"
 
   const columns = [
     columnHelper.accessor("created_at", {
@@ -52,13 +45,15 @@ export default function StockMovementsPage() {
       header: t("columnType"),
       cell: ({ getValue }) => <Badge variant="outline">{tTypes(getValue())}</Badge>,
     }),
-    columnHelper.accessor("item_id", {
+    columnHelper.accessor("item.name", {
+      id: "item_id",
       header: t("columnItem"),
-      cell: ({ getValue }) => itemName(getValue()),
+      cell: ({ getValue }) => getValue() ?? "—",
     }),
-    columnHelper.accessor("warehouse_id", {
+    columnHelper.accessor("warehouse.name", {
+      id: "warehouse_id",
       header: t("columnWarehouse"),
-      cell: ({ getValue }) => warehouseName(getValue()),
+      cell: ({ getValue }) => getValue() ?? "—",
     }),
     columnHelper.accessor("quantity_delta", {
       header: t("columnQuantity"),

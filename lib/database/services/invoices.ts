@@ -1,5 +1,5 @@
 import { api } from "@/lib/axios"
-import type { Invoice } from "@/lib/database/types"
+import type { Invoice, InvoiceWithCustomer } from "@/lib/database/types"
 import type { ListParams, PaginatedResponse } from "@/lib/database/list-params-types"
 
 /** Fetch all invoices with no pagination — for dropdowns / pickers. */
@@ -15,9 +15,11 @@ export async function fetchInvoiceById(id: string): Promise<Invoice> {
   return data
 }
 
-/** Fetch a paginated + searched page of invoices. */
-export async function fetchInvoicesPaginated(params: ListParams): Promise<PaginatedResponse<Invoice>> {
-  const { data } = await api.get<PaginatedResponse<Invoice>>("/database/invoices", { params })
+/** Fetch a paginated + searched page of invoices, with each row's customer
+ * name embedded (a real server-side join over customer_id) — no separate
+ * fetch-every-customer call needed to resolve it for display. */
+export async function fetchInvoicesPaginated(params: ListParams): Promise<PaginatedResponse<InvoiceWithCustomer>> {
+  const { data } = await api.get<PaginatedResponse<InvoiceWithCustomer>>("/database/invoices", { params })
   return data
 }
 

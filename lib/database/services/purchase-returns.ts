@@ -1,5 +1,5 @@
 import { api } from "@/lib/axios"
-import type { PurchaseReturn } from "@/lib/database/types"
+import type { PurchaseReturn, PurchaseReturnWithRelations } from "@/lib/database/types"
 import type { ListParams, PaginatedResponse } from "@/lib/database/list-params-types"
 
 /** Fetch all purchase returns with no pagination — for dropdowns / pickers. */
@@ -15,9 +15,10 @@ export async function fetchPurchaseReturnById(id: string): Promise<PurchaseRetur
   return data
 }
 
-/** Fetch a paginated + searched page of purchase returns. */
-export async function fetchPurchaseReturnsPaginated(params: ListParams): Promise<PaginatedResponse<PurchaseReturn>> {
-  const { data } = await api.get<PaginatedResponse<PurchaseReturn>>("/database/purchase_returns", { params })
+/** Fetch a paginated + searched page of purchase returns, with each row's
+ * vendor name and original bill number embedded via real joins. */
+export async function fetchPurchaseReturnsPaginated(params: ListParams): Promise<PaginatedResponse<PurchaseReturnWithRelations>> {
+  const { data } = await api.get<PaginatedResponse<PurchaseReturnWithRelations>>("/database/purchase_returns", { params })
   return data
 }
 

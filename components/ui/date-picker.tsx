@@ -21,6 +21,10 @@ export interface DatePickerProps {
   disabled?: boolean
   className?: string
   clearable?: boolean
+  /** Portal target for the calendar popover — needed when the picker is
+   * rendered inside a native Fullscreen element (e.g. the POS), since
+   * Radix's default document.body portal is invisible there. */
+  container?: HTMLElement | null
 }
 
 export function DatePicker({
@@ -31,6 +35,7 @@ export function DatePicker({
   disabled = false,
   className,
   clearable = false,
+  container,
 }: DatePickerProps) {
   const [open, setOpen] = React.useState(false)
 
@@ -88,7 +93,7 @@ export function DatePicker({
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-auto p-0" align="start">
+      <PopoverContent className="w-auto p-0" align="start" container={container}>
         <Calendar
           mode="single"
           selected={dateValue}

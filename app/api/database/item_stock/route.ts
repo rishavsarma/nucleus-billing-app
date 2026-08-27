@@ -57,12 +57,16 @@ export async function GET(request: Request) {
   const page = Number(searchParams.get("page") ?? 1)
   const pageSize = Number(searchParams.get("pageSize") ?? 10)
 
+  // Embeds both the item's fields (already joined here) and now the
+  // warehouse's name too — avoids the list page separately fetching every
+  // warehouse (pageSize: 9999) just to resolve warehouse_id to a name.
   let query = supabase
     .schema("billing")
     .from("item_stock")
-    .select("item_id, warehouse_id, quantity_on_hand, items!inner(name, sku, reorder_level, org_id)", {
-      count: "exact",
-    })
+    .select(
+      "item_id, warehouse_id, quantity_on_hand, items!inner(name, sku, reorder_level, org_id), warehouses(name)",
+      { count: "exact" },
+    )
 
   if (!auth.isSuperadmin) query = query.eq("items.org_id", auth.orgId!)
   if (search) query = query.or(`name.ilike.%${search}%,sku.ilike.%${search}%`, { foreignTable: "items" })
@@ -77,6 +81,7 @@ export async function GET(request: Request) {
 
   const rows = (data ?? []).map((row) => {
     const item = Array.isArray(row.items) ? row.items[0] : row.items
+    const warehouse = Array.isArray(row.warehouses) ? row.warehouses[0] : row.warehouses
     return {
       item_id: row.item_id,
       warehouse_id: row.warehouse_id,
@@ -84,6 +89,7 @@ export async function GET(request: Request) {
       item_name: item?.name ?? "—",
       item_sku: item?.sku ?? null,
       item_reorder_level: item?.reorder_level ?? 0,
+      warehouse_name: warehouse?.name ?? "—",
     }
   })
 

@@ -1,38 +1,37 @@
 "use client"
 
 import { useTranslations } from "next-intl"
+import { EyeIcon } from "lucide-react"
 
 import { Link } from "@/i18n/navigation"
+import { Button } from "@/components/ui/button"
 import { EntityTable, entityColumnHelper } from "@/components/entity-table"
 import { useServerTableParams } from "@/components/server-table"
 import { StatusBadge } from "@/components/status-badge"
 import { useInstallmentsList } from "@/hooks/use-installments"
-import { useInvoices } from "@/hooks/use-invoices"
 import { routes } from "@/lib/routes"
-import type { Installment } from "@/lib/database/types"
+import type { InstallmentWithInvoice } from "@/lib/database/types"
 
 const money = (n: number) => "₹" + n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-const columnHelper = entityColumnHelper<Installment>()
+const columnHelper = entityColumnHelper<InstallmentWithInvoice>()
 
 export default function InstallmentsPage() {
   const t = useTranslations("Emi")
+  const tCommon = useTranslations("Common")
   const { params, tableControlProps } = useServerTableParams()
   const { data: result, isLoading } = useInstallmentsList(params)
-  const { data: invoices } = useInvoices()
 
   const today = new Date().toISOString().slice(0, 10)
 
   const columns = [
-    columnHelper.accessor("invoice_id", {
+    columnHelper.accessor("invoice.invoice_number", {
+      id: "invoice_id",
       header: t("columnInvoice"),
-      cell: ({ getValue }) => {
-        const invoice = invoices?.find((inv) => inv.id === getValue())
-        return (
-          <Link href={routes.sales.invoices.detail(getValue())} className="font-medium hover:underline">
-            {invoice?.invoice_number ?? "—"}
-          </Link>
-        )
-      },
+      cell: ({ getValue, row }) => (
+        <Link href={routes.sales.invoices.detail(row.original.invoice_id)} className="font-medium hover:underline">
+          {getValue() ?? "—"}
+        </Link>
+      ),
     }),
     columnHelper.accessor("installment_number", {
       header: t("columnInstallment"),
@@ -55,6 +54,23 @@ export default function InstallmentsPage() {
         if (isOverdue) return <StatusBadge status="overdue">{t("statusOverdue")}</StatusBadge>
         return <StatusBadge status="pending">{t("statusPending")}</StatusBadge>
       },
+    }),
+    columnHelper.display({
+      id: "actions",
+      header: () => null,
+      cell: ({ row }) => (
+        <div className="flex justify-end">
+          <Button variant="ghost" size="icon-sm" asChild>
+            <Link
+              href={routes.sales.invoices.detail(row.original.invoice_id)}
+              aria-label={tCommon("view")}
+              onClick={(event) => event.stopPropagation()}
+            >
+              <EyeIcon />
+            </Link>
+          </Button>
+        </div>
+      ),
     }),
   ]
 

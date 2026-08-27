@@ -32,7 +32,9 @@ export async function GET(request: Request) {
   const page = Number(searchParams.get("page") ?? 1)
   const pageSize = Number(searchParams.get("pageSize") ?? 10)
 
-  let query = supabase.schema("billing").from("items").select("*", { count: "exact" })
+  // Embeds the tax rate's name via tax_rate_id — avoids the list page
+  // separately fetching every tax rate (pageSize: 9999) to resolve it.
+  let query = supabase.schema("billing").from("items").select("*, tax_rate:tax_rates(name)", { count: "exact" })
   if (!auth.isSuperadmin) query = query.eq("org_id", auth.orgId)
   query = applyListParams(query, ["name", "sku"], { search, page, pageSize })
   const { data, error, count } = await query

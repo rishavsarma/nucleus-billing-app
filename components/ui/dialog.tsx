@@ -51,12 +51,17 @@ function DialogContent({
   className,
   children,
   showCloseButton = true,
+  container,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean
+  /** Portal target — defaults to document.body. Pass e.g. a fullscreened
+   * element's ref so this still renders while that element is in native
+   * Fullscreen mode (which only paints its own DOM subtree). */
+  container?: React.ComponentProps<typeof DialogPrimitive.Portal>["container"]
 }) {
   return (
-    <DialogPortal>
+    <DialogPortal container={container}>
       <DialogOverlay />
       <DialogPrimitive.Content
         data-slot="dialog-content"

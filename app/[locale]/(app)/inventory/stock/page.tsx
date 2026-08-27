@@ -6,7 +6,6 @@ import { EntityTable, entityColumnHelper } from "@/components/entity-table"
 import { useServerTableParams } from "@/components/server-table"
 import { StatusBadge } from "@/components/status-badge"
 import { useItemStockList } from "@/hooks/use-item-stock"
-import { useWarehouses } from "@/hooks/use-warehouses"
 import type { ItemStockRow } from "@/lib/database/types"
 
 type StockRow = ItemStockRow & { id: string }
@@ -17,9 +16,7 @@ export default function StockPage() {
   const t = useTranslations("Stock")
   const { params, tableControlProps } = useServerTableParams()
   const { data: result, isLoading } = useItemStockList(params)
-  const { data: warehouses } = useWarehouses()
 
-  const warehouseById = new Map((warehouses ?? []).map((w) => [w.id, w]))
   const rows: StockRow[] = (result?.data ?? []).map((row) => ({
     ...row,
     id: `${row.item_id}:${row.warehouse_id}`,
@@ -35,9 +32,9 @@ export default function StockPage() {
         </div>
       ),
     }),
-    columnHelper.accessor("warehouse_id", {
+    columnHelper.accessor("warehouse_name", {
       header: t("columnWarehouse"),
-      cell: ({ getValue }) => warehouseById.get(getValue())?.name ?? "—",
+      cell: ({ getValue }) => getValue() ?? "—",
     }),
     columnHelper.accessor("quantity_on_hand", {
       header: t("columnQuantity"),

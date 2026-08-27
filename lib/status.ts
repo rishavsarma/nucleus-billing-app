@@ -18,6 +18,7 @@ const TONE_BY_STATUS: Record<string, StatusTone> = {
   delivered: "success",
   active: "success",
   overdue: "danger",
+  covered: "success",
   failed: "danger",
   cancelled: "neutral",
   void: "neutral",

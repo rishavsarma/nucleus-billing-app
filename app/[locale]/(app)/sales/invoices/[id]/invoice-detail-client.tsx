@@ -97,7 +97,17 @@ export function InvoiceDetailClient({ id }: { id: string }) {
   const isVoid = invoice.status === "void"
   const isPaid = invoice.status === "paid"
   const isSentOrBeyond = !isDraft && !isVoid
-  const canRecordPayment = !isDraft && !isVoid
+  // Once an EMI plan exists, every payment must be recorded through a
+  // specific installment's own "Pay" button (below) so it links via
+  // installment_id and the DB trigger can mark that installment paid —
+  // see db-schema/008_emi_installments.sql's comment on why installment
+  // settlement is deliberately explicit/cashier-chosen rather than
+  // auto-allocated. The generic Record Payment button bypasses that link
+  // entirely: it still raises invoice.amount_paid (and can even flip the
+  // invoice to "paid"), but leaves every installment row exactly as
+  // pending as before, which is what caused the EMI schedule to keep
+  // showing installments due after the invoice was already fully paid.
+  const canRecordPayment = !isDraft && !isVoid && !emiPlan
   const balanceDue = invoice.total - invoice.amount_paid
 
   const steps: StepperStep[] = [
@@ -255,7 +265,7 @@ export function InvoiceDetailClient({ id }: { id: string }) {
               {t("recordPayment")}
             </Button>
           ) : null}
-          {canRecordPayment && !emiPlan ? (
+          {canRecordPayment && !emiPlan && !isPaid ? (
             <Button variant="outline" onClick={() => setShowSetupEmi(true)}>
               <CalendarClockIcon />
               {tEmi("setupButton")}
@@ -387,6 +397,16 @@ export function InvoiceDetailClient({ id }: { id: string }) {
                         <span className="font-medium">{money(installment.amount)}</span>
                         {installment.status === "paid" ? (
                           <StatusBadge status="paid">{tEmi("statusPaid")}</StatusBadge>
+                        ) : balanceDue <= 0 ? (
+                          // The invoice is already fully paid (e.g. a
+                          // payment was recorded some other way, from
+                          // before Record Payment was restricted above)
+                          // even though this installment row itself was
+                          // never linked/marked paid. Showing "Pay" here
+                          // would let the cashier collect the same money
+                          // again, so show a neutral "covered" state
+                          // instead of an actionable button.
+                          <StatusBadge status="covered">{tEmi("statusCovered")}</StatusBadge>
                         ) : isOverdue ? (
                           <StatusBadge status="overdue">{tEmi("statusOverdue")}</StatusBadge>
                         ) : (

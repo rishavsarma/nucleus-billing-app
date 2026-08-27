@@ -5,12 +5,10 @@ import { useTranslations } from "next-intl"
 import { EntityTable, entityColumnHelper } from "@/components/entity-table"
 import { useServerTableParams } from "@/components/server-table"
 import { Badge } from "@/components/ui/badge"
-import { useCustomers } from "@/hooks/use-customers"
-import { useInvoices } from "@/hooks/use-invoices"
 import { usePaymentsList } from "@/hooks/use-payments"
-import type { Payment } from "@/lib/database/types"
+import type { PaymentWithRelations } from "@/lib/database/types"
 
-const columnHelper = entityColumnHelper<Payment>()
+const columnHelper = entityColumnHelper<PaymentWithRelations>()
 const money = (n: number) => "₹" + n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
 export default function SalesPaymentsPage() {
@@ -18,28 +16,21 @@ export default function SalesPaymentsPage() {
   const tMethods = useTranslations("PaymentMethods")
   const { params, tableControlProps } = useServerTableParams()
   const { data: result, isLoading } = usePaymentsList(params)
-  const { data: invoices } = useInvoices()
-  const { data: customers } = useCustomers()
-
-  const invoiceNumber = (id: string) => invoices?.find((i) => i.id === id)?.invoice_number ?? "—"
-  const customerName = (invoiceId: string) => {
-    const invoice = invoices?.find((i) => i.id === invoiceId)
-    return invoice ? (customers?.find((c) => c.id === invoice.customer_id)?.name ?? "—") : "—"
-  }
 
   const columns = [
     columnHelper.accessor("paid_at", {
       header: t("columnDate"),
       cell: ({ getValue }) => getValue().slice(0, 10),
     }),
-    columnHelper.accessor("invoice_id", {
+    columnHelper.accessor("invoice.invoice_number", {
+      id: "invoice_id",
       header: t("columnInvoice"),
-      cell: ({ getValue }) => invoiceNumber(getValue()),
+      cell: ({ getValue }) => getValue() ?? "—",
     }),
-    columnHelper.display({
+    columnHelper.accessor("invoice.customer.name", {
       id: "customer",
       header: t("columnCustomer"),
-      cell: ({ row }) => customerName(row.original.invoice_id),
+      cell: ({ getValue }) => getValue() ?? "—",
     }),
     columnHelper.accessor("method", {
       header: t("columnMethod"),

@@ -1,29 +1,26 @@
 "use client"
 
 import { useTranslations } from "next-intl"
-import { PlusIcon } from "lucide-react"
+import { EyeIcon, PlusIcon } from "lucide-react"
 
 import { Link } from "@/i18n/navigation"
 import { Button } from "@/components/ui/button"
 import { EntityTable, entityColumnHelper } from "@/components/entity-table"
 import { useServerTableParams } from "@/components/server-table"
 import { StatusBadge } from "@/components/status-badge"
-import { useVendors } from "@/hooks/use-vendors"
 import { useDebitNotesList } from "@/hooks/use-debit-notes"
 import { routes } from "@/lib/routes"
-import type { DebitNote } from "@/lib/database/types"
+import type { DebitNoteWithVendor } from "@/lib/database/types"
 
-const columnHelper = entityColumnHelper<DebitNote>()
+const columnHelper = entityColumnHelper<DebitNoteWithVendor>()
 const money = (n: number) => "₹" + n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
 export default function DebitNotesPage() {
   const t = useTranslations("DebitNotes")
   const tStatus = useTranslations("DocStatus")
+  const tCommon = useTranslations("Common")
   const { params, tableControlProps } = useServerTableParams()
   const { data: result, isLoading } = useDebitNotesList(params)
-  const { data: vendors } = useVendors()
-
-  const vendorName = (id: string) => vendors?.find((v) => v.id === id)?.name ?? "—"
 
   const columns = [
     columnHelper.accessor("debit_note_number", {
@@ -34,9 +31,10 @@ export default function DebitNotesPage() {
         </Link>
       ),
     }),
-    columnHelper.accessor("vendor_id", {
+    columnHelper.accessor("vendor.name", {
+      id: "vendor_id",
       header: t("columnVendor"),
-      cell: ({ getValue }) => vendorName(getValue()),
+      cell: ({ getValue }) => getValue() ?? "—",
     }),
     columnHelper.accessor("issue_date", { header: t("columnIssueDate") }),
     columnHelper.accessor("status", {
@@ -46,6 +44,23 @@ export default function DebitNotesPage() {
     columnHelper.accessor("total", {
       header: t("columnTotal"),
       cell: ({ getValue }) => <span className="font-medium">{money(getValue())}</span>,
+    }),
+    columnHelper.display({
+      id: "actions",
+      header: () => null,
+      cell: ({ row }) => (
+        <div className="flex justify-end">
+          <Button variant="ghost" size="icon-sm" asChild>
+            <Link
+              href={routes.purchases.debitNotes.detail(row.original.id)}
+              aria-label={tCommon("view")}
+              onClick={(event) => event.stopPropagation()}
+            >
+              <EyeIcon />
+            </Link>
+          </Button>
+        </div>
+      ),
     }),
   ]
 

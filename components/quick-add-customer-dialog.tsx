@@ -11,10 +11,14 @@ export function QuickAddCustomerDialog({
   open,
   onOpenChange,
   onCreated,
+  container,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
   onCreated: (customerId: string) => void
+  /** Portal target — defaults to document.body. Pass e.g. a fullscreened
+   * element's ref so this still renders during Fullscreen. */
+  container?: HTMLElement | null
 }) {
   const t = useTranslations("Customers")
   const tFields = useTranslations("PartyFields")
@@ -34,7 +38,7 @@ export function QuickAddCustomerDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-xl">
+      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-xl" container={container}>
         <DialogHeader>
           <DialogTitle>{t("newCustomer")}</DialogTitle>
         </DialogHeader>

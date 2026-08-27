@@ -124,6 +124,11 @@ export interface Item {
   updated_at: string
 }
 
+// Embedded via a real join over tax_rate_id — see fetchItemsPaginated().
+export interface ItemWithTaxRate extends Item {
+  tax_rate: { name: string } | null
+}
+
 export interface TaxRate {
   id: string
   org_id: string
@@ -184,6 +189,14 @@ export interface Invoice {
   updated_at: string
 }
 
+// Only what a list-view column needs, embedded via a real PostgREST/Supabase
+// join over invoices.customer_id — see fetchInvoicesPaginated(). Avoids the
+// old "fetch every customer with pageSize: 9999, .find() client-side" cost
+// that list pages used to pay just to resolve a display name.
+export interface InvoiceWithCustomer extends Invoice {
+  customer: { name: string } | null
+}
+
 export interface InvoiceItem {
   id: string
   invoice_id: string
@@ -221,6 +234,12 @@ export interface CreditNote {
   updated_at: string
 }
 
+// Embedded via a real join over credit_notes.customer_id — see
+// fetchCreditNotesPaginated().
+export interface CreditNoteWithCustomer extends CreditNote {
+  customer: { name: string } | null
+}
+
 // A line is a signed amount, not a quantity*price — no item_id/quantity at
 // all, since this never represents real goods.
 export interface CreditNoteItem {
@@ -254,6 +273,11 @@ export interface PurchaseBill {
   created_by: string | null
   created_at: string
   updated_at: string
+}
+
+// Embedded via a real join over vendor_id — see fetchPurchaseBillsPaginated().
+export interface PurchaseBillWithVendor extends PurchaseBill {
+  vendor: { name: string } | null
 }
 
 export interface PurchaseBillItem {
@@ -292,6 +316,12 @@ export interface DebitNote {
   updated_at: string
 }
 
+// Embedded via a real join over debit_notes.vendor_id — see
+// fetchDebitNotesPaginated().
+export interface DebitNoteWithVendor extends DebitNote {
+  vendor: { name: string } | null
+}
+
 // A line is a signed amount, not a quantity*cost — no item_id/quantity at
 // all, since this never represents real goods.
 export interface DebitNoteItem {
@@ -326,6 +356,13 @@ export interface SalesReturn {
   created_by: string | null
   created_at: string
   updated_at: string
+}
+
+// Embedded via real joins over customer_id / invoice_id — see
+// fetchSalesReturnsPaginated().
+export interface SalesReturnWithRelations extends SalesReturn {
+  customer: { name: string } | null
+  invoice: { invoice_number: string | null } | null
 }
 
 export interface SalesReturnItem {
@@ -363,6 +400,13 @@ export interface PurchaseReturn {
   updated_at: string
 }
 
+// Embedded via real joins over vendor_id / purchase_bill_id — see
+// fetchPurchaseReturnsPaginated().
+export interface PurchaseReturnWithRelations extends PurchaseReturn {
+  vendor: { name: string } | null
+  bill: { bill_number: string | null } | null
+}
+
 export interface PurchaseReturnItem {
   id: string
   purchase_return_id: string
@@ -392,6 +436,12 @@ export interface Payment {
   created_at: string
 }
 
+// Embedded via a real join over invoice_id, nested one level further to the
+// invoice's own customer_id — see fetchPaymentsPaginated().
+export interface PaymentWithRelations extends Payment {
+  invoice: { invoice_number: string | null; customer: { name: string } | null } | null
+}
+
 export interface PurchasePayment {
   id: string
   org_id: string
@@ -403,6 +453,12 @@ export interface PurchasePayment {
   paid_at: string
   created_by: string | null
   created_at: string
+}
+
+// Embedded via a real join over purchase_bill_id, nested one level further
+// to the bill's own vendor_id — see fetchPurchasePaymentsPaginated().
+export interface PurchasePaymentWithRelations extends PurchasePayment {
+  bill: { bill_number: string | null; vendor: { name: string } | null } | null
 }
 
 export interface StockMovement {
@@ -431,6 +487,13 @@ export interface StockMovement {
   created_at: string
 }
 
+// Embedded via real joins over item_id / warehouse_id — see
+// fetchStockMovementsPaginated().
+export interface StockMovementWithRelations extends StockMovement {
+  item: { name: string } | null
+  warehouse: { name: string } | null
+}
+
 export interface ItemStock {
   item_id: string
   warehouse_id: string
@@ -447,6 +510,7 @@ export interface ItemStockRow {
   item_name: string
   item_sku: string | null
   item_reorder_level: number
+  warehouse_name: string
 }
 
 // One row per purchase receiving event for a track_inventory item —
@@ -543,6 +607,11 @@ export interface Installment {
   payment_id: string | null
   paid_at: string | null
   created_at: string
+}
+
+// Embedded via a real join over invoice_id — see fetchInstallmentsPaginated().
+export interface InstallmentWithInvoice extends Installment {
+  invoice: { invoice_number: string | null } | null
 }
 
 // Date-range watermark preset — see db-schema/009_pdf_watermarks.sql.

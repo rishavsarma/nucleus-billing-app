@@ -1,5 +1,5 @@
 import { api } from "@/lib/axios"
-import type { StockMovement } from "@/lib/database/types"
+import type { StockMovement, StockMovementWithRelations } from "@/lib/database/types"
 import type { ListParams, PaginatedResponse } from "@/lib/database/list-params-types"
 
 /** Fetch all stockmovements with no pagination — for dropdowns / pickers. */
@@ -8,9 +8,10 @@ export async function fetchStockMovementsAll(): Promise<StockMovement[]> {
   return (data as unknown as PaginatedResponse<StockMovement>).data
 }
 
-/** Fetch a paginated + searched page of stockmovements. */
-export async function fetchStockMovementsPaginated(params: ListParams): Promise<PaginatedResponse<StockMovement>> {
-  const { data } = await api.get<PaginatedResponse<StockMovement>>("/database/stock_movements", { params })
+/** Fetch a paginated + searched page of stock movements, with each row's
+ * item name and warehouse name embedded via real server-side joins. */
+export async function fetchStockMovementsPaginated(params: ListParams): Promise<PaginatedResponse<StockMovementWithRelations>> {
+  const { data } = await api.get<PaginatedResponse<StockMovementWithRelations>>("/database/stock_movements", { params })
   return data
 }
 

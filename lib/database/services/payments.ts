@@ -1,5 +1,5 @@
 import { api } from "@/lib/axios"
-import type { Payment } from "@/lib/database/types"
+import type { Payment, PaymentWithRelations } from "@/lib/database/types"
 import type { ListParams, PaginatedResponse } from "@/lib/database/list-params-types"
 
 /** Fetch all payments with no pagination — for dropdowns / pickers. */
@@ -8,9 +8,10 @@ export async function fetchPaymentsAll(): Promise<Payment[]> {
   return (data as unknown as PaginatedResponse<Payment>).data
 }
 
-/** Fetch a paginated + searched page of payments. */
-export async function fetchPaymentsPaginated(params: ListParams): Promise<PaginatedResponse<Payment>> {
-  const { data } = await api.get<PaginatedResponse<Payment>>("/database/payments", { params })
+/** Fetch a paginated + searched page of payments, with each row's invoice
+ * number and (nested) customer name embedded via real joins. */
+export async function fetchPaymentsPaginated(params: ListParams): Promise<PaginatedResponse<PaymentWithRelations>> {
+  const { data } = await api.get<PaginatedResponse<PaymentWithRelations>>("/database/payments", { params })
   return data
 }
 

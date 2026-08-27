@@ -33,6 +33,9 @@ export interface SearchableSelectProps {
   disabled?: boolean
   className?: string
   icon?: LucideIcon
+  /** Portal target for the dropdown — defaults to document.body. Pass e.g.
+   * a fullscreened element's ref so it still renders during Fullscreen. */
+  container?: HTMLElement | null
 }
 
 export function SearchableSelect({
@@ -46,6 +49,7 @@ export function SearchableSelect({
   disabled = false,
   className,
   icon: Icon,
+  container,
 }: SearchableSelectProps) {
   const [open, setOpen] = React.useState(false)
 
@@ -82,6 +86,7 @@ export function SearchableSelect({
       <PopoverContent
         className="w-(--radix-popover-trigger-width) min-w-[280px] p-0"
         align="start"
+        container={container}
       >
         <Command
           filter={(itemValue, search) => {

@@ -1,32 +1,26 @@
 "use client"
 
 import { useTranslations } from "next-intl"
-import { PlusIcon } from "lucide-react"
+import { EyeIcon, PlusIcon } from "lucide-react"
 
 import { Link } from "@/i18n/navigation"
 import { Button } from "@/components/ui/button"
 import { EntityTable, entityColumnHelper } from "@/components/entity-table"
 import { useServerTableParams } from "@/components/server-table"
 import { StatusBadge } from "@/components/status-badge"
-import { useCustomers } from "@/hooks/use-customers"
 import { useSalesReturnsList } from "@/hooks/use-sales-returns"
-import { useInvoices } from "@/hooks/use-invoices"
 import { routes } from "@/lib/routes"
-import type { SalesReturn } from "@/lib/database/types"
+import type { SalesReturnWithRelations } from "@/lib/database/types"
 
-const columnHelper = entityColumnHelper<SalesReturn>()
+const columnHelper = entityColumnHelper<SalesReturnWithRelations>()
 const money = (n: number) => "₹" + n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
 export default function SalesReturnsPage() {
   const t = useTranslations("SalesReturns")
   const tStatus = useTranslations("DocStatus")
+  const tCommon = useTranslations("Common")
   const { params, tableControlProps } = useServerTableParams()
   const { data: result, isLoading } = useSalesReturnsList(params)
-  const { data: customers } = useCustomers()
-  const { data: invoices } = useInvoices()
-
-  const customerName = (id: string) => customers?.find((c) => c.id === id)?.name ?? "—"
-  const invoiceNumber = (id: string) => invoices?.find((i) => i.id === id)?.invoice_number ?? "—"
 
   const columns = [
     columnHelper.accessor("sales_return_number", {
@@ -37,13 +31,15 @@ export default function SalesReturnsPage() {
         </Link>
       ),
     }),
-    columnHelper.accessor("invoice_id", {
+    columnHelper.accessor("invoice.invoice_number", {
+      id: "invoice_id",
       header: t("columnInvoice"),
-      cell: ({ getValue }) => invoiceNumber(getValue()),
+      cell: ({ getValue }) => getValue() ?? "—",
     }),
-    columnHelper.accessor("customer_id", {
+    columnHelper.accessor("customer.name", {
+      id: "customer_id",
       header: t("columnCustomer"),
-      cell: ({ getValue }) => customerName(getValue()),
+      cell: ({ getValue }) => getValue() ?? "—",
     }),
     columnHelper.accessor("issue_date", { header: t("columnIssueDate") }),
     columnHelper.accessor("status", {
@@ -53,6 +49,23 @@ export default function SalesReturnsPage() {
     columnHelper.accessor("total", {
       header: t("columnTotal"),
       cell: ({ getValue }) => <span className="font-medium">{money(getValue())}</span>,
+    }),
+    columnHelper.display({
+      id: "actions",
+      header: () => null,
+      cell: ({ row }) => (
+        <div className="flex justify-end">
+          <Button variant="ghost" size="icon-sm" asChild>
+            <Link
+              href={routes.sales.salesReturns.detail(row.original.id)}
+              aria-label={tCommon("view")}
+              onClick={(event) => event.stopPropagation()}
+            >
+              <EyeIcon />
+            </Link>
+          </Button>
+        </div>
+      ),
     }),
   ]
 

@@ -18,7 +18,13 @@ export async function GET(request: Request) {
   const pageSize = Number(searchParams.get("pageSize") ?? 10)
 
   const supabase = await createClient()
-  let query = supabase.schema("billing").from("stock_movements").select("*", { count: "exact" })
+  // Embeds the item name and warehouse name via their FKs — avoids the list
+  // page separately fetching every item and every warehouse (pageSize: 9999
+  // each) just to resolve these by id.
+  let query = supabase
+    .schema("billing")
+    .from("stock_movements")
+    .select("*, item:items(name), warehouse:warehouses(name)", { count: "exact" })
   if (!auth.isSuperadmin) query = query.eq("org_id", auth.orgId)
   query = applyListParams(query, ["notes"], { search, page, pageSize })
   const { data, error, count } = await query

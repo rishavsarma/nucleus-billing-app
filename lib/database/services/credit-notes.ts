@@ -1,5 +1,5 @@
 import { api } from "@/lib/axios"
-import type { CreditNote } from "@/lib/database/types"
+import type { CreditNote, CreditNoteWithCustomer } from "@/lib/database/types"
 import type { ListParams, PaginatedResponse } from "@/lib/database/list-params-types"
 
 /** Fetch all creditnotes with no pagination — for dropdowns / pickers. */
@@ -15,9 +15,10 @@ export async function fetchCreditNoteById(id: string): Promise<CreditNote> {
   return data
 }
 
-/** Fetch a paginated + searched page of creditnotes. */
-export async function fetchCreditNotesPaginated(params: ListParams): Promise<PaginatedResponse<CreditNote>> {
-  const { data } = await api.get<PaginatedResponse<CreditNote>>("/database/credit_notes", { params })
+/** Fetch a paginated + searched page of credit notes, with each row's
+ * customer name embedded via a real server-side join. */
+export async function fetchCreditNotesPaginated(params: ListParams): Promise<PaginatedResponse<CreditNoteWithCustomer>> {
+  const { data } = await api.get<PaginatedResponse<CreditNoteWithCustomer>>("/database/credit_notes", { params })
   return data
 }
 

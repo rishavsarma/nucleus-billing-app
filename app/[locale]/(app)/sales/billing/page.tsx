@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 import {
   BanknoteIcon,
+  CalendarClockIcon,
   CreditCardIcon,
   LandmarkIcon,
   Maximize2Icon,
@@ -21,8 +22,12 @@ import {
   XIcon,
 } from "lucide-react"
 
+import { useRouter } from "@/i18n/navigation"
+import { routes } from "@/lib/routes"
 import { Button } from "@/components/ui/button"
 import { CustomerSelect } from "@/components/customer-select"
+import { DatePicker } from "@/components/ui/date-picker"
+import { Field, FieldLabel } from "@/components/ui/field"
 import { OfferSelect } from "@/components/offer-select"
 import { Input } from "@/components/ui/input"
 import { QuickAddCustomerDialog } from "@/components/quick-add-customer-dialog"
@@ -36,6 +41,8 @@ import { useCreateDelivery, useDeliveryByInvoice, useUpdateDelivery } from "@/ho
 import { useStaff } from "@/hooks/use-staff"
 import { fetchInvoiceItems } from "@/lib/database/services/invoice-items"
 import { fetchInvoiceById } from "@/lib/database/services/invoices"
+import { useCreateInstallment } from "@/hooks/use-installments"
+import { useCreateInstallmentPlan } from "@/hooks/use-installment-plans"
 import { useCreateInvoiceItem, useDeleteInvoiceItem, useInvoiceItems, useUpdateInvoiceItem } from "@/hooks/use-invoice-items"
 import { useCreateInvoice, useInvoices, useUpdateInvoice } from "@/hooks/use-invoices"
 import { useItems } from "@/hooks/use-items"
@@ -46,7 +53,7 @@ import { useActivePdfWatermarkText } from "@/hooks/use-pdf-watermarks"
 import { useCreatePayment } from "@/hooks/use-payments"
 import { useTaxRates } from "@/hooks/use-tax-rates"
 import { useWarehouses } from "@/hooks/use-warehouses"
-import { buildInvoicePdfElement, printInvoicePdf } from "@/lib/pdf/invoice-pdf"
+import { buildInvoicePdfElement, downloadInvoicePdf } from "@/lib/pdf/invoice-pdf"
 import type { Item, ItemVariant, Payment } from "@/lib/database/types"
 
 const money = (n: number) => "₹" + n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -100,6 +107,14 @@ type PosTab = {
   paymentAmount: number | null
   lines: CartLine[]
   delivery: DeliveryDraft
+  // When true, Complete Sale confirms the invoice without recording a
+  // payment, sets up the installment plan itself using emiMonths/
+  // emiStartDate below, and only then hands off to the invoice detail page
+  // — keeps EMI billing from ever double-counting against the full-amount
+  // payment Complete Sale would otherwise record immediately.
+  isEmi: boolean
+  emiMonths: number
+  emiStartDate: string
 }
 
 function newTab(): PosTab {
@@ -114,6 +129,9 @@ function newTab(): PosTab {
     paymentAmount: null,
     lines: [],
     delivery: { enabled: false, address: "", deliveryPersonId: null, paymentMode: null },
+    isEmi: false,
+    emiMonths: 3,
+    emiStartDate: new Date().toISOString().slice(0, 10),
   }
 }
 
@@ -245,6 +263,8 @@ export default function BillingPosPage() {
   const tMethods = useTranslations("PaymentMethods")
   const tDeliveryPaymentMode = useTranslations("DeliveryPaymentMode")
   const tPrint = useTranslations("InvoicePrint")
+  const tEmi = useTranslations("Emi")
+  const router = useRouter()
 
   const { data: items } = useItems()
   const { data: customers } = useCustomers()
@@ -261,6 +281,8 @@ export default function BillingPosPage() {
   const deleteInvoiceItem = useDeleteInvoiceItem(undefined)
   const updateInvoice = useUpdateInvoice()
   const createPayment = useCreatePayment()
+  const createInstallmentPlan = useCreateInstallmentPlan()
+  const createInstallment = useCreateInstallment()
   const createCustomer = useCreateCustomer()
   const createDelivery = useCreateDelivery()
   const updateDelivery = useUpdateDelivery()
@@ -271,8 +293,23 @@ export default function BillingPosPage() {
   const [showAddCustomer, setShowAddCustomer] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [isClearing, setIsClearing] = useState(false)
-  const [isFullscreen, setIsFullscreen] = useState(false)
+  // A CSS-only "focus mode" (fixed, covers the viewport) rather than the
+  // native Fullscreen API — deliberate, not an oversight. Real Fullscreen
+  // gets force-exited by *any* native browser/OS dialog (print, file save,
+  // a future card-reader or signature-pad popup), which kept minimizing
+  // the POS after Complete Sale. A CSS overlay has nothing for those
+  // dialogs to exit, since it was never real Fullscreen to begin with; the
+  // trade-off is the browser's own tab/URL bar stay visible.
+  const [isFocusMode, setIsFocusMode] = useState(true)
   const posContainerRef = useRef<HTMLDivElement>(null)
+  // Dropdowns/dialogs portal into this element instead of document.body
+  // (see the `container` props below). Kept even though it's no longer
+  // strictly required now that focus mode isn't real Fullscreen — still
+  // correct, and there's no reason to re-plumb six call sites to remove it.
+  // Mirrored into state via the callback ref below rather than read from
+  // posContainerRef.current directly in JSX, since reading a ref's .current
+  // during render is unsafe/disallowed by the rules of React.
+  const [posContainerEl, setPosContainerEl] = useState<HTMLDivElement | null>(null)
   // A saved custom line's only persisted signal for "charge vs discount" is
   // the sign of its unit_price — but it starts at 0 (ambiguous) until the
   // cashier types an amount, and by then the description may have been
@@ -281,26 +318,26 @@ export default function BillingPosPage() {
   // is still exactly 0.
   const [customLineKinds, setCustomLineKinds] = useState<Record<string, "charge" | "discount">>({})
 
-  // True device-level fullscreen on just the POS workspace (not a CSS
-  // "cover the viewport" trick) — the browser renders only this element
-  // full-screen, so the app sidebar/topbar are hidden along with it.
+  // Native Fullscreen exits on Escape automatically; a CSS overlay doesn't,
+  // so this replicates that one bit of expected behavior.
   useEffect(() => {
-    function handleFullscreenChange() {
-      setIsFullscreen(document.fullscreenElement === posContainerRef.current)
+    if (!isFocusMode) return
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") setIsFocusMode(false)
     }
-    document.addEventListener("fullscreenchange", handleFullscreenChange)
-    return () => document.removeEventListener("fullscreenchange", handleFullscreenChange)
-  }, [])
+    document.addEventListener("keydown", handleKeyDown)
+    return () => document.removeEventListener("keydown", handleKeyDown)
+  }, [isFocusMode])
 
-  function toggleFullscreen() {
-    if (document.fullscreenElement) {
-      document.exitFullscreen()
-    } else {
-      posContainerRef.current?.requestFullscreen()
-    }
+  function toggleFocusMode() {
+    setIsFocusMode((prev) => !prev)
   }
 
-  const activeTab = tabs.find((tab) => tab.key === activeKey)!
+  // Falls back to the first tab instead of crashing if activeKey ever
+  // desyncs from tabs (defense in depth — closeTab is the only place that
+  // removes tabs, and it's written to keep both in sync, but this keeps a
+  // future regression of that class from taking the whole page down).
+  const activeTab = tabs.find((tab) => tab.key === activeKey) ?? tabs[0]
   const activeInvoice = invoices?.find((inv) => inv.id === activeTab.invoiceId)
   const { data: savedCartItems } = useInvoiceItems(activeTab.invoiceId ?? undefined)
   const { data: existingDelivery } = useDeliveryByInvoice(activeTab.invoiceId ?? undefined)
@@ -310,15 +347,29 @@ export default function BillingPosPage() {
   const selectedOffer = offers?.find((o) => o.id === selectedOfferId)
 
   const localTotals = lineTotals(activeTab.lines)
-  const subtotal = isDraftSaved ? (activeInvoice?.subtotal ?? 0) : localTotals.subtotal
+  const blendedSubtotal = isDraftSaved ? (activeInvoice?.subtotal ?? 0) : localTotals.subtotal
   const tax = isDraftSaved ? (activeInvoice?.tax_total ?? 0) : localTotals.tax
   const discount = isDraftSaved
     ? (activeInvoice?.discount_total ?? 0)
-    : calculateOfferDiscount(selectedOffer, subtotal, tax)
+    : calculateOfferDiscount(selectedOffer, blendedSubtotal, tax)
   const total = isDraftSaved
     ? (activeInvoice?.total ?? 0)
-    : Math.max(0, subtotal + tax - discount)
-  const cartCount = isDraftSaved ? (savedCartItems?.length ?? 0) : activeTab.lines.length
+    : Math.max(0, blendedSubtotal + tax - discount)
+
+  // Fees/discounts aren't items — the cart list below only ever shows
+  // kind === "item" rows; every charge/discount line renders as its own
+  // editable row in the totals panel instead, via *ChargeDiscountLines.
+  // "Subtotal" in that panel is the items-only sum, not blendedSubtotal
+  // (which still folds charges/discounts in — that's what makes `total`
+  // above correct without touching its formula).
+  const savedItemLines = (savedCartItems ?? []).filter((l) => l.item_id)
+  const savedChargeDiscountLines = (savedCartItems ?? []).filter((l) => !l.item_id)
+  const localItemLines = activeTab.lines.filter((l) => l.kind === "item")
+  const localChargeDiscountLines = activeTab.lines.filter((l) => l.kind !== "item")
+  const subtotal = isDraftSaved
+    ? savedItemLines.reduce((sum, l) => sum + l.quantity * l.unit_price, 0)
+    : localItemLines.reduce((sum, l) => sum + l.quantity * l.unitPrice, 0)
+  const cartCount = isDraftSaved ? savedItemLines.length : localItemLines.length
 
   function updateTab(key: string, patch: Partial<PosTab>) {
     setTabs((prev) => prev.map((tab) => (tab.key === key ? { ...tab, ...patch } : tab)))
@@ -338,12 +389,21 @@ export default function BillingPosPage() {
   }
 
   function closeTab(key: string) {
+    // Both branches use the functional setState form (never the `activeKey`
+    // closure directly) so this stays correct even when two closeTab calls
+    // land in the same batch before a re-render — e.g. closing two tabs in
+    // quick succession. Comparing against the closure's `activeKey` here
+    // used to go stale in exactly that case, leaving activeKey pointing at
+    // a tab that had already been removed by the other call, which crashed
+    // `tabs.find(...)!` downstream.
+    let nextActiveKey = key
     setTabs((prev) => {
       const remaining = prev.filter((tab) => tab.key !== key)
       const next = remaining.length ? remaining : [newTab()]
-      if (key === activeKey) setActiveKey(next[0].key)
+      nextActiveKey = next[0].key
       return next
     })
+    setActiveKey((prevActiveKey) => (prevActiveKey === key ? nextActiveKey : prevActiveKey))
   }
 
   function addItemToCart(item: Item, variant?: ItemVariant) {
@@ -405,12 +465,14 @@ export default function BillingPosPage() {
     }
   }
 
-  /** Adds a manual no-item line — a delivery fee/additional charge or a
+  /** Adds a manual no-item line — an additional charge, a delivery fee, or a
    * discount — using the same nullable item_id mechanism purchase bills'
    * "Custom line" already relies on. No schema change: a discount is just
-   * a negative unit_price, which recalc_invoice() already sums correctly. */
-  function addCustomLine(kind: "charge" | "discount") {
-    const description = kind === "discount" ? t("discountLineDefault") : t("chargeLineDefault")
+   * a negative unit_price, which recalc_invoice() already sums correctly.
+   * `description` lets a caller pre-fill the label (e.g. "Delivery Fee")
+   * instead of the generic per-kind default. */
+  function addCustomLine(kind: "charge" | "discount", descriptionOverride?: string) {
+    const description = descriptionOverride ?? (kind === "discount" ? t("discountLineDefault") : t("chargeLineDefault"))
 
     if (!isDraftSaved) {
       setTabs((prev) =>
@@ -450,6 +512,82 @@ export default function BillingPosPage() {
       },
       { onSuccess: (data) => setCustomLineKinds((prev) => ({ ...prev, [data.id]: kind })) },
     )
+  }
+
+  /** The Delivery Fee field in the Delivery card drives one specific cart
+   * line (kind "charge", a fixed description) instead of the cashier having
+   * to use "+ Charge" and rename it — same no-item-id mechanism as
+   * addCustomLine, just a dedicated field for a fee common enough to
+   * deserve one. Matched by description since invoice_items has no column
+   * to mark "this charge is the delivery fee." */
+  function deliveryFeeValue(): number {
+    const label = t("deliveryFeeLineDefault")
+    if (!isDraftSaved) {
+      return activeTab.lines.find((l) => l.kind === "charge" && l.description === label)?.unitPrice ?? 0
+    }
+    return savedCartItems?.find((l) => !l.item_id && l.description === label)?.unit_price ?? 0
+  }
+
+  function setDeliveryFee(rawValue: number) {
+    const label = t("deliveryFeeLineDefault")
+    const amount = Number.isNaN(rawValue) ? 0 : Math.max(0, rawValue)
+
+    if (!isDraftSaved) {
+      const existing = activeTab.lines.find((l) => l.kind === "charge" && l.description === label)
+      if (amount <= 0) {
+        if (existing) changeLocalQuantity(existing.tempId, 0)
+        return
+      }
+      if (existing) {
+        changeLocalPrice(existing.tempId, amount)
+      } else {
+        setTabs((prev) =>
+          prev.map((tab) =>
+            tab.key !== activeTab.key
+              ? tab
+              : {
+                  ...tab,
+                  lines: [
+                    ...tab.lines,
+                    {
+                      tempId: crypto.randomUUID(),
+                      itemId: null,
+                      itemVariantId: null,
+                      kind: "charge",
+                      description: label,
+                      quantity: 1,
+                      unitPrice: amount,
+                      taxRate: 0,
+                    },
+                  ],
+                },
+          ),
+        )
+      }
+      return
+    }
+
+    const existing = savedCartItems?.find((l) => !l.item_id && l.description === label)
+    if (amount <= 0) {
+      if (existing) deleteInvoiceItem.mutate(existing.id)
+      return
+    }
+    if (existing) {
+      updateInvoiceItem.mutate({ id: existing.id, input: { unit_price: amount } })
+    } else {
+      createInvoiceItem.mutate(
+        {
+          invoice_id: activeTab.invoiceId!,
+          item_id: null,
+          item_variant_id: null,
+          description: label,
+          quantity: 1,
+          unit_price: amount,
+          tax_rate: 0,
+        },
+        { onSuccess: (data) => setCustomLineKinds((prev) => ({ ...prev, [data.id]: "charge" })) },
+      )
+    }
   }
 
   function changeLocalQuantity(tempId: string, quantity: number) {
@@ -593,10 +731,13 @@ export default function BillingPosPage() {
 
   /** Fetches the just-completed invoice fresh (rather than relying on
    * client cache, which may not have caught up with the status/payment
-   * mutations yet) and sends it straight to the print dialog — no
-   * intermediate "open the invoice, click Print" step after a sale. Runs
-   * fire-and-forget: a failure here shouldn't undo or block the sale that
-   * already succeeded. */
+   * mutations yet) and downloads it as a PDF. Deliberately NOT called
+   * automatically after Complete Sale — a file download still triggers the
+   * browser's own save prompt, which is a native dialog just like the
+   * print dialog it replaced, and forcing that on every single sale is
+   * exactly the interruption this was meant to avoid. Wired instead as the
+   * action button on the "Sale completed" toast, so the download only
+   * happens on a deliberate click. */
   async function printCompletedInvoice(invoiceId: string) {
     try {
       const [invoiceData, lineItems] = await Promise.all([
@@ -612,29 +753,85 @@ export default function BillingPosPage() {
         tPrint,
         watermarkText,
       })
-      await printInvoicePdf(element)
+      await downloadInvoicePdf(element, `${invoiceData.invoice_number ?? "invoice"}.pdf`)
     } catch {
-      // Printing is a bonus step after a sale that already succeeded —
+      // Downloading is a bonus step after a sale that already succeeded —
       // don't surface an error toast for it.
+    }
+  }
+
+  /** Creates the installment plan and its full schedule of installment rows
+   * for a just-confirmed EMI sale — same math as the invoice detail page's
+   * "Set up EMI" dialog (components/setup-emi-dialog.tsx), just invoked
+   * directly from the POS instead of via a separate follow-up step. */
+  async function setupEmiPlan(invoiceId: string, invoiceTotal: number, months: number, startDate: string) {
+    const plan = await createInstallmentPlan.mutateAsync({
+      invoice_id: invoiceId,
+      total_amount: invoiceTotal,
+      months,
+      start_date: startDate,
+    })
+    const base = Math.floor((invoiceTotal / months) * 100) / 100
+    let allocated = 0
+    const start = new Date(startDate)
+    for (let i = 0; i < months; i++) {
+      const isLast = i === months - 1
+      const amount = isLast ? Math.round((invoiceTotal - allocated) * 100) / 100 : base
+      allocated += amount
+      const dueDate = new Date(start)
+      dueDate.setMonth(dueDate.getMonth() + i)
+      await createInstallment.mutateAsync({
+        plan_id: plan.id,
+        invoice_id: invoiceId,
+        installment_number: i + 1,
+        due_date: dueDate.toISOString().slice(0, 10),
+        amount,
+      })
     }
   }
 
   /** Confirms the invoice, then immediately records payment inline with
    * whatever method/amount chip is selected in the payment section — no
    * separate dialog step. Amount defaults to the invoice total unless the
-   * cashier overrode it. */
+   * cashier overrode it.
+   *
+   * When "Sell as EMI" is on, no payment is recorded here at all — the
+   * invoice is just confirmed and the installment plan is set up right
+   * here using the months/start date chosen in the EMI section, then the
+   * cashier is sent to the invoice detail page to see the schedule.
+   * Recording a full payment now and then setting up EMI afterward is
+   * exactly what caused amount_paid to double-count (full payment + first
+   * installment), so this path deliberately skips createPayment rather
+   * than trying to record a partial/zero payment. */
   async function completeSale() {
     if (!isDraftSaved && !activeTab.lines.length) return
     setIsSaving(true)
     try {
       const invoiceId = await ensureDraftSaved()
       await persistDelivery(invoiceId)
+      const isEmi = activeTab.isEmi
+      const emiMonths = activeTab.emiMonths
+      const emiStartDate = activeTab.emiStartDate
+      const invoiceTotal = total
       const paymentAmount = activeTab.paymentAmount ?? total
       const paymentMethod = activeTab.paymentMethod
       updateInvoice.mutate(
         { id: invoiceId, input: { status: "sent", warehouse_id: activeTab.warehouseId, offer_id: activeTab.offerId || null } },
         {
           onSuccess: () => {
+            if (isEmi) {
+              setupEmiPlan(invoiceId, invoiceTotal, emiMonths, emiStartDate)
+                .then(() => {
+                  toast.success(t("saleCompletedEmi"), {
+                    duration: 8000,
+                    action: { label: t("downloadInvoiceAction"), onClick: () => printCompletedInvoice(invoiceId) },
+                  })
+                  closeTab(activeTab.key)
+                  router.push(routes.sales.invoices.detail(invoiceId))
+                })
+                .catch(() => toast.error(tCommon("genericError")))
+              return
+            }
             createPayment.mutate(
               {
                 invoice_id: invoiceId,
@@ -646,8 +843,10 @@ export default function BillingPosPage() {
               },
               {
                 onSuccess: () => {
-                  toast.success(t("saleCompleted"))
-                  printCompletedInvoice(invoiceId)
+                  toast.success(t("saleCompleted"), {
+                    duration: 8000,
+                    action: { label: t("downloadInvoiceAction"), onClick: () => printCompletedInvoice(invoiceId) },
+                  })
                   closeTab(activeTab.key)
                 },
                 onError: () => toast.error(tCommon("genericError")),
@@ -694,10 +893,18 @@ export default function BillingPosPage() {
       </div>
 
       <div
-        ref={posContainerRef}
+        ref={(node) => {
+          posContainerRef.current = node
+          setPosContainerEl(node)
+        }}
         className={cn(
           "flex min-h-0 flex-1 flex-col overflow-hidden bg-card",
-          isFullscreen ? "rounded-none" : "rounded-xl ring-1 ring-foreground/10",
+          // z-[110]: the app sidebar's own fixed panel renders at z-100
+          // (components/ui/sidebar.tsx), so this has to clear that to
+          // actually cover it — z-40 quietly rendered underneath it.
+          isFocusMode
+            ? "fixed inset-0 z-[110] rounded-none"
+            : "rounded-xl ring-1 ring-foreground/10",
         )}
       >
         {/* Browser-style bill tabs */}
@@ -736,11 +943,11 @@ export default function BillingPosPage() {
           <Button
             variant="ghost"
             size="icon-sm"
-            onClick={toggleFullscreen}
-            title={isFullscreen ? t("exitFullscreen") : t("fullscreen")}
+            onClick={toggleFocusMode}
+            title={isFocusMode ? t("exitFullscreen") : t("fullscreen")}
             className="mb-1 ml-auto shrink-0"
           >
-            {isFullscreen ? <Minimize2Icon /> : <Maximize2Icon />}
+            {isFocusMode ? <Minimize2Icon /> : <Maximize2Icon />}
           </Button>
         </div>
 
@@ -755,7 +962,7 @@ export default function BillingPosPage() {
               <SelectTrigger className="mb-3 w-full">
                 <SelectValue placeholder={t("warehousePlaceholder")} />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent container={posContainerEl}>
                 {warehouses?.map((warehouse) => (
                   <SelectItem key={warehouse.id} value={warehouse.id}>
                     {warehouse.name}
@@ -791,72 +998,35 @@ export default function BillingPosPage() {
             )}
           </div>
 
-          {/* Column 2 — cart lines, offer, note */}
+          {/* Column 2 — cart lines (items only — fees/discounts live in the totals panel), offer, note */}
           <div className="flex min-h-0 min-w-0 flex-col p-4">
             <div className="mb-2.5 flex items-center justify-between">
               <h2 className="text-sm font-semibold">
                 {t("cartTitle")} <span className="font-normal text-muted-foreground">{t("cartCount", { count: cartCount })}</span>
               </h2>
-              <div className="flex items-center gap-1">
-                <Button variant="ghost" size="sm" onClick={() => addCustomLine("charge")}>
-                  {t("addChargeLine")}
-                </Button>
-                <Button variant="ghost" size="sm" onClick={() => addCustomLine("discount")}>
-                  {t("addDiscountLine")}
-                </Button>
-                <Button variant="ghost" size="sm" onClick={clearCart} disabled={!cartCount || isClearing}>
-                  {t("clearCart")}
-                </Button>
-              </div>
+              <Button variant="ghost" size="sm" onClick={clearCart} disabled={!cartCount || isClearing}>
+                {t("clearCart")}
+              </Button>
             </div>
 
             <div className="flex-1 overflow-y-auto">
               {isDraftSaved ? (
-                savedCartItems?.length ? (
+                savedItemLines.length ? (
                   <div className="flex flex-col">
-                    {savedCartItems.map((line) => {
-                      const kind: CartLine["kind"] = line.item_id
-                        ? "item"
-                        : line.unit_price !== 0
-                          ? line.unit_price < 0
-                            ? "discount"
-                            : "charge"
-                          : (customLineKinds[line.id] ?? "charge")
-                      const fallbackName = kind === "discount" ? t("discountLineDefault") : t("chargeLineDefault")
-                      const displayPrice = kind === "discount" ? Math.abs(line.unit_price) : line.unit_price
+                    {savedItemLines.map((line) => {
                       const lineTotal = line.quantity * line.unit_price
                       return (
                         <div key={line.id} className="flex items-center gap-2 border-b border-border/70 py-2.5 last:border-0">
                           <div className="min-w-0 flex-1">
-                            {kind === "item" ? (
-                              <p className="truncate text-sm font-medium">{line.description}</p>
-                            ) : (
-                              <div className="flex items-center gap-1">
-                                <input
-                                  type="text"
-                                  defaultValue={line.description}
-                                  onBlur={(event) =>
-                                    commitSavedDescription(line.id, event.target.value, line.description, fallbackName)
-                                  }
-                                  className="min-w-0 flex-1 border-0 bg-transparent p-0 text-sm font-medium focus:outline-none"
-                                />
-                                <span className="shrink-0 rounded bg-muted px-1 py-0.2 text-[10px] font-normal uppercase text-muted-foreground">
-                                  {fallbackName}
-                                </span>
-                              </div>
-                            )}
+                            <p className="truncate text-sm font-medium">{line.description}</p>
                             <div className="flex items-center gap-1 text-xs text-muted-foreground">
                               <span>₹</span>
                               <input
                                 type="number"
                                 step="any"
                                 min={0}
-                                defaultValue={displayPrice}
-                                onBlur={(event) => {
-                                  const magnitude = event.target.valueAsNumber
-                                  const signed = kind === "discount" ? -Math.abs(magnitude) : magnitude
-                                  commitSavedPrice(line.id, signed, line.unit_price)
-                                }}
+                                defaultValue={line.unit_price}
+                                onBlur={(event) => commitSavedPrice(line.id, event.target.valueAsNumber, line.unit_price)}
                                 className="w-14 border-0 bg-transparent p-0 text-xs text-muted-foreground focus:text-foreground focus:outline-none"
                               />
                               <span>× {line.quantity}</span>
@@ -867,15 +1037,7 @@ export default function BillingPosPage() {
                             onDecrement={() => changeSavedQuantity(line.id, line.quantity - 1)}
                             onIncrement={() => changeSavedQuantity(line.id, line.quantity + 1)}
                           />
-                          <span
-                            className={cn(
-                              "w-20 shrink-0 text-right text-sm font-semibold tabular-nums",
-                              kind === "discount" && "text-emerald-600 dark:text-emerald-400",
-                            )}
-                          >
-                            {kind === "discount" ? "−" : ""}
-                            {money(Math.abs(lineTotal))}
-                          </span>
+                          <span className="w-20 shrink-0 text-right text-sm font-semibold tabular-nums">{money(lineTotal)}</span>
                           <Button
                             variant="ghost"
                             size="icon-xs"
@@ -891,44 +1053,24 @@ export default function BillingPosPage() {
                 ) : (
                   <p className="py-8 text-center text-sm text-muted-foreground">{t("emptyCart")}</p>
                 )
-              ) : activeTab.lines.length ? (
+              ) : localItemLines.length ? (
                 <div className="flex flex-col">
-                  {activeTab.lines.map((line) => {
-                    const fallbackName = line.kind === "discount" ? t("discountLineDefault") : t("chargeLineDefault")
-                    const displayPrice = line.kind === "discount" ? Math.abs(line.unitPrice) : line.unitPrice
+                  {localItemLines.map((line) => {
                     const lineTotal = line.quantity * line.unitPrice
                     return (
                       <div key={line.tempId} className="flex items-center gap-2 border-b border-border/70 py-2.5 last:border-0">
                         <div className="min-w-0 flex-1">
-                          {line.kind === "item" ? (
-                            <p className="truncate text-sm font-medium">{line.description}</p>
-                          ) : (
-                            <div className="flex items-center gap-1">
-                              <input
-                                type="text"
-                                value={line.description}
-                                onChange={(event) => changeLocalDescription(line.tempId, event.target.value)}
-                                onBlur={(event) => {
-                                  if (!event.target.value.trim()) changeLocalDescription(line.tempId, fallbackName)
-                                }}
-                                className="min-w-0 flex-1 border-0 bg-transparent p-0 text-sm font-medium focus:outline-none"
-                              />
-                              <span className="shrink-0 rounded bg-muted px-1 py-0.2 text-[10px] font-normal uppercase text-muted-foreground">
-                                {fallbackName}
-                              </span>
-                            </div>
-                          )}
+                          <p className="truncate text-sm font-medium">{line.description}</p>
                           <div className="flex items-center gap-1 text-xs text-muted-foreground">
                             <span>₹</span>
                             <input
                               type="number"
                               step="any"
                               min={0}
-                              value={displayPrice}
+                              value={line.unitPrice}
                               onChange={(event) => {
-                                const magnitude = event.target.valueAsNumber
-                                const value = Number.isNaN(magnitude) ? 0 : magnitude
-                                changeLocalPrice(line.tempId, line.kind === "discount" ? -Math.abs(value) : value)
+                                const value = event.target.valueAsNumber
+                                changeLocalPrice(line.tempId, Number.isNaN(value) ? 0 : value)
                               }}
                               className="w-14 border-0 bg-transparent p-0 text-xs text-muted-foreground focus:text-foreground focus:outline-none"
                             />
@@ -940,15 +1082,7 @@ export default function BillingPosPage() {
                           onDecrement={() => changeLocalQuantity(line.tempId, line.quantity - 1)}
                           onIncrement={() => changeLocalQuantity(line.tempId, line.quantity + 1)}
                         />
-                        <span
-                          className={cn(
-                            "w-20 shrink-0 text-right text-sm font-semibold tabular-nums",
-                            line.kind === "discount" && "text-emerald-600 dark:text-emerald-400",
-                          )}
-                        >
-                          {line.kind === "discount" ? "−" : ""}
-                          {money(Math.abs(lineTotal))}
-                        </span>
+                        <span className="w-20 shrink-0 text-right text-sm font-semibold tabular-nums">{money(lineTotal)}</span>
                         <Button
                           variant="ghost"
                           size="icon-xs"
@@ -972,6 +1106,7 @@ export default function BillingPosPage() {
                 value={selectedOfferId}
                 onValueChange={handleOfferChange}
                 placeholder={t("offerPlaceholder")}
+                container={posContainerEl}
               />
               <Textarea
                 placeholder={t("notePlaceholder")}
@@ -995,6 +1130,7 @@ export default function BillingPosPage() {
               className="w-full"
               onAddNew={isDraftSaved ? undefined : () => setShowAddCustomer(true)}
               addNewLabel={t("addCustomer")}
+              container={posContainerEl}
             />
 
             <div className="flex flex-col gap-2 rounded-lg border border-border p-2.5">
@@ -1029,7 +1165,7 @@ export default function BillingPosPage() {
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder={t("deliveryPersonPlaceholder")} />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent container={posContainerEl}>
                       {deliveryPersons
                         ?.filter((person) => person.is_active)
                         .map((person) => (
@@ -1039,6 +1175,20 @@ export default function BillingPosPage() {
                         ))}
                     </SelectContent>
                   </Select>
+                  <Input
+                    key={activeTab.invoiceId ?? activeTab.key}
+                    type="number"
+                    step="any"
+                    min={0}
+                    placeholder={t("deliveryFeeLineDefault")}
+                    defaultValue={deliveryFeeValue() || ""}
+                    onChange={
+                      isDraftSaved ? undefined : (event) => setDeliveryFee(event.target.valueAsNumber)
+                    }
+                    onBlur={
+                      isDraftSaved ? (event) => setDeliveryFee(event.target.valueAsNumber) : undefined
+                    }
+                  />
                   <Select
                     value={activeTab.delivery.paymentMode ?? undefined}
                     onValueChange={(value) =>
@@ -1050,7 +1200,7 @@ export default function BillingPosPage() {
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder={t("deliveryPaymentModeLabel")} />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent container={posContainerEl}>
                       <SelectItem value="cod">{tDeliveryPaymentMode("cod")}</SelectItem>
                       <SelectItem value="prepaid">{tDeliveryPaymentMode("prepaid")}</SelectItem>
                     </SelectContent>
@@ -1064,6 +1214,98 @@ export default function BillingPosPage() {
                 <span className="text-muted-foreground">{t("subtotalLabel")}</span>
                 <span className="tabular-nums">{money(subtotal)}</span>
               </div>
+
+              {/* Fees/discounts — not items, so they live here instead of the cart list. */}
+              {isDraftSaved
+                ? savedChargeDiscountLines.map((line) => {
+                    const kind: "charge" | "discount" =
+                      line.unit_price < 0 ? "discount" : line.unit_price > 0 ? "charge" : (customLineKinds[line.id] ?? "charge")
+                    const fallbackName = kind === "discount" ? t("discountLineDefault") : t("chargeLineDefault")
+                    const displayPrice = Math.abs(line.unit_price)
+                    return (
+                      <div key={line.id} className="flex items-center gap-1.5">
+                        <input
+                          type="text"
+                          defaultValue={line.description}
+                          onBlur={(event) => commitSavedDescription(line.id, event.target.value, line.description, fallbackName)}
+                          className="min-w-0 flex-1 truncate border-0 bg-transparent p-0 text-muted-foreground focus:text-foreground focus:outline-none"
+                        />
+                        <span>₹</span>
+                        <input
+                          type="number"
+                          step="any"
+                          min={0}
+                          defaultValue={displayPrice}
+                          onBlur={(event) => {
+                            const magnitude = event.target.valueAsNumber
+                            commitSavedPrice(line.id, kind === "discount" ? -Math.abs(magnitude) : magnitude, line.unit_price)
+                          }}
+                          className={cn(
+                            "w-16 shrink-0 border-0 bg-transparent p-0 text-right tabular-nums focus:outline-none",
+                            kind === "discount" && "text-emerald-600 dark:text-emerald-400",
+                          )}
+                        />
+                        <Button
+                          variant="ghost"
+                          size="icon-xs"
+                          className="shrink-0 text-muted-foreground hover:text-destructive"
+                          onClick={() => deleteInvoiceItem.mutate(line.id)}
+                        >
+                          <TrashIcon />
+                        </Button>
+                      </div>
+                    )
+                  })
+                : localChargeDiscountLines.map((line) => {
+                    const fallbackName = line.kind === "discount" ? t("discountLineDefault") : t("chargeLineDefault")
+                    const displayPrice = Math.abs(line.unitPrice)
+                    return (
+                      <div key={line.tempId} className="flex items-center gap-1.5">
+                        <input
+                          type="text"
+                          value={line.description}
+                          onChange={(event) => changeLocalDescription(line.tempId, event.target.value)}
+                          onBlur={(event) => {
+                            if (!event.target.value.trim()) changeLocalDescription(line.tempId, fallbackName)
+                          }}
+                          className="min-w-0 flex-1 truncate border-0 bg-transparent p-0 text-muted-foreground focus:text-foreground focus:outline-none"
+                        />
+                        <span>₹</span>
+                        <input
+                          type="number"
+                          step="any"
+                          min={0}
+                          value={displayPrice}
+                          onChange={(event) => {
+                            const magnitude = event.target.valueAsNumber
+                            const value = Number.isNaN(magnitude) ? 0 : magnitude
+                            changeLocalPrice(line.tempId, line.kind === "discount" ? -Math.abs(value) : value)
+                          }}
+                          className={cn(
+                            "w-16 shrink-0 border-0 bg-transparent p-0 text-right tabular-nums focus:outline-none",
+                            line.kind === "discount" && "text-emerald-600 dark:text-emerald-400",
+                          )}
+                        />
+                        <Button
+                          variant="ghost"
+                          size="icon-xs"
+                          className="shrink-0 text-muted-foreground hover:text-destructive"
+                          onClick={() => changeLocalQuantity(line.tempId, 0)}
+                        >
+                          <TrashIcon />
+                        </Button>
+                      </div>
+                    )
+                  })}
+              <div className="flex items-center gap-1">
+                <Button variant="ghost" size="sm" className="h-6 px-1.5 text-xs" onClick={() => addCustomLine("charge")}>
+                  {t("addChargeLine")}
+                </Button>
+                <Button variant="ghost" size="sm" className="h-6 px-1.5 text-xs" onClick={() => addCustomLine("discount")}>
+                  {t("addDiscountLine")}
+                </Button>
+              </div>
+
               {discount > 0 ? (
                 <div className="flex justify-between font-medium text-emerald-600 dark:text-emerald-400">
                   <span className="flex items-center gap-1.5">
@@ -1087,46 +1329,108 @@ export default function BillingPosPage() {
               </div>
             </div>
 
-            <div className="flex flex-col gap-2">
-              <span className="text-xs font-medium text-muted-foreground">{tPay("methodLabel")}</span>
-              <div className="grid grid-cols-2 gap-2">
-                {PAYMENT_METHODS.map((method) => {
-                  const Icon = PAYMENT_METHOD_ICONS[method]
-                  const selected = activeTab.paymentMethod === method
-                  return (
-                    <button
-                      key={method}
-                      type="button"
-                      onClick={() => updateTab(activeTab.key, { paymentMethod: method })}
-                      className={cn(
-                        "flex h-10 items-center justify-center gap-2 rounded-lg border text-xs font-medium transition-colors",
-                        selected
-                          ? "border-foreground bg-primary text-primary-foreground"
-                          : "border-border text-muted-foreground hover:bg-muted",
-                      )}
-                    >
-                      <Icon className="size-3.5" />
-                      <span>{method === "razorpay" ? t("paymentCard") : tMethods(method)}</span>
-                    </button>
-                  )
-                })}
+            <div className="flex flex-col gap-2 rounded-lg border border-border p-2.5">
+              <div className="flex items-center justify-between">
+                <div className="flex flex-col gap-0.5">
+                  <span className="flex items-center gap-1.5 text-xs font-medium">
+                    <CalendarClockIcon className="size-3.5 text-muted-foreground" />
+                    {t("emiSectionTitle")}
+                  </span>
+                  {activeTab.isEmi ? <span className="text-[11px] text-muted-foreground">{t("emiSectionHint")}</span> : null}
+                </div>
+                <Switch
+                  checked={activeTab.isEmi}
+                  onCheckedChange={(checked) => updateTab(activeTab.key, { isEmi: checked })}
+                />
               </div>
+              {activeTab.isEmi ? (
+                <div className="flex flex-col gap-2">
+                  <div className="grid grid-cols-2 gap-2">
+                    <Field className="gap-1">
+                      <FieldLabel htmlFor="pos-emi-months" className="text-[11px] text-muted-foreground">
+                        {tEmi("monthsLabel")}
+                      </FieldLabel>
+                      <Input
+                        id="pos-emi-months"
+                        type="number"
+                        min={2}
+                        max={60}
+                        step={1}
+                        value={activeTab.emiMonths}
+                        onChange={(event) => {
+                          const value = event.target.valueAsNumber
+                          updateTab(activeTab.key, { emiMonths: Number.isNaN(value) ? 2 : Math.min(60, Math.max(2, value)) })
+                        }}
+                        className="h-8 text-xs"
+                      />
+                    </Field>
+                    <Field className="gap-1">
+                      <FieldLabel htmlFor="pos-emi-start" className="text-[11px] text-muted-foreground">
+                        {tEmi("startDateLabel")}
+                      </FieldLabel>
+                      <DatePicker
+                        id="pos-emi-start"
+                        value={activeTab.emiStartDate}
+                        onChange={(value) => updateTab(activeTab.key, { emiStartDate: value })}
+                        className="h-8 text-xs"
+                        container={posContainerEl}
+                      />
+                    </Field>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">
+                    {tEmi("previewNote", {
+                      months: activeTab.emiMonths,
+                      amount: money(activeTab.emiMonths > 0 ? total / activeTab.emiMonths : 0),
+                    })}
+                  </p>
+                </div>
+              ) : null}
             </div>
 
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-muted-foreground">{tPay("amountLabel")}</label>
-              <Input
-                type="number"
-                step="0.01"
-                min={0}
-                value={activeTab.paymentAmount ?? total}
-                onChange={(event) => {
-                  const value = event.target.valueAsNumber
-                  updateTab(activeTab.key, { paymentAmount: Number.isNaN(value) ? 0 : value })
-                }}
-                className="font-semibold"
-              />
-            </div>
+            {!activeTab.isEmi ? (
+              <>
+                <div className="flex flex-col gap-2">
+                  <span className="text-xs font-medium text-muted-foreground">{tPay("methodLabel")}</span>
+                  <div className="grid grid-cols-2 gap-2">
+                    {PAYMENT_METHODS.map((method) => {
+                      const Icon = PAYMENT_METHOD_ICONS[method]
+                      const selected = activeTab.paymentMethod === method
+                      return (
+                        <button
+                          key={method}
+                          type="button"
+                          onClick={() => updateTab(activeTab.key, { paymentMethod: method })}
+                          className={cn(
+                            "flex h-10 items-center justify-center gap-2 rounded-lg border text-xs font-medium transition-colors",
+                            selected
+                              ? "border-foreground bg-primary text-primary-foreground"
+                              : "border-border text-muted-foreground hover:bg-muted",
+                          )}
+                        >
+                          <Icon className="size-3.5" />
+                          <span>{method === "razorpay" ? t("paymentCard") : tMethods(method)}</span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-medium text-muted-foreground">{tPay("amountLabel")}</label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min={0}
+                    value={activeTab.paymentAmount ?? total}
+                    onChange={(event) => {
+                      const value = event.target.valueAsNumber
+                      updateTab(activeTab.key, { paymentAmount: Number.isNaN(value) ? 0 : value })
+                    }}
+                    className="font-semibold"
+                  />
+                </div>
+              </>
+            ) : null}
 
             <div className="grid grid-cols-2 gap-2">
               <Button
@@ -1153,6 +1457,7 @@ export default function BillingPosPage() {
         open={showAddCustomer}
         onOpenChange={setShowAddCustomer}
         onCreated={(customerId) => updateTab(activeTab.key, { customerId })}
+        container={posContainerEl}
       />
     </div>
   )

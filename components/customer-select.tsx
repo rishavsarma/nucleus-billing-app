@@ -30,6 +30,9 @@ export interface CustomerSelectProps {
   /** When provided, renders an "add new customer" row at the bottom of the list, below a separator. */
   onAddNew?: () => void
   addNewLabel?: string
+  /** Portal target for the dropdown — defaults to document.body. Pass e.g.
+   * a fullscreened element's ref so it still renders during Fullscreen. */
+  container?: HTMLElement | null
 }
 
 export function CustomerSelect({
@@ -44,6 +47,7 @@ export function CustomerSelect({
   className,
   onAddNew,
   addNewLabel = "Add new customer",
+  container,
 }: CustomerSelectProps) {
   const [open, setOpen] = React.useState(false)
 
@@ -80,6 +84,7 @@ export function CustomerSelect({
       <PopoverContent
         className="w-(--radix-popover-trigger-width) min-w-[280px] p-0"
         align="start"
+        container={container}
       >
         <Command
           filter={(itemValue, search) => {

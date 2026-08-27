@@ -1,5 +1,5 @@
 import { api } from "@/lib/axios"
-import type { Installment } from "@/lib/database/types"
+import type { Installment, InstallmentWithInvoice } from "@/lib/database/types"
 import type { ListParams, PaginatedResponse } from "@/lib/database/list-params-types"
 
 /** Every installment in one plan's schedule — for the invoice detail page. */
@@ -8,9 +8,10 @@ export async function fetchInstallmentsByPlanId(planId: string): Promise<Install
   return data
 }
 
-/** Paginated list of every installment due org-wide — for the Installments page. */
-export async function fetchInstallmentsPaginated(params: ListParams): Promise<PaginatedResponse<Installment>> {
-  const { data } = await api.get<PaginatedResponse<Installment>>("/database/installments", { params })
+/** Paginated list of every installment due org-wide, with each row's
+ * invoice number embedded via a real join — for the Installments page. */
+export async function fetchInstallmentsPaginated(params: ListParams): Promise<PaginatedResponse<InstallmentWithInvoice>> {
+  const { data } = await api.get<PaginatedResponse<InstallmentWithInvoice>>("/database/installments", { params })
   return data
 }
 

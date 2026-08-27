@@ -1,5 +1,5 @@
 import { api } from "@/lib/axios"
-import type { Item } from "@/lib/database/types"
+import type { Item, ItemWithTaxRate } from "@/lib/database/types"
 import type { ListParams, PaginatedResponse } from "@/lib/database/list-params-types"
 
 /** Fetch all items with no pagination — for dropdowns / pickers. */
@@ -15,9 +15,10 @@ export async function fetchItemById(id: string): Promise<Item> {
   return data
 }
 
-/** Fetch a paginated + searched page of items. */
-export async function fetchItemsPaginated(params: ListParams): Promise<PaginatedResponse<Item>> {
-  const { data } = await api.get<PaginatedResponse<Item>>("/database/items", { params })
+/** Fetch a paginated + searched page of items, with each row's tax rate
+ * name embedded via a real server-side join. */
+export async function fetchItemsPaginated(params: ListParams): Promise<PaginatedResponse<ItemWithTaxRate>> {
+  const { data } = await api.get<PaginatedResponse<ItemWithTaxRate>>("/database/items", { params })
   return data
 }
 

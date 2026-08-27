@@ -32,7 +32,13 @@ export async function GET(request: Request) {
   const page = Number(searchParams.get("page") ?? 1)
   const pageSize = Number(searchParams.get("pageSize") ?? 10)
 
-  let query = supabase.schema("billing").from("purchase_returns").select("*", { count: "exact" })
+  // Embeds the vendor name and original bill number via their FKs — avoids
+  // the list page separately fetching every vendor and every purchase bill
+  // (pageSize: 9999 each) just to resolve these by id.
+  let query = supabase
+    .schema("billing")
+    .from("purchase_returns")
+    .select("*, vendor:vendors(name), bill:purchase_bills(bill_number)", { count: "exact" })
   if (!auth.isSuperadmin) query = query.eq("org_id", auth.orgId)
   query = applyListParams(query, ["purchase_return_number"], { search, page, pageSize })
   const { data, error, count } = await query

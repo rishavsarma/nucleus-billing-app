@@ -1,5 +1,5 @@
 import { api } from "@/lib/axios"
-import type { PurchaseBill } from "@/lib/database/types"
+import type { PurchaseBill, PurchaseBillWithVendor } from "@/lib/database/types"
 import type { ListParams, PaginatedResponse } from "@/lib/database/list-params-types"
 
 /** Fetch all purchasebills with no pagination — for dropdowns / pickers. */
@@ -15,9 +15,10 @@ export async function fetchPurchaseBillById(id: string): Promise<PurchaseBill> {
   return data
 }
 
-/** Fetch a paginated + searched page of purchasebills. */
-export async function fetchPurchaseBillsPaginated(params: ListParams): Promise<PaginatedResponse<PurchaseBill>> {
-  const { data } = await api.get<PaginatedResponse<PurchaseBill>>("/database/purchase_bills", { params })
+/** Fetch a paginated + searched page of purchase bills, with each row's
+ * vendor name embedded via a real server-side join. */
+export async function fetchPurchaseBillsPaginated(params: ListParams): Promise<PaginatedResponse<PurchaseBillWithVendor>> {
+  const { data } = await api.get<PaginatedResponse<PurchaseBillWithVendor>>("/database/purchase_bills", { params })
   return data
 }
 

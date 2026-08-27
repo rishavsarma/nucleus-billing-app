@@ -26,6 +26,9 @@ export interface OfferSelectProps {
   emptyMessage?: string
   disabled?: boolean
   className?: string
+  /** Portal target for the dropdown — defaults to document.body. Pass e.g.
+   * a fullscreened element's ref so it still renders during Fullscreen. */
+  container?: HTMLElement | null
 }
 
 export function OfferSelect({
@@ -38,6 +41,7 @@ export function OfferSelect({
   emptyMessage = "No active offers found.",
   disabled = false,
   className,
+  container,
 }: OfferSelectProps) {
   const [open, setOpen] = React.useState(false)
 
@@ -102,6 +106,7 @@ export function OfferSelect({
         <PopoverContent
           className="w-(--radix-popover-trigger-width) min-w-[280px] p-0"
           align="start"
+          container={container}
         >
           <Command
             filter={(itemValue, search) => {

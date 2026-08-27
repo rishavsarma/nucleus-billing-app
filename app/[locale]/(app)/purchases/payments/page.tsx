@@ -5,12 +5,10 @@ import { useTranslations } from "next-intl"
 import { EntityTable, entityColumnHelper } from "@/components/entity-table"
 import { useServerTableParams } from "@/components/server-table"
 import { Badge } from "@/components/ui/badge"
-import { useVendors } from "@/hooks/use-vendors"
-import { usePurchaseBills } from "@/hooks/use-purchase-bills"
 import { usePurchasePaymentsList } from "@/hooks/use-purchase-payments"
-import type { PurchasePayment } from "@/lib/database/types"
+import type { PurchasePaymentWithRelations } from "@/lib/database/types"
 
-const columnHelper = entityColumnHelper<PurchasePayment>()
+const columnHelper = entityColumnHelper<PurchasePaymentWithRelations>()
 const money = (n: number) => "₹" + n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
 export default function PurchasePaymentsPage() {
@@ -18,28 +16,21 @@ export default function PurchasePaymentsPage() {
   const tMethods = useTranslations("PaymentMethods")
   const { params, tableControlProps } = useServerTableParams()
   const { data: result, isLoading } = usePurchasePaymentsList(params)
-  const { data: bills } = usePurchaseBills()
-  const { data: vendors } = useVendors()
-
-  const billNumber = (id: string) => bills?.find((b) => b.id === id)?.bill_number ?? "—"
-  const vendorName = (billId: string) => {
-    const bill = bills?.find((b) => b.id === billId)
-    return bill ? (vendors?.find((v) => v.id === bill.vendor_id)?.name ?? "—") : "—"
-  }
 
   const columns = [
     columnHelper.accessor("paid_at", {
       header: t("columnDate"),
       cell: ({ getValue }) => getValue().slice(0, 10),
     }),
-    columnHelper.accessor("purchase_bill_id", {
+    columnHelper.accessor("bill.bill_number", {
+      id: "purchase_bill_id",
       header: t("columnBill"),
-      cell: ({ getValue }) => billNumber(getValue()),
+      cell: ({ getValue }) => getValue() ?? "—",
     }),
-    columnHelper.display({
+    columnHelper.accessor("bill.vendor.name", {
       id: "vendor",
       header: t("columnVendor"),
-      cell: ({ row }) => vendorName(row.original.purchase_bill_id),
+      cell: ({ getValue }) => getValue() ?? "—",
     }),
     columnHelper.accessor("method", {
       header: t("columnMethod"),

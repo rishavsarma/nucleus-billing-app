@@ -1,5 +1,5 @@
 import { api } from "@/lib/axios"
-import type { SalesReturn } from "@/lib/database/types"
+import type { SalesReturn, SalesReturnWithRelations } from "@/lib/database/types"
 import type { ListParams, PaginatedResponse } from "@/lib/database/list-params-types"
 
 /** Fetch all sales returns with no pagination — for dropdowns / pickers. */
@@ -15,9 +15,10 @@ export async function fetchSalesReturnById(id: string): Promise<SalesReturn> {
   return data
 }
 
-/** Fetch a paginated + searched page of sales returns. */
-export async function fetchSalesReturnsPaginated(params: ListParams): Promise<PaginatedResponse<SalesReturn>> {
-  const { data } = await api.get<PaginatedResponse<SalesReturn>>("/database/sales_returns", { params })
+/** Fetch a paginated + searched page of sales returns, with each row's
+ * customer name and original invoice number embedded via real joins. */
+export async function fetchSalesReturnsPaginated(params: ListParams): Promise<PaginatedResponse<SalesReturnWithRelations>> {
+  const { data } = await api.get<PaginatedResponse<SalesReturnWithRelations>>("/database/sales_returns", { params })
   return data
 }
 

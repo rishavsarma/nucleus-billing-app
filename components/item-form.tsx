@@ -1,7 +1,7 @@
 "use client"
 
 import { zodResolver } from "@hookform/resolvers/zod"
-import { Loader2Icon } from "lucide-react"
+import { Loader2Icon, PackageIcon, WrenchIcon } from "lucide-react"
 import { useForm, useWatch } from "react-hook-form"
 import { useTranslations } from "next-intl"
 import { z } from "zod"
@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
+import { cn } from "@/lib/utils"
 import { useTaxRates } from "@/hooks/use-tax-rates"
 import type { Item } from "@/lib/database/types"
 
@@ -90,6 +91,57 @@ export function ItemForm({
     <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-6">
       <div className="rounded-xl bg-card ring-1 ring-foreground/10">
         <div className="border-b px-4 py-3">
+          <h2 className="text-sm font-semibold">{t("itemTypeTitle")}</h2>
+          <p className="text-xs text-muted-foreground">{t("itemTypeDescription")}</p>
+        </div>
+        <div className="grid grid-cols-2 gap-3 p-4">
+          <button
+            type="button"
+            onClick={() => setValue("track_inventory", true)}
+            className={cn(
+              "flex flex-col items-start gap-1.5 rounded-lg border p-3 text-left transition-colors",
+              trackInventory ? "border-primary bg-primary/5" : "border-border hover:bg-muted/40",
+            )}
+          >
+            <span className="flex items-center gap-2 text-sm font-medium">
+              <PackageIcon className="size-4 text-muted-foreground" />
+              {t("productTypeLabel")}
+            </span>
+            <span className="text-xs text-muted-foreground">{t("productTypeHint")}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setValue("track_inventory", false)}
+            className={cn(
+              "flex flex-col items-start gap-1.5 rounded-lg border p-3 text-left transition-colors",
+              !trackInventory ? "border-primary bg-primary/5" : "border-border hover:bg-muted/40",
+            )}
+          >
+            <span className="flex items-center gap-2 text-sm font-medium">
+              <WrenchIcon className="size-4 text-muted-foreground" />
+              {t("serviceTypeLabel")}
+            </span>
+            <span className="text-xs text-muted-foreground">{t("serviceTypeHint")}</span>
+          </button>
+        </div>
+        {trackInventory ? (
+          <div className="border-t px-4 py-4">
+            <Field className="max-w-xs">
+              <FieldLabel htmlFor="item-reorder-level">{t("reorderLevelLabel")}</FieldLabel>
+              <Input
+                id="item-reorder-level"
+                type="number"
+                step="0.01"
+                min={0}
+                {...register("reorder_level", { valueAsNumber: true })}
+              />
+            </Field>
+          </div>
+        ) : null}
+      </div>
+
+      <div className="rounded-xl bg-card ring-1 ring-foreground/10">
+        <div className="border-b px-4 py-3">
           <h2 className="text-sm font-semibold">{t("basicDetailsTitle")}</h2>
         </div>
         <div className="flex flex-col gap-4 p-4">
@@ -165,32 +217,9 @@ export function ItemForm({
 
       <div className="rounded-xl bg-card ring-1 ring-foreground/10">
         <div className="border-b px-4 py-3">
-          <h2 className="text-sm font-semibold">{t("inventoryTitle")}</h2>
+          <h2 className="text-sm font-semibold">{t("statusTitle")}</h2>
         </div>
         <div className="flex flex-col gap-4 p-4">
-          <Field orientation="horizontal">
-            <FieldLabel htmlFor="item-track-inventory">
-              {t("trackInventoryLabel")}
-              <span className="block text-xs font-normal text-muted-foreground">{t("trackInventoryHint")}</span>
-            </FieldLabel>
-            <Switch
-              id="item-track-inventory"
-              checked={trackInventory}
-              onCheckedChange={(checked) => setValue("track_inventory", checked)}
-            />
-          </Field>
-          {trackInventory ? (
-            <Field className="max-w-xs">
-              <FieldLabel htmlFor="item-reorder-level">{t("reorderLevelLabel")}</FieldLabel>
-              <Input
-                id="item-reorder-level"
-                type="number"
-                step="0.01"
-                min={0}
-                {...register("reorder_level", { valueAsNumber: true })}
-              />
-            </Field>
-          ) : null}
           <Field orientation="horizontal">
             <FieldLabel htmlFor="item-active">
               {t("activeLabel")}
