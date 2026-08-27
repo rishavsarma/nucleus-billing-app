@@ -4,7 +4,7 @@ import { useState } from "react"
 import { isAxiosError } from "axios"
 import { useTranslations } from "next-intl"
 import { toast } from "sonner"
-import { ArrowLeftIcon, BanknoteIcon, CheckIcon, DownloadIcon, Loader2Icon, MoreHorizontalIcon, PrinterIcon, TruckIcon, XIcon } from "lucide-react"
+import { ArrowLeftIcon, BanknoteIcon, CalendarClockIcon, CheckIcon, DownloadIcon, Loader2Icon, MoreHorizontalIcon, PrinterIcon, TruckIcon, XIcon } from "lucide-react"
 
 import { Link } from "@/i18n/navigation"
 import { Button } from "@/components/ui/button"
@@ -12,22 +12,26 @@ import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog"
 import { DocumentStepper, type StepperStep } from "@/components/document-stepper"
 import { InvoiceItemsSection } from "@/components/invoice-items-section"
 import { RecordPaymentDialog } from "@/components/record-payment-dialog"
+import { SetupEmiDialog } from "@/components/setup-emi-dialog"
 import { OfferSelect } from "@/components/offer-select"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { StatusBadge } from "@/components/status-badge"
 import { useCustomers } from "@/hooks/use-customers"
 import { useDeliveryByInvoice, useUpdateDelivery } from "@/hooks/use-deliveries"
 import { useDeliveryPersons } from "@/hooks/use-delivery-persons"
+import { useCreateInstallmentPlan, useInstallmentPlanByInvoice } from "@/hooks/use-installment-plans"
+import { useCreateInstallment, useInstallmentsByPlan } from "@/hooks/use-installments"
 import { useInvoiceItems } from "@/hooks/use-invoice-items"
 import { useInvoice, useUpdateInvoice } from "@/hooks/use-invoices"
 import { useItems } from "@/hooks/use-items"
 import { useOffers } from "@/hooks/use-offers"
 import { useOrganizations } from "@/hooks/use-organizations"
+import { useActivePdfWatermarkText } from "@/hooks/use-pdf-watermarks"
 import { useCreatePayment, usePayments } from "@/hooks/use-payments"
 import { useWarehouses } from "@/hooks/use-warehouses"
 import { buildInvoicePdfElement, downloadInvoicePdf, printInvoicePdf } from "@/lib/pdf/invoice-pdf"
 import { routes } from "@/lib/routes"
-import type { Payment } from "@/lib/database/types"
+import type { Installment, Payment } from "@/lib/database/types"
 
 const money = (n: number) => "₹" + n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 const PAYMENT_METHODS = ["manual", "bank_transfer", "cash", "upi", "razorpay"]
@@ -41,6 +45,7 @@ export function InvoiceDetailClient({ id }: { id: string }) {
   const tDelivery = useTranslations("InvoiceDelivery")
   const tDeliveryStatus = useTranslations("DeliveryStatus")
   const tDeliveryPaymentMode = useTranslations("DeliveryPaymentMode")
+  const tEmi = useTranslations("Emi")
 
   const { data: invoice, isLoading } = useInvoice(id)
   const { data: customers } = useCustomers()
@@ -52,12 +57,19 @@ export function InvoiceDetailClient({ id }: { id: string }) {
   const { data: invoiceLineItems } = useInvoiceItems(id)
   const { data: delivery } = useDeliveryByInvoice(id)
   const { data: deliveryPersons } = useDeliveryPersons()
+  const { data: emiPlan } = useInstallmentPlanByInvoice(id)
+  const { data: installments } = useInstallmentsByPlan(emiPlan?.id)
+  const watermarkText = useActivePdfWatermarkText()
   const updateInvoice = useUpdateInvoice()
   const updateDelivery = useUpdateDelivery()
   const createPayment = useCreatePayment()
+  const createInstallmentPlan = useCreateInstallmentPlan()
+  const createInstallment = useCreateInstallment()
 
   const [confirmVoid, setConfirmVoid] = useState(false)
   const [showRecordPayment, setShowRecordPayment] = useState(false)
+  const [showSetupEmi, setShowSetupEmi] = useState(false)
+  const [payingInstallment, setPayingInstallment] = useState<Installment | null>(null)
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false)
   const [isPreparingPrint, setIsPreparingPrint] = useState(false)
 
@@ -120,6 +132,43 @@ export function InvoiceDetailClient({ id }: { id: string }) {
     )
   }
 
+  /** Creates the installment plan, then the N installment rows themselves —
+   * amount is split evenly across months with the remainder absorbed by
+   * the last installment so the schedule always sums exactly to the
+   * invoice total regardless of rounding. Due dates step one calendar
+   * month at a time from the chosen start date. */
+  async function setupEmi(values: { months: number; start_date: string }) {
+    try {
+      const plan = await createInstallmentPlan.mutateAsync({
+        invoice_id: id,
+        total_amount: invoice!.total,
+        months: values.months,
+        start_date: values.start_date,
+      })
+      const base = Math.floor((invoice!.total / values.months) * 100) / 100
+      let allocated = 0
+      const startDate = new Date(values.start_date)
+      for (let i = 0; i < values.months; i++) {
+        const isLast = i === values.months - 1
+        const amount = isLast ? Math.round((invoice!.total - allocated) * 100) / 100 : base
+        allocated += amount
+        const dueDate = new Date(startDate)
+        dueDate.setMonth(dueDate.getMonth() + i)
+        await createInstallment.mutateAsync({
+          plan_id: plan.id,
+          invoice_id: id,
+          installment_number: i + 1,
+          due_date: dueDate.toISOString().slice(0, 10),
+          amount,
+        })
+      }
+      toast.success(tEmi("setupSuccess"))
+      setShowSetupEmi(false)
+    } catch {
+      toast.error(tCommon("genericError"))
+    }
+  }
+
   /** Renders the invoice as an actual PDF file client-side via
    * @react-pdf/renderer (not a browser print-to-PDF) and downloads it —
    * pixel-accurate layout and real embedded fonts/colors regardless of the
@@ -134,6 +183,7 @@ export function InvoiceDetailClient({ id }: { id: string }) {
         lineItems: invoiceLineItems ?? [],
         items,
         tPrint,
+        watermarkText,
       })
       await downloadInvoicePdf(element, `${invoice!.invoice_number ?? "invoice"}.pdf`)
     } catch {
@@ -156,6 +206,7 @@ export function InvoiceDetailClient({ id }: { id: string }) {
         lineItems: invoiceLineItems ?? [],
         items,
         tPrint,
+        watermarkText,
       })
       await printInvoicePdf(element)
     } catch {
@@ -202,6 +253,12 @@ export function InvoiceDetailClient({ id }: { id: string }) {
             <Button variant="outline" onClick={() => setShowRecordPayment(true)}>
               <BanknoteIcon />
               {t("recordPayment")}
+            </Button>
+          ) : null}
+          {canRecordPayment && !emiPlan ? (
+            <Button variant="outline" onClick={() => setShowSetupEmi(true)}>
+              <CalendarClockIcon />
+              {tEmi("setupButton")}
             </Button>
           ) : null}
           {!isVoid ? (
@@ -311,6 +368,47 @@ export function InvoiceDetailClient({ id }: { id: string }) {
             )}
           </div>
 
+          {emiPlan ? (
+            <div className="rounded-xl bg-card p-4 ring-1 ring-foreground/10">
+              <h2 className="mb-3 flex items-center gap-1.5 text-sm font-semibold">
+                <CalendarClockIcon className="size-4" />
+                {tEmi("scheduleTitle")}
+              </h2>
+              <div className="flex flex-col gap-2">
+                {(installments ?? []).map((installment) => {
+                  const isOverdue = installment.status === "pending" && installment.due_date < new Date().toISOString().slice(0, 10)
+                  return (
+                    <div key={installment.id} className="flex items-center justify-between text-sm">
+                      <div className="flex flex-col">
+                        <span>{tEmi("installmentLabel", { number: installment.installment_number, total: emiPlan.months })}</span>
+                        <span className="text-xs text-muted-foreground">{installment.due_date}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">{money(installment.amount)}</span>
+                        {installment.status === "paid" ? (
+                          <StatusBadge status="paid">{tEmi("statusPaid")}</StatusBadge>
+                        ) : isOverdue ? (
+                          <StatusBadge status="overdue">{tEmi("statusOverdue")}</StatusBadge>
+                        ) : (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setPayingInstallment(installment)
+                              setShowRecordPayment(true)
+                            }}
+                          >
+                            {tEmi("payButton")}
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          ) : null}
+
           <div className="rounded-xl bg-card p-4 ring-1 ring-foreground/10">
             <h2 className="mb-3 flex items-center gap-1.5 text-sm font-semibold">
               <MoreHorizontalIcon className="size-4" />
@@ -410,9 +508,12 @@ export function InvoiceDetailClient({ id }: { id: string }) {
 
       <RecordPaymentDialog
         open={showRecordPayment}
-        onOpenChange={setShowRecordPayment}
+        onOpenChange={(open) => {
+          setShowRecordPayment(open)
+          if (!open) setPayingInstallment(null)
+        }}
         methods={PAYMENT_METHODS}
-        balanceDue={balanceDue}
+        balanceDue={payingInstallment ? payingInstallment.amount : balanceDue}
         isSubmitting={createPayment.isPending}
         onSubmit={(values) =>
           createPayment.mutate(
@@ -423,16 +524,26 @@ export function InvoiceDetailClient({ id }: { id: string }) {
               reference: values.reference || null,
               notes: values.notes || null,
               paid_at: values.paid_at,
+              installment_id: payingInstallment?.id ?? null,
             },
             {
               onSuccess: () => {
                 toast.success(tCommon("createdSuccess"))
                 setShowRecordPayment(false)
+                setPayingInstallment(null)
               },
               onError: () => toast.error(tCommon("genericError")),
             },
           )
         }
+      />
+
+      <SetupEmiDialog
+        open={showSetupEmi}
+        onOpenChange={setShowSetupEmi}
+        totalAmount={invoice.total}
+        isSubmitting={createInstallmentPlan.isPending || createInstallment.isPending}
+        onSubmit={setupEmi}
       />
 
       <DeleteConfirmDialog

@@ -14,7 +14,7 @@ import { THEME_PRESET_DATA } from "@/lib/theme-preset-data"
 
 export type ThemePresetId = keyof typeof THEME_PRESET_DATA
 
-export const DEFAULT_THEME_PRESET: ThemePresetId = "violet-bloom"
+export const DEFAULT_THEME_PRESET: ThemePresetId = "zen"
 
 export const THEME_PRESETS: { id: ThemePresetId; label: string; swatch: string }[] = Object.entries(
   THEME_PRESET_DATA,

@@ -41,6 +41,10 @@ export async function GET(request: Request) {
   return NextResponse.json({ data: data ?? [], total: count ?? 0 })
 }
 
+// Debit notes are pure value adjustments now — no item_id/quantity/
+// warehouse_id, no inventory trigger. purchase_bill_id is optional context
+// (a debit doesn't have to reference a purchase at all), so it's only
+// verified when actually provided.
 export async function POST(request: Request) {
   const auth = await requireOrgId()
   if (auth.error) {
@@ -55,36 +59,19 @@ export async function POST(request: Request) {
   if (!orgId) {
     return NextResponse.json({ error: '"org_id" is required' }, { status: 400 })
   }
-  if (!body.purchase_bill_id || !body.vendor_id) {
-    return NextResponse.json(
-      { error: '"purchase_bill_id" and "vendor_id" are required' },
-      { status: 400 },
-    )
+  if (!body.vendor_id) {
+    return NextResponse.json({ error: '"vendor_id" is required' }, { status: 400 })
   }
 
   const supabase = await createClient()
-  if (
-    !(await verifyBelongsToOrg(
-      supabase,
-      "purchase_bills",
-      body.purchase_bill_id,
-      orgId,
-      auth.isSuperadmin,
-    ))
-  ) {
-    return NextResponse.json(
-      { error: "purchase_bill_id does not belong to this org" },
-      { status: 400 },
-    )
-  }
   if (!(await verifyBelongsToOrg(supabase, "vendors", body.vendor_id, orgId, auth.isSuperadmin))) {
     return NextResponse.json({ error: "vendor_id does not belong to this org" }, { status: 400 })
   }
   if (
-    body.warehouse_id &&
-    !(await verifyBelongsToOrg(supabase, "warehouses", body.warehouse_id, orgId, auth.isSuperadmin))
+    body.purchase_bill_id &&
+    !(await verifyBelongsToOrg(supabase, "purchase_bills", body.purchase_bill_id, orgId, auth.isSuperadmin))
   ) {
-    return NextResponse.json({ error: "warehouse_id does not belong to this org" }, { status: 400 })
+    return NextResponse.json({ error: "purchase_bill_id does not belong to this org" }, { status: 400 })
   }
 
   const { data, error } = await supabase

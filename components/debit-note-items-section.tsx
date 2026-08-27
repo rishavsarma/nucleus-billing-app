@@ -1,106 +1,120 @@
 "use client"
 
 import { useState } from "react"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { useForm } from "react-hook-form"
 import { useTranslations } from "next-intl"
 import { toast } from "sonner"
-import { PlusIcon, TrashIcon } from "lucide-react"
+import { PencilIcon, PlusIcon, TrashIcon } from "lucide-react"
+import { z } from "zod"
 
 import { Button } from "@/components/ui/button"
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog"
+import { EntityFormDialog } from "@/components/entity-form-dialog"
+import { Field, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import {
   useCreateDebitNoteItem,
   useDebitNoteItems,
   useDeleteDebitNoteItem,
+  useUpdateDebitNoteItem,
 } from "@/hooks/use-debit-note-items"
-import { usePurchaseBillItems } from "@/hooks/use-purchase-bill-items"
 import type { DebitNoteItem } from "@/lib/database/types"
 
 const money = (n: number) => "₹" + n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
-export function DebitNoteItemsSection({
-  debitNoteId,
-  purchaseBillId,
-  editable,
-}: {
-  debitNoteId: string
-  purchaseBillId: string
-  editable: boolean
-}) {
+const lineItemSchema = z.object({
+  description: z.string().min(1),
+  amount: z.number(),
+  tax_rate: z.number().min(0).max(100),
+})
+type LineItemFormValues = z.infer<typeof lineItemSchema>
+
+export function DebitNoteItemsSection({ debitNoteId, editable }: { debitNoteId: string; editable: boolean }) {
   const t = useTranslations("DebitNotes")
-  const tBills = useTranslations("PurchaseBills")
   const tCommon = useTranslations("Common")
 
-  const { data: billLines } = usePurchaseBillItems(purchaseBillId)
-  const { data: returnLines } = useDebitNoteItems(debitNoteId)
-  const createReturnLine = useCreateDebitNoteItem()
-  const deleteReturnLine = useDeleteDebitNoteItem(debitNoteId)
+  const { data: lineItems } = useDebitNoteItems(debitNoteId)
+  const createLineItem = useCreateDebitNoteItem()
+  const updateLineItem = useUpdateDebitNoteItem(debitNoteId)
+  const deleteLineItem = useDeleteDebitNoteItem(debitNoteId)
 
+  const [editing, setEditing] = useState<DebitNoteItem | "new" | null>(null)
   const [toDelete, setToDelete] = useState<DebitNoteItem | null>(null)
-  const [pendingQty, setPendingQty] = useState<Record<string, number>>({})
 
-  const returnedByBillLine = new Map<string, number>()
-  returnLines?.forEach((line) => {
-    if (!line.purchase_bill_item_id) return
-    returnedByBillLine.set(line.purchase_bill_item_id, (returnedByBillLine.get(line.purchase_bill_item_id) ?? 0) + line.quantity)
+  const form = useForm<LineItemFormValues>({
+    resolver: zodResolver(lineItemSchema),
+    values:
+      editing && editing !== "new"
+        ? { description: editing.description, amount: editing.amount, tax_rate: editing.tax_rate }
+        : { description: "", amount: 0, tax_rate: 0 },
   })
 
-  function addReturnLine(billLineId: string) {
-    const billLine = billLines?.find((l) => l.id === billLineId)
-    if (!billLine) return
-    const alreadyReturned = returnedByBillLine.get(billLineId) ?? 0
-    const remaining = billLine.quantity - alreadyReturned
-    const quantity = pendingQty[billLineId] ?? remaining
-    if (quantity <= 0 || quantity > remaining) return
-
-    createReturnLine.mutate(
-      {
-        debit_note_id: debitNoteId,
-        purchase_bill_item_id: billLine.id,
-        item_id: billLine.item_id,
-        description: billLine.description,
-        quantity,
-        unit_cost: billLine.unit_cost,
-        tax_rate: billLine.tax_rate,
-      },
-      {
-        onSuccess: () => toast.success(tCommon("createdSuccess")),
-        onError: () => toast.error(tCommon("genericError")),
-      },
-    )
+  function onSubmit(values: LineItemFormValues) {
+    if (editing && editing !== "new") {
+      updateLineItem.mutate(
+        { id: editing.id, input: values },
+        {
+          onSuccess: () => {
+            toast.success(tCommon("updatedSuccess"))
+            setEditing(null)
+          },
+          onError: () => toast.error(tCommon("genericError")),
+        },
+      )
+    } else {
+      createLineItem.mutate(
+        { ...values, debit_note_id: debitNoteId },
+        {
+          onSuccess: () => {
+            toast.success(tCommon("createdSuccess"))
+            setEditing(null)
+          },
+          onError: () => toast.error(tCommon("genericError")),
+        },
+      )
+    }
   }
 
-  const availableLines = billLines?.filter((line) => (returnedByBillLine.get(line.id) ?? 0) < line.quantity) ?? []
+  const isSaving = createLineItem.isPending || updateLineItem.isPending
 
   return (
     <div className="rounded-xl bg-card ring-1 ring-foreground/10">
-      <div className="border-b px-4 py-3">
-        <h2 className="text-sm font-semibold">{t("returnItemsTitle")}</h2>
-        <p className="text-xs text-muted-foreground">{t("returnItemsDescription")}</p>
+      <div className="flex items-center justify-between border-b px-4 py-3">
+        <h2 className="text-sm font-semibold">{t("lineItemsTitle")}</h2>
+        {editable ? (
+          <Button size="sm" variant="outline" onClick={() => setEditing("new")}>
+            <PlusIcon />
+            {t("addLineItem")}
+          </Button>
+        ) : null}
       </div>
-      <div className="flex flex-col gap-4 p-4">
-        {returnLines?.length ? (
+      <div className="p-4">
+        {lineItems?.length ? (
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>{tBills("descriptionLabel")}</TableHead>
-                <TableHead className="text-right">{tBills("quantityLabel")}</TableHead>
-                <TableHead className="text-right">{tBills("unitCostLabel")}</TableHead>
-                <TableHead className="text-right">{tBills("lineTotalLabel")}</TableHead>
+                <TableHead>{t("descriptionLabel")}</TableHead>
+                <TableHead className="text-right">{t("amountLabel")}</TableHead>
+                <TableHead className="text-right">{t("taxRateLabel")}</TableHead>
+                <TableHead className="text-right">{t("lineTotalLabel")}</TableHead>
                 {editable ? <TableHead /> : null}
               </TableRow>
             </TableHeader>
             <TableBody>
-              {returnLines.map((line) => (
+              {lineItems.map((line) => (
                 <TableRow key={line.id}>
                   <TableCell>{line.description}</TableCell>
-                  <TableCell className="text-right">{line.quantity}</TableCell>
-                  <TableCell className="text-right">{money(line.unit_cost)}</TableCell>
+                  <TableCell className="text-right">{money(line.amount)}</TableCell>
+                  <TableCell className="text-right">{line.tax_rate}%</TableCell>
                   <TableCell className="text-right font-medium">{money(line.line_total)}</TableCell>
                   {editable ? (
                     <TableCell>
-                      <div className="flex justify-end">
+                      <div className="flex justify-end gap-1">
+                        <Button variant="ghost" size="icon-sm" onClick={() => setEditing(line)}>
+                          <PencilIcon />
+                        </Button>
                         <Button variant="ghost" size="icon-sm" onClick={() => setToDelete(line)}>
                           <TrashIcon />
                         </Button>
@@ -111,56 +125,42 @@ export function DebitNoteItemsSection({
               ))}
             </TableBody>
           </Table>
-        ) : null}
-
-        {editable ? (
-          availableLines.length ? (
-            <div className="flex flex-col gap-2">
-              {availableLines.map((line) => {
-                const alreadyReturned = returnedByBillLine.get(line.id) ?? 0
-                const remaining = line.quantity - alreadyReturned
-                return (
-                  <div key={line.id} className="flex items-center gap-3 rounded-lg border p-2.5">
-                    <div className="flex-1">
-                      <div className="text-sm">{line.description}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {t("maxReturnableNote", { qty: remaining, total: line.quantity })}
-                      </div>
-                    </div>
-                    <Input
-                      type="number"
-                      step="any"
-                      min={0}
-                      max={remaining}
-                      defaultValue={remaining}
-                      className="w-24"
-                      onChange={(e) => setPendingQty((prev) => ({ ...prev, [line.id]: Number(e.target.value) }))}
-                    />
-                    <Button size="sm" variant="outline" onClick={() => addReturnLine(line.id)} disabled={createReturnLine.isPending}>
-                      <PlusIcon />
-                      {t("addReturnLine")}
-                    </Button>
-                  </div>
-                )
-              })}
-            </div>
-          ) : returnLines?.length ? (
-            <p className="text-center text-sm text-muted-foreground">{t("noReturnableItems")}</p>
-          ) : null
-        ) : null}
-
-        {!returnLines?.length && !availableLines.length ? (
-          <p className="py-4 text-center text-sm text-muted-foreground">{t("noReturnableItems")}</p>
-        ) : null}
+        ) : (
+          <p className="py-4 text-center text-sm text-muted-foreground">{t("noLineItems")}</p>
+        )}
       </div>
+
+      <EntityFormDialog
+        open={!!editing}
+        onOpenChange={(open) => !open && setEditing(null)}
+        title={t("addLineItem")}
+        onSubmit={form.handleSubmit(onSubmit)}
+        isSubmitting={isSaving}
+        submitLabel={editing !== "new" ? tCommon("save") : tCommon("create")}
+      >
+        <Field>
+          <FieldLabel htmlFor="dni-description">{t("descriptionLabel")}</FieldLabel>
+          <Input id="dni-description" {...form.register("description")} />
+        </Field>
+        <div className="grid grid-cols-2 gap-4">
+          <Field>
+            <FieldLabel htmlFor="dni-amount">{t("amountLabel")}</FieldLabel>
+            <Input id="dni-amount" type="number" step="0.01" {...form.register("amount", { valueAsNumber: true })} />
+          </Field>
+          <Field>
+            <FieldLabel htmlFor="dni-tax-rate">{t("taxRateLabel")}</FieldLabel>
+            <Input id="dni-tax-rate" type="number" step="0.01" min={0} max={100} {...form.register("tax_rate", { valueAsNumber: true })} />
+          </Field>
+        </div>
+      </EntityFormDialog>
 
       <DeleteConfirmDialog
         open={!!toDelete}
         onOpenChange={(open) => !open && setToDelete(null)}
-        isDeleting={deleteReturnLine.isPending}
+        isDeleting={deleteLineItem.isPending}
         onConfirm={() => {
           if (!toDelete) return
-          deleteReturnLine.mutate(toDelete.id, {
+          deleteLineItem.mutate(toDelete.id, {
             onSuccess: () => {
               toast.success(tCommon("deletedSuccess"))
               setToDelete(null)

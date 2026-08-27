@@ -14,7 +14,6 @@ import { SearchableSelect } from "@/components/searchable-select"
 import { Button } from "@/components/ui/button"
 import { DatePicker } from "@/components/ui/date-picker"
 import { Field, FieldError, FieldLabel } from "@/components/ui/field"
-import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { useCustomers } from "@/hooks/use-customers"
 import { useCreateCreditNote } from "@/hooks/use-credit-notes"
@@ -22,11 +21,14 @@ import { useInvoices } from "@/hooks/use-invoices"
 import { routes } from "@/lib/routes"
 
 const newCreditNoteSchema = z.object({
-  invoice_id: z.string().min(1),
+  customer_id: z.string().min(1),
+  invoice_id: z.string().optional(),
   reason: z.string().optional(),
   issue_date: z.string().min(1),
 })
 type NewCreditNoteValues = z.infer<typeof newCreditNoteSchema>
+
+const NO_INVOICE = "__none__"
 
 export default function NewCreditNotePage() {
   const t = useTranslations("CreditNotes")
@@ -36,17 +38,19 @@ export default function NewCreditNotePage() {
   const { data: invoices } = useInvoices()
   const { data: customers } = useCustomers()
 
-  const returnableInvoices = invoices?.filter((inv) => inv.status !== "draft" && inv.status !== "void") ?? []
-
   const form = useForm<NewCreditNoteValues>({
     resolver: zodResolver(newCreditNoteSchema),
     defaultValues: { issue_date: new Date().toISOString().slice(0, 10) },
   })
   const { register, handleSubmit, formState, setValue, control } = form
+  const selectedCustomerId = useWatch({ control, name: "customer_id" })
   const selectedInvoiceId = useWatch({ control, name: "invoice_id" })
   const issueDate = useWatch({ control, name: "issue_date" })
-  const selectedInvoice = invoices?.find((inv) => inv.id === selectedInvoiceId)
-  const customerName = selectedInvoice ? customers?.find((c) => c.id === selectedInvoice.customer_id)?.name : undefined
+
+  const relatedInvoices =
+    invoices?.filter(
+      (inv) => inv.status !== "draft" && inv.status !== "void" && (!selectedCustomerId || inv.customer_id === selectedCustomerId),
+    ) ?? []
 
   const steps: StepperStep[] = [
     { label: t("stepCreditNoteDetails"), done: false, current: true },
@@ -54,14 +58,10 @@ export default function NewCreditNotePage() {
   ]
 
   function onSubmit(values: NewCreditNoteValues) {
-    const invoice = invoices?.find((inv) => inv.id === values.invoice_id)
-    if (!invoice) return
-
     createCreditNote.mutate(
       {
-        invoice_id: values.invoice_id,
-        customer_id: invoice.customer_id,
-        warehouse_id: invoice.warehouse_id,
+        customer_id: values.customer_id,
+        invoice_id: values.invoice_id && values.invoice_id !== NO_INVOICE ? values.invoice_id : null,
         reason: values.reason || null,
         issue_date: values.issue_date,
       },
@@ -88,24 +88,37 @@ export default function NewCreditNotePage() {
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4 rounded-xl bg-card p-4 ring-1 ring-foreground/10">
-        <Field data-invalid={!!formState.errors.invoice_id}>
+        <Field data-invalid={!!formState.errors.customer_id}>
+          <FieldLabel htmlFor="cn-customer">{t("customerLabel")}</FieldLabel>
+          <SearchableSelect
+            id="cn-customer"
+            value={selectedCustomerId}
+            onValueChange={(value) => setValue("customer_id", value, { shouldValidate: true })}
+            placeholder={t("customerPlaceholder")}
+            options={
+              customers?.map((customer) => ({
+                value: customer.id,
+                label: customer.name,
+              })) ?? []
+            }
+          />
+          {formState.errors.customer_id ? <FieldError>{tCommon("required")}</FieldError> : null}
+        </Field>
+        <Field>
           <FieldLabel htmlFor="cn-invoice">{t("invoiceLabel")}</FieldLabel>
           <SearchableSelect
             id="cn-invoice"
-            value={selectedInvoiceId}
-            onValueChange={(value) => setValue("invoice_id", value, { shouldValidate: true })}
+            value={selectedInvoiceId ?? NO_INVOICE}
+            onValueChange={(value) => setValue("invoice_id", value === NO_INVOICE ? undefined : value)}
             placeholder={t("invoicePlaceholder")}
-            options={returnableInvoices.map((invoice) => {
-              const customer = customers?.find((c) => c.id === invoice.customer_id)
-              return {
+            options={[
+              { value: NO_INVOICE, label: t("noInvoiceOption") },
+              ...relatedInvoices.map((invoice) => ({
                 value: invoice.id,
                 label: invoice.invoice_number,
-                subtitle: customer?.name ?? undefined,
-                keywords: [customer?.name ?? ""],
-              }
-            })}
+              })),
+            ]}
           />
-          {formState.errors.invoice_id ? <FieldError>{tCommon("required")}</FieldError> : null}
         </Field>
         <Field>
           <FieldLabel htmlFor="cn-issue-date">{t("issueDateLabel")}</FieldLabel>

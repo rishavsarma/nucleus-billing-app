@@ -42,6 +42,7 @@ import { useItems } from "@/hooks/use-items"
 import { useItemVariantsBulk } from "@/hooks/use-item-variants"
 import { useOffers } from "@/hooks/use-offers"
 import { useOrganizations } from "@/hooks/use-organizations"
+import { useActivePdfWatermarkText } from "@/hooks/use-pdf-watermarks"
 import { useCreatePayment } from "@/hooks/use-payments"
 import { useTaxRates } from "@/hooks/use-tax-rates"
 import { useWarehouses } from "@/hooks/use-warehouses"
@@ -253,6 +254,7 @@ export default function BillingPosPage() {
   const { data: invoices } = useInvoices()
   const { data: deliveryPersons } = useDeliveryPersons()
   const { data: organizations } = useOrganizations()
+  const watermarkText = useActivePdfWatermarkText()
   const createInvoice = useCreateInvoice()
   const createInvoiceItem = useCreateInvoiceItem()
   const updateInvoiceItem = useUpdateInvoiceItem(undefined)
@@ -608,6 +610,7 @@ export default function BillingPosPage() {
         lineItems,
         items,
         tPrint,
+        watermarkText,
       })
       await printInvoicePdf(element)
     } catch {

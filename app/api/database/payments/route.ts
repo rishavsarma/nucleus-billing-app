@@ -49,6 +49,12 @@ export async function POST(request: Request) {
   if (!(await verifyBelongsToOrg(supabase, "invoices", body.invoice_id, orgId, auth.isSuperadmin))) {
     return NextResponse.json({ error: "invoice_id does not belong to this org" }, { status: 400 })
   }
+  if (
+    body.installment_id &&
+    !(await verifyBelongsToOrg(supabase, "installments", body.installment_id, orgId, auth.isSuperadmin))
+  ) {
+    return NextResponse.json({ error: "installment_id does not belong to this org" }, { status: 400 })
+  }
 
   const { data, error } = await supabase
     .schema("billing")

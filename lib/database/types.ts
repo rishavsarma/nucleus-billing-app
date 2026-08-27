@@ -12,6 +12,8 @@ export interface Organization {
   bill_prefix: string
   credit_note_prefix: string
   debit_note_prefix: string
+  sales_return_prefix: string
+  purchase_return_prefix: string
   gstin: string | null
   gst_registered: boolean
   state_code: string | null
@@ -198,12 +200,15 @@ export interface InvoiceItem {
   created_at: string
 }
 
+// Pure value adjustment (price correction, goodwill credit, shortage
+// claim) — never touches inventory. invoice_id is optional context, not a
+// restocking link. Physical returns-with-restocking live in SalesReturn
+// instead — see db-schema/010_returns_split.sql for the split rationale.
 export interface CreditNote {
   id: string
   org_id: string
-  invoice_id: string
   customer_id: string
-  warehouse_id: string | null
+  invoice_id: string | null
   credit_note_number: string | null
   status: "draft" | "issued" | "void"
   issue_date: string
@@ -216,14 +221,13 @@ export interface CreditNote {
   updated_at: string
 }
 
+// A line is a signed amount, not a quantity*price — no item_id/quantity at
+// all, since this never represents real goods.
 export interface CreditNoteItem {
   id: string
   credit_note_id: string
-  invoice_item_id: string | null
-  item_id: string | null
   description: string
-  quantity: number
-  unit_price: number
+  amount: number
   tax_rate: number
   line_subtotal: number
   line_tax: number
@@ -268,12 +272,14 @@ export interface PurchaseBillItem {
   created_at: string
 }
 
+// Pure value adjustment — the debit-note mirror of CreditNote above. See
+// db-schema/010_returns_split.sql. purchase_bill_id is optional context,
+// not a restocking link — physical returns live in PurchaseReturn instead.
 export interface DebitNote {
   id: string
   org_id: string
-  purchase_bill_id: string
   vendor_id: string
-  warehouse_id: string | null
+  purchase_bill_id: string | null
   debit_note_number: string | null
   status: "draft" | "issued" | "void"
   issue_date: string
@@ -286,9 +292,80 @@ export interface DebitNote {
   updated_at: string
 }
 
+// A line is a signed amount, not a quantity*cost — no item_id/quantity at
+// all, since this never represents real goods.
 export interface DebitNoteItem {
   id: string
   debit_note_id: string
+  description: string
+  amount: number
+  tax_rate: number
+  line_subtotal: number
+  line_tax: number
+  line_total: number
+  created_at: string
+}
+
+// A physical return with restocking — what CreditNote used to be before
+// the returns split (db-schema/010_returns_split.sql). Always tied to a
+// real invoice and (for tracked items) a warehouse, since issuing one
+// moves real inventory.
+export interface SalesReturn {
+  id: string
+  org_id: string
+  invoice_id: string
+  customer_id: string
+  warehouse_id: string | null
+  sales_return_number: string | null
+  status: "draft" | "issued" | "void"
+  issue_date: string
+  reason: string | null
+  subtotal: number
+  tax_total: number
+  total: number
+  created_by: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface SalesReturnItem {
+  id: string
+  sales_return_id: string
+  invoice_item_id: string | null
+  item_id: string | null
+  description: string
+  quantity: number
+  unit_price: number
+  tax_rate: number
+  line_subtotal: number
+  line_tax: number
+  line_total: number
+  created_at: string
+}
+
+// A physical return with restocking — what DebitNote used to be before
+// the returns split. See SalesReturn above.
+export interface PurchaseReturn {
+  id: string
+  org_id: string
+  purchase_bill_id: string
+  vendor_id: string
+  warehouse_id: string | null
+  purchase_return_number: string | null
+  status: "draft" | "issued" | "void"
+  issue_date: string
+  reason: string | null
+  subtotal: number
+  tax_total: number
+  total: number
+  created_by: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface PurchaseReturnItem {
+  id: string
+  purchase_return_id: string
   purchase_bill_item_id: string | null
   item_id: string | null
   description: string
@@ -310,6 +387,7 @@ export interface Payment {
   reference: string | null
   notes: string | null
   paid_at: string
+  installment_id: string | null
   created_by: string | null
   created_at: string
 }
@@ -347,7 +425,7 @@ export interface StockMovement {
   reference_id: string | null
   invoice_item_id: string | null
   purchase_bill_item_id: string | null
-  credit_note_item_id: string | null
+  sales_return_item_id: string | null
   notes: string | null
   created_by: string | null
   created_at: string
@@ -402,7 +480,7 @@ export interface StockMovementVariant {
 
 export interface OrgDocumentCounter {
   org_id: string
-  doc_type: "invoice" | "purchase_bill" | "credit_note" | "debit_note"
+  doc_type: "invoice" | "purchase_bill" | "credit_note" | "debit_note" | "sales_return" | "purchase_return"
   next_value: number
 }
 
@@ -431,4 +509,46 @@ export interface Delivery {
   created_by: string | null
   created_at: string
   updated_at: string
+}
+
+// One per invoice (v1, sales-only) — see db-schema/008_emi_installments.sql.
+export interface InstallmentPlan {
+  id: string
+  org_id: string
+  invoice_id: string
+  total_amount: number
+  months: number
+  start_date: string
+  status: "active" | "completed" | "cancelled"
+  created_by: string | null
+  created_at: string
+}
+
+// status only ever stores "pending"/"paid" — "overdue" is derived at read
+// time (pending && due_date < today), never stored. See the migration's
+// comment for why.
+export interface Installment {
+  id: string
+  org_id: string
+  plan_id: string
+  invoice_id: string
+  installment_number: number
+  due_date: string
+  amount: number
+  status: "pending" | "paid"
+  payment_id: string | null
+  paid_at: string | null
+  created_at: string
+}
+
+// Date-range watermark preset — see db-schema/009_pdf_watermarks.sql.
+export interface PdfWatermark {
+  id: string
+  org_id: string
+  name: string
+  text: string
+  starts_on: string
+  ends_on: string
+  is_active: boolean
+  created_at: string
 }

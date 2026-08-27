@@ -32,6 +32,10 @@ export function useCreatePayment() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["payments"] })
       queryClient.invalidateQueries({ queryKey: ["invoices"] })
+      // A payment against an installment flips that installment to "paid"
+      // via the payments_mark_installment_paid DB trigger — refetch so the
+      // EMI schedule and the org-wide Installments list catch up.
+      queryClient.invalidateQueries({ queryKey: ["installments"] })
     },
   })
 }

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
-import { requireOrgId, verifyBelongsToOrg } from "@/lib/database/require-org"
+import { requireOrgId } from "@/lib/database/require-org"
 
 async function verifyCreditNoteInOrg(
   supabase: Awaited<ReturnType<typeof createClient>>,
@@ -51,6 +51,9 @@ export async function GET(request: Request) {
   return NextResponse.json(data)
 }
 
+// A line here is a pure value adjustment — description + amount + tax_rate,
+// no item_id/quantity/invoice_item_id — so there's no catalog-item FK to
+// verify beyond the parent credit_note_id.
 export async function POST(request: Request) {
   const auth = await requireOrgId()
   if (auth.error) {
@@ -74,12 +77,6 @@ export async function POST(request: Request) {
   )
   if (verifyError) return NextResponse.json({ error: verifyError.message }, { status: 500 })
   if (!ok) return NextResponse.json({ error: "Not found" }, { status: 404 })
-  if (
-    body.item_id &&
-    !(await verifyBelongsToOrg(supabase, "items", body.item_id, auth.orgId, auth.isSuperadmin))
-  ) {
-    return NextResponse.json({ error: "item_id does not belong to this org" }, { status: 400 })
-  }
 
   const { data, error } = await supabase
     .schema("billing")

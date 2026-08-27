@@ -34,6 +34,23 @@ const styles = StyleSheet.create({
   page: { padding: 20, fontFamily: "Noto Sans", fontSize: 8, color: INK },
   outer: { borderTopWidth: 1, borderLeftWidth: 1, borderColor: INK },
 
+  // Positioned first (painted first, so every later element draws over it)
+  // and absolute (so it never participates in layout flow) — a low-opacity,
+  // rotated block of text sitting behind the real content. `fixed` repeats
+  // it on every page if the invoice ever spans more than one.
+  watermark: {
+    position: "absolute",
+    top: "42%",
+    left: 0,
+    right: 0,
+    textAlign: "center",
+    fontSize: 56,
+    fontWeight: 700,
+    color: "#000000",
+    opacity: 0.07,
+    transform: "rotate(-30deg)",
+  },
+
   headerRow: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -228,6 +245,7 @@ export function InvoicePdfDocument({
   lineItems,
   items,
   labels,
+  watermarkText,
 }: {
   invoice: Invoice
   customer: Customer | undefined
@@ -235,6 +253,7 @@ export function InvoicePdfDocument({
   lineItems: InvoiceItem[]
   items: Item[] | undefined
   labels: InvoicePdfLabels
+  watermarkText?: string | null
 }) {
   const billingAddress = (customer?.billing_address ?? null) as BillingAddress | null
   const addressLines = formatAddress(billingAddress)
@@ -262,6 +281,11 @@ export function InvoicePdfDocument({
   return (
     <Document>
       <Page size="A4" style={styles.page}>
+        {watermarkText ? (
+          <Text style={styles.watermark} fixed>
+            {watermarkText}
+          </Text>
+        ) : null}
         <View style={styles.outer}>
           <View style={styles.headerRow}>
             <Text style={styles.taxInvoiceLabel}>{labels.taxInvoice}</Text>

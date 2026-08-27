@@ -14,7 +14,6 @@ import { StatusBadge } from "@/components/status-badge"
 import { useVendors } from "@/hooks/use-vendors"
 import { useDebitNote, useUpdateDebitNote } from "@/hooks/use-debit-notes"
 import { usePurchaseBills } from "@/hooks/use-purchase-bills"
-import { useWarehouses } from "@/hooks/use-warehouses"
 import { routes } from "@/lib/routes"
 
 const money = (n: number) => "₹" + n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -27,7 +26,6 @@ export function DebitNoteDetailClient({ id }: { id: string }) {
   const { data: debitNote, isLoading } = useDebitNote(id)
   const { data: vendors } = useVendors()
   const { data: bills } = usePurchaseBills()
-  const { data: warehouses } = useWarehouses()
   const updateDebitNote = useUpdateDebitNote()
   const [confirmVoid, setConfirmVoid] = useState(false)
 
@@ -48,8 +46,7 @@ export function DebitNoteDetailClient({ id }: { id: string }) {
   }
 
   const vendor = vendors?.find((v) => v.id === debitNote.vendor_id)
-  const originalBill = bills?.find((b) => b.id === debitNote.purchase_bill_id)
-  const warehouse = warehouses?.find((w) => w.id === debitNote.warehouse_id)
+  const relatedBill = debitNote.purchase_bill_id ? bills?.find((b) => b.id === debitNote.purchase_bill_id) : undefined
   const isDraft = debitNote.status === "draft"
   const isVoid = debitNote.status === "void"
 
@@ -95,7 +92,8 @@ export function DebitNoteDetailClient({ id }: { id: string }) {
             <StatusBadge status={debitNote.status}>{tStatus(debitNote.status)}</StatusBadge>
           </div>
           <p className="text-sm text-muted-foreground">
-            {t("columnBill")} {originalBill?.bill_number ?? "—"} • {vendor?.name ?? "—"}
+            {vendor?.name ?? "—"}
+            {relatedBill ? ` • ${t("columnBill")} ${relatedBill.bill_number}` : ""}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -121,7 +119,7 @@ export function DebitNoteDetailClient({ id }: { id: string }) {
 
       <div className="grid grid-cols-3 gap-5">
         <div className="col-span-2 flex flex-col gap-5">
-          <DebitNoteItemsSection debitNoteId={id} purchaseBillId={debitNote.purchase_bill_id} editable={isDraft} />
+          <DebitNoteItemsSection debitNoteId={id} editable={isDraft} />
           {debitNote.reason ? (
             <div className="rounded-xl bg-card p-4 ring-1 ring-foreground/10">
               <h2 className="mb-2 text-sm font-semibold">{t("reasonLabel")}</h2>
@@ -148,13 +146,6 @@ export function DebitNoteDetailClient({ id }: { id: string }) {
                 <span>{money(debitNote.total)}</span>
               </div>
             </div>
-          </div>
-
-          <div className="rounded-xl bg-card p-4 ring-1 ring-foreground/10">
-            <h2 className="mb-2 text-sm font-semibold">{t("destockingTitle")}</h2>
-            <p className="text-xs text-muted-foreground">
-              {warehouse ? `${t("destockingNote")} (${warehouse.name})` : t("destockingNote")}
-            </p>
           </div>
         </div>
       </div>

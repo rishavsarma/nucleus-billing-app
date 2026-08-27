@@ -10,7 +10,6 @@ import { useServerTableParams } from "@/components/server-table"
 import { StatusBadge } from "@/components/status-badge"
 import { useCustomers } from "@/hooks/use-customers"
 import { useCreditNotesList } from "@/hooks/use-credit-notes"
-import { useInvoices } from "@/hooks/use-invoices"
 import { routes } from "@/lib/routes"
 import type { CreditNote } from "@/lib/database/types"
 
@@ -23,10 +22,8 @@ export default function CreditNotesPage() {
   const { params, tableControlProps } = useServerTableParams()
   const { data: result, isLoading } = useCreditNotesList(params)
   const { data: customers } = useCustomers()
-  const { data: invoices } = useInvoices()
 
   const customerName = (id: string) => customers?.find((c) => c.id === id)?.name ?? "—"
-  const invoiceNumber = (id: string) => invoices?.find((i) => i.id === id)?.invoice_number ?? "—"
 
   const columns = [
     columnHelper.accessor("credit_note_number", {
@@ -36,10 +33,6 @@ export default function CreditNotesPage() {
           {getValue() ?? "—"}
         </Link>
       ),
-    }),
-    columnHelper.accessor("invoice_id", {
-      header: t("columnInvoice"),
-      cell: ({ getValue }) => invoiceNumber(getValue()),
     }),
     columnHelper.accessor("customer_id", {
       header: t("columnCustomer"),

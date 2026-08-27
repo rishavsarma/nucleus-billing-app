@@ -16,11 +16,19 @@ import type { StockMovement } from "@/lib/database/types"
 
 const columnHelper = entityColumnHelper<StockMovement>()
 
+// credit_note/debit_note reference_type values only ever existed on rows
+// written before db-schema/010_returns_split.sql, which renamed the
+// physical-return tables to sales_returns/purchase_returns and backfilled
+// every existing stock_movements row to match — so new rows never carry
+// the old values, but old rows read back before the migration runs still
+// need somewhere to route to.
 const REFERENCE_ROUTE: Record<string, (id: string) => string> = {
   invoice: (id) => routes.sales.invoices.detail(id),
   purchase_bill: (id) => routes.purchases.bills.detail(id),
-  credit_note: (id) => routes.sales.creditNotes.detail(id),
-  debit_note: (id) => routes.purchases.debitNotes.detail(id),
+  sales_return: (id) => routes.sales.salesReturns.detail(id),
+  purchase_return: (id) => routes.purchases.purchaseReturns.detail(id),
+  credit_note: (id) => routes.sales.salesReturns.detail(id),
+  debit_note: (id) => routes.purchases.purchaseReturns.detail(id),
 }
 
 export default function StockMovementsPage() {

@@ -24,7 +24,13 @@ export const routes = {
       new: "/sales/credit-notes/new",
       detail: (id: string) => `/sales/credit-notes/${id}`,
     },
+    salesReturns: {
+      list: "/sales/sales-returns",
+      new: "/sales/sales-returns/new",
+      detail: (id: string) => `/sales/sales-returns/${id}`,
+    },
     payments: "/sales/payments",
+    installments: "/sales/installments",
   },
 
   purchases: {
@@ -37,6 +43,11 @@ export const routes = {
       list: "/purchases/debit-notes",
       new: "/purchases/debit-notes/new",
       detail: (id: string) => `/purchases/debit-notes/${id}`,
+    },
+    purchaseReturns: {
+      list: "/purchases/purchase-returns",
+      new: "/purchases/purchase-returns/new",
+      detail: (id: string) => `/purchases/purchase-returns/${id}`,
     },
     payments: "/purchases/payments",
   },
@@ -84,6 +95,7 @@ export const routes = {
     subscription: "/settings/subscription",
     addons: "/settings/addons",
     appSettings: "/settings/app-settings",
+    pdfWatermarks: "/settings/pdf-watermarks",
   },
 
   admin: {

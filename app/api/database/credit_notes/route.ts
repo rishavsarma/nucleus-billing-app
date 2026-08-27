@@ -41,6 +41,10 @@ export async function GET(request: Request) {
   return NextResponse.json({ data: data ?? [], total: count ?? 0 })
 }
 
+// Credit notes are pure value adjustments now — no item_id/quantity/
+// warehouse_id, no inventory trigger. invoice_id is optional context
+// (a credit doesn't have to reference a sale at all, e.g. a standing
+// goodwill credit), so it's only verified when actually provided.
 export async function POST(request: Request) {
   const auth = await requireOrgId()
   if (auth.error) {
@@ -55,25 +59,19 @@ export async function POST(request: Request) {
   if (!orgId) {
     return NextResponse.json({ error: '"org_id" is required' }, { status: 400 })
   }
-  if (!body.invoice_id || !body.customer_id) {
-    return NextResponse.json(
-      { error: '"invoice_id" and "customer_id" are required' },
-      { status: 400 },
-    )
+  if (!body.customer_id) {
+    return NextResponse.json({ error: '"customer_id" is required' }, { status: 400 })
   }
 
   const supabase = await createClient()
-  if (!(await verifyBelongsToOrg(supabase, "invoices", body.invoice_id, orgId, auth.isSuperadmin))) {
-    return NextResponse.json({ error: "invoice_id does not belong to this org" }, { status: 400 })
-  }
   if (!(await verifyBelongsToOrg(supabase, "customers", body.customer_id, orgId, auth.isSuperadmin))) {
     return NextResponse.json({ error: "customer_id does not belong to this org" }, { status: 400 })
   }
   if (
-    body.warehouse_id &&
-    !(await verifyBelongsToOrg(supabase, "warehouses", body.warehouse_id, orgId, auth.isSuperadmin))
+    body.invoice_id &&
+    !(await verifyBelongsToOrg(supabase, "invoices", body.invoice_id, orgId, auth.isSuperadmin))
   ) {
-    return NextResponse.json({ error: "warehouse_id does not belong to this org" }, { status: 400 })
+    return NextResponse.json({ error: "invoice_id does not belong to this org" }, { status: 400 })
   }
 
   const { data, error } = await supabase

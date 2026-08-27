@@ -10,7 +10,6 @@ import { useServerTableParams } from "@/components/server-table"
 import { StatusBadge } from "@/components/status-badge"
 import { useVendors } from "@/hooks/use-vendors"
 import { useDebitNotesList } from "@/hooks/use-debit-notes"
-import { usePurchaseBills } from "@/hooks/use-purchase-bills"
 import { routes } from "@/lib/routes"
 import type { DebitNote } from "@/lib/database/types"
 
@@ -23,10 +22,8 @@ export default function DebitNotesPage() {
   const { params, tableControlProps } = useServerTableParams()
   const { data: result, isLoading } = useDebitNotesList(params)
   const { data: vendors } = useVendors()
-  const { data: bills } = usePurchaseBills()
 
   const vendorName = (id: string) => vendors?.find((v) => v.id === id)?.name ?? "—"
-  const billNumber = (id: string) => bills?.find((b) => b.id === id)?.bill_number ?? "—"
 
   const columns = [
     columnHelper.accessor("debit_note_number", {
@@ -36,10 +33,6 @@ export default function DebitNotesPage() {
           {getValue() ?? "—"}
         </Link>
       ),
-    }),
-    columnHelper.accessor("purchase_bill_id", {
-      header: t("columnBill"),
-      cell: ({ getValue }) => billNumber(getValue()),
     }),
     columnHelper.accessor("vendor_id", {
       header: t("columnVendor"),

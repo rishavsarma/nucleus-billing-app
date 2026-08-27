@@ -54,6 +54,11 @@ export async function buildInvoicePdfElement(params: {
   lineItems: InvoiceItem[]
   items: Item[] | undefined
   tPrint: TFunc
+  /** Today's active date-range preset text (resolved by the caller via
+   * useActivePdfWatermarkText(), since this function has no hook access),
+   * falling back to organization.pdf_watermark_text when no preset is
+   * currently active. */
+  watermarkText?: string | null
 }): Promise<React.ReactElement<DocumentProps>> {
   const { InvoicePdfDocument } = await import("@/components/invoice-pdf-document")
   return (
@@ -64,6 +69,7 @@ export async function buildInvoicePdfElement(params: {
       lineItems={params.lineItems}
       items={params.items}
       labels={buildInvoicePdfLabels(params.tPrint, params.lineItems)}
+      watermarkText={params.watermarkText ?? params.organization?.pdf_watermark_text}
     />
   ) as React.ReactElement<DocumentProps>
 }

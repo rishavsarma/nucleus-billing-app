@@ -63,6 +63,19 @@ export async function PUT(request: Request) {
   }
 
   const body = await request.json()
+
+  // is_active/subscription_status are already DB-trigger-guarded to
+  // superadmin-only (organizations_active_change_guard /
+  // organizations_subscription_change_guard in 002_functions_triggers.sql)
+  // — this is defense-in-depth so a non-superadmin gets a clear 403 instead
+  // of relying solely on the trigger's exception.
+  if ("is_active" in body || "subscription_status" in body) {
+    const superadminAuth = await requireSuperadmin()
+    if (superadminAuth.error) {
+      return NextResponse.json({ error: "Only a superadmin can change is_active or subscription_status" }, { status: 403 })
+    }
+  }
+
   const supabase = await createClient()
   const { data, error } = await supabase
     .schema("billing")

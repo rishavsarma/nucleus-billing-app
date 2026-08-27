@@ -14,7 +14,6 @@ import { StatusBadge } from "@/components/status-badge"
 import { useCustomers } from "@/hooks/use-customers"
 import { useCreditNote, useUpdateCreditNote } from "@/hooks/use-credit-notes"
 import { useInvoices } from "@/hooks/use-invoices"
-import { useWarehouses } from "@/hooks/use-warehouses"
 import { routes } from "@/lib/routes"
 
 const money = (n: number) => "₹" + n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -27,7 +26,6 @@ export function CreditNoteDetailClient({ id }: { id: string }) {
   const { data: creditNote, isLoading } = useCreditNote(id)
   const { data: customers } = useCustomers()
   const { data: invoices } = useInvoices()
-  const { data: warehouses } = useWarehouses()
   const updateCreditNote = useUpdateCreditNote()
   const [confirmVoid, setConfirmVoid] = useState(false)
 
@@ -48,8 +46,7 @@ export function CreditNoteDetailClient({ id }: { id: string }) {
   }
 
   const customer = customers?.find((c) => c.id === creditNote.customer_id)
-  const originalInvoice = invoices?.find((inv) => inv.id === creditNote.invoice_id)
-  const warehouse = warehouses?.find((w) => w.id === creditNote.warehouse_id)
+  const relatedInvoice = creditNote.invoice_id ? invoices?.find((inv) => inv.id === creditNote.invoice_id) : undefined
   const isDraft = creditNote.status === "draft"
   const isVoid = creditNote.status === "void"
 
@@ -95,7 +92,8 @@ export function CreditNoteDetailClient({ id }: { id: string }) {
             <StatusBadge status={creditNote.status}>{tStatus(creditNote.status)}</StatusBadge>
           </div>
           <p className="text-sm text-muted-foreground">
-            {t("columnInvoice")} {originalInvoice?.invoice_number ?? "—"} • {customer?.name ?? "—"}
+            {customer?.name ?? "—"}
+            {relatedInvoice ? ` • ${t("columnInvoice")} ${relatedInvoice.invoice_number}` : ""}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -121,7 +119,7 @@ export function CreditNoteDetailClient({ id }: { id: string }) {
 
       <div className="grid grid-cols-3 gap-5">
         <div className="col-span-2 flex flex-col gap-5">
-          <CreditNoteItemsSection creditNoteId={id} invoiceId={creditNote.invoice_id} editable={isDraft} />
+          <CreditNoteItemsSection creditNoteId={id} editable={isDraft} />
           {creditNote.reason ? (
             <div className="rounded-xl bg-card p-4 ring-1 ring-foreground/10">
               <h2 className="mb-2 text-sm font-semibold">{t("reasonLabel")}</h2>
@@ -148,13 +146,6 @@ export function CreditNoteDetailClient({ id }: { id: string }) {
                 <span>{money(creditNote.total)}</span>
               </div>
             </div>
-          </div>
-
-          <div className="rounded-xl bg-card p-4 ring-1 ring-foreground/10">
-            <h2 className="mb-2 text-sm font-semibold">{t("restockingTitle")}</h2>
-            <p className="text-xs text-muted-foreground">
-              {warehouse ? `${t("restockingNote")} (${warehouse.name})` : t("restockingNote")}
-            </p>
           </div>
         </div>
       </div>
