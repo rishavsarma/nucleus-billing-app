@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server"
-import { createClient } from "@/lib/supabase/server"
 import { requireOrgId, requireSuperadmin } from "@/lib/database/require-org"
 
 export async function GET() {
@@ -11,8 +10,7 @@ export async function GET() {
     )
   }
 
-  const supabase = await createClient()
-  let query = supabase.schema("billing").from("organization_addon_subscriptions").select("*")
+  let query = auth.supabase.schema("billing").from("organization_addon_subscriptions").select("*")
   if (!auth.isSuperadmin) query = query.eq("org_id", auth.orgId)
   const { data, error } = await query
 
@@ -36,8 +34,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: '"org_id" and "addon_slug" are required' }, { status: 400 })
   }
 
-  const supabase = await createClient()
-  const { data, error } = await supabase.schema("billing").rpc("subscribe_org_to_addon", {
+  const { data, error } = await auth.supabase.schema("billing").rpc("subscribe_org_to_addon", {
     p_org_id: org_id,
     p_addon_slug: addon_slug,
   })
@@ -59,8 +56,7 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: '"org_id" and "addon_slug" query params are required' }, { status: 400 })
   }
 
-  const supabase = await createClient()
-  const { error } = await supabase.schema("billing").rpc("cancel_org_addon", {
+  const { error } = await auth.supabase.schema("billing").rpc("cancel_org_addon", {
     p_org_id: org_id,
     p_addon_slug: addon_slug,
   })

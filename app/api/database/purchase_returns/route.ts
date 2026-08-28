@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server"
 import { applyListParams } from "@/lib/database/list-params"
-import { createClient } from "@/lib/supabase/server"
 import { requireOrgId, verifyBelongsToOrg } from "@/lib/database/require-org"
 
 export async function GET(request: Request) {
@@ -15,7 +14,7 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const id = searchParams.get("id")
 
-  const supabase = await createClient()
+  const supabase = auth.supabase
 
   // A single-record fetch — used by detail pages instead of pulling every
   // row via the paginated branch below and finding it client-side.
@@ -68,7 +67,7 @@ export async function POST(request: Request) {
     )
   }
 
-  const supabase = await createClient()
+  const supabase = auth.supabase
   if (
     !(await verifyBelongsToOrg(
       supabase,
@@ -119,7 +118,7 @@ export async function PUT(request: Request) {
   }
 
   const body = await request.json()
-  const supabase = await createClient()
+  const supabase = auth.supabase
   let query = supabase.schema("billing").from("purchase_returns").update(body).eq("id", id)
   if (!auth.isSuperadmin) query = query.eq("org_id", auth.orgId)
   const { data, error } = await query.select().maybeSingle()

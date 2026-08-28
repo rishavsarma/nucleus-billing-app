@@ -101,7 +101,7 @@ async function authCacheSet(tokenHash: string, payload: AuthPayload): Promise<vo
   }
 }
 
-type SupabaseClient = Awaited<ReturnType<typeof createClient>>
+export type SupabaseClient = Awaited<ReturnType<typeof createClient>>
 
 type RequireOrgResult =
   | { orgId: string | null; userId: string; isSuperadmin: boolean; supabase: SupabaseClient; error?: undefined }
@@ -130,12 +130,14 @@ export async function requireOrgId(): Promise<RequireOrgResult> {
   const supabase = await createClient()
 
   // Fast path: check Redis before hitting the Supabase Auth server.
+  // Superadmin hits are never served from cache — superadmins have
+  // cross-tenant access and must be re-verified every request.
   const accessToken = await getAccessToken()
   if (accessToken) {
     const tokenHash = hashToken(accessToken)
     const cached = await authCacheGet(tokenHash)
-    if (cached) {
-      return { userId: cached.userId, orgId: cached.orgId, isSuperadmin: cached.isSuperadmin, supabase }
+    if (cached && !cached.isSuperadmin) {
+      return { userId: cached.userId, orgId: cached.orgId, isSuperadmin: false, supabase }
     }
   }
 
@@ -163,9 +165,7 @@ export async function requireOrgId(): Promise<RequireOrgResult> {
   ])
 
   if (isSuperadmin) {
-    if (accessToken) {
-      void authCacheSet(hashToken(accessToken), { userId: user.id, orgId: null, isSuperadmin: true })
-    }
+    // Never cache superadmin auth — always re-verify next request.
     return { orgId: null, userId: user.id, isSuperadmin: true, supabase }
   }
 
@@ -179,9 +179,9 @@ export async function requireOrgId(): Promise<RequireOrgResult> {
   return { orgId: payload.orgId, userId: user.id, isSuperadmin: false, supabase }
 }
 
-type RequireUserResult =
-  | { userId: string; error?: undefined }
-  | { userId?: undefined; error: "unauthorized" }
+export type RequireUserResult =
+  | { userId: string; supabase: SupabaseClient; isSuperadmin?: boolean; error?: undefined }
+  | { userId?: undefined; supabase?: undefined; isSuperadmin?: undefined; error: "unauthorized" }
 
 /** Weaker check for routes that don't require org membership yet (e.g. creating the first org). */
 export async function requireUserId(): Promise<RequireUserResult> {
@@ -194,7 +194,7 @@ export async function requireUserId(): Promise<RequireUserResult> {
     return { error: "unauthorized" }
   }
 
-  return { userId: user.id }
+  return { userId: user.id, supabase }
 }
 
 /** Verifies the requesting user belongs to the given org (any role), or is a superadmin. */
@@ -209,7 +209,7 @@ export async function requireMemberOf(orgId: string): Promise<RequireUserResult>
   }
 
   if (await checkSuperadmin(supabase, user.id)) {
-    return { userId: user.id }
+    return { userId: user.id, isSuperadmin: true, supabase }
   }
 
   const { data: membership } = await supabase
@@ -224,7 +224,7 @@ export async function requireMemberOf(orgId: string): Promise<RequireUserResult>
     return { error: "unauthorized" }
   }
 
-  return { userId: user.id }
+  return { userId: user.id, isSuperadmin: false, supabase }
 }
 
 /**
@@ -236,7 +236,7 @@ export async function requireMemberOf(orgId: string): Promise<RequireUserResult>
  * (or, for *_items tables, the immediate parent), not sibling FK columns.
  */
 export async function verifyBelongsToOrg(
-  supabase: Awaited<ReturnType<typeof createClient>>,
+  supabase: SupabaseClient,
   table: string,
   id: string,
   orgId: string | null,
@@ -257,7 +257,7 @@ export async function verifyBelongsToOrg(
  * (which does have org_id) via verifyBelongsToOrg.
  */
 export async function verifyChildBelongsToOrg(
-  supabase: Awaited<ReturnType<typeof createClient>>,
+  supabase: SupabaseClient,
   childTable: string,
   childId: string,
   parentFkColumn: string,
@@ -291,5 +291,5 @@ export async function requireSuperadmin(): Promise<RequireUserResult> {
     return { error: "unauthorized" }
   }
 
-  return { userId: user.id }
+  return { userId: user.id, isSuperadmin: true, supabase }
 }

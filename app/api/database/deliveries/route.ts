@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server"
-import { createClient } from "@/lib/supabase/server"
 import { requireOrgId, verifyBelongsToOrg } from "@/lib/database/require-org"
 
 export async function GET(request: Request) {
@@ -21,7 +20,7 @@ export async function GET(request: Request) {
     )
   }
 
-  const supabase = await createClient()
+  const supabase = auth.supabase
   let query = supabase.schema("billing").from("deliveries").select("*")
   query = id ? query.eq("id", id) : query.eq("invoice_id", invoiceId!)
   if (!auth.isSuperadmin) query = query.eq("org_id", auth.orgId)
@@ -49,7 +48,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: '"invoice_id" is required' }, { status: 400 })
   }
 
-  const supabase = await createClient()
+  const supabase = auth.supabase
   if (!(await verifyBelongsToOrg(supabase, "invoices", body.invoice_id, orgId, auth.isSuperadmin))) {
     return NextResponse.json({ error: "invoice_id does not belong to this org" }, { status: 400 })
   }
@@ -86,7 +85,7 @@ export async function PUT(request: Request) {
   }
 
   const body = await request.json()
-  const supabase = await createClient()
+  const supabase = auth.supabase
   if (
     body.delivery_person_id &&
     !(await verifyBelongsToOrg(supabase, "staff", body.delivery_person_id, auth.orgId, auth.isSuperadmin))
@@ -117,7 +116,7 @@ export async function DELETE(request: Request) {
     )
   }
 
-  const supabase = await createClient()
+  const supabase = auth.supabase
   let query = supabase.schema("billing").from("deliveries").delete().eq("id", id)
   if (!auth.isSuperadmin) query = query.eq("org_id", auth.orgId)
   const { error } = await query

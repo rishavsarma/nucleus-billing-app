@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server"
-import { createClient } from "@/lib/supabase/server"
-import { requireOrgId } from "@/lib/database/require-org"
+import { requireOrgId, type SupabaseClient } from "@/lib/database/require-org"
 
 async function verifyItemInOrg(
-  supabase: Awaited<ReturnType<typeof createClient>>,
+  supabase: SupabaseClient,
   itemId: string,
   orgId: string | null,
   isSuperadmin: boolean,
@@ -25,7 +24,7 @@ export async function GET(request: Request) {
 
   const { searchParams } = new URL(request.url)
   const itemId = searchParams.get("item_id")
-  const supabase = await createClient()
+  const supabase = auth.supabase
 
   // Single item's stock across warehouses — used by the "current quantity on
   // hand" preview when recording a manual adjustment.

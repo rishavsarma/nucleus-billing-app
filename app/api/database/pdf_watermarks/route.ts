@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server"
 import { applyListParams } from "@/lib/database/list-params"
-import { createClient } from "@/lib/supabase/server"
 import { requireOrgId } from "@/lib/database/require-org"
 
 export async function GET(request: Request) {
@@ -17,7 +16,7 @@ export async function GET(request: Request) {
   const page = Number(searchParams.get("page") ?? 1)
   const pageSize = Number(searchParams.get("pageSize") ?? 10)
 
-  const supabase = await createClient()
+  const supabase = auth.supabase
   let query = supabase.schema("billing").from("pdf_watermarks").select("*", { count: "exact" })
   if (!auth.isSuperadmin) query = query.eq("org_id", auth.orgId)
   query = applyListParams(query, ["name"], { search, page, pageSize })
@@ -42,7 +41,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: '"org_id" is required' }, { status: 400 })
   }
 
-  const supabase = await createClient()
+  const supabase = auth.supabase
   const { data, error } = await supabase
     .schema("billing")
     .from("pdf_watermarks")
@@ -69,7 +68,7 @@ export async function PUT(request: Request) {
   }
 
   const body = await request.json()
-  const supabase = await createClient()
+  const supabase = auth.supabase
   let query = supabase.schema("billing").from("pdf_watermarks").update(body).eq("id", id)
   if (!auth.isSuperadmin) query = query.eq("org_id", auth.orgId)
   const { data, error } = await query.select().maybeSingle()
@@ -93,7 +92,7 @@ export async function DELETE(request: Request) {
     )
   }
 
-  const supabase = await createClient()
+  const supabase = auth.supabase
   let query = supabase.schema("billing").from("pdf_watermarks").delete().eq("id", id)
   if (!auth.isSuperadmin) query = query.eq("org_id", auth.orgId)
   const { error } = await query

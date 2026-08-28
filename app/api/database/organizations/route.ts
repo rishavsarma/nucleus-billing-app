@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server"
 import { applyListParams } from "@/lib/database/list-params"
-import { createClient } from "@/lib/supabase/server"
 import { requireOrgId, requireSuperadmin, requireMemberOf } from "@/lib/database/require-org"
 
 export async function GET(request: Request) {
@@ -14,22 +13,17 @@ export async function GET(request: Request) {
 
   const { searchParams } = new URL(request.url)
   const id = searchParams.get("id")
-  const supabase = await createClient()
+  const supabase = auth.supabase
 
   // Single org — either an explicit lookup (id given; the superadmin admin
   // org-detail page) or, for a non-superadmin caller with no id, always
   // their own org (a non-superadmin never has any other org to fetch).
-  // Every non-admin usage of "the current org" (org settings, subscription
-  // page, invoice PDF letterhead, the sidebar — rendered on every
-  // authenticated page) used to go through the paginated fetch-all
-  // (pageSize: 9999) and take organizations?.[0], and the admin org-detail
-  // page fetched every org and .find()'d the one it needed. Both are now a
-  // single-row fetch instead.
   if (id || !auth.isSuperadmin) {
     const query = supabase.schema("billing").from("organizations").select("*").eq("id", id ?? auth.orgId!)
     const { data, error } = await query.maybeSingle()
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (!data) return NextResponse.json({ error: "Not found" }, { status: 404 })
     return NextResponse.json(data)
   }
 
@@ -55,11 +49,11 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   const auth = await requireSuperadmin()
   if (auth.error) {
-    return NextResponse.json({ error: auth.error }, { status: 401 })
+    return NextResponse.json({ error: auth.error }, { status: 403 })
   }
 
   const body = await request.json()
-  const supabase = await createClient()
+  const supabase = auth.supabase
 
   const { data: org, error: orgError } = await supabase
     .schema("billing")
@@ -91,13 +85,12 @@ export async function PUT(request: Request) {
   // — this is defense-in-depth so a non-superadmin gets a clear 403 instead
   // of relying solely on the trigger's exception.
   if ("is_active" in body || "subscription_status" in body) {
-    const superadminAuth = await requireSuperadmin()
-    if (superadminAuth.error) {
+    if (!auth.isSuperadmin) {
       return NextResponse.json({ error: "Only a superadmin can change is_active or subscription_status" }, { status: 403 })
     }
   }
 
-  const supabase = await createClient()
+  const supabase = auth.supabase
   const { data, error } = await supabase
     .schema("billing")
     .from("organizations")
@@ -110,8 +103,3 @@ export async function PUT(request: Request) {
   if (!data) return NextResponse.json({ error: "Not found" }, { status: 404 })
   return NextResponse.json(data)
 }
-
-// No DELETE: organizations are never hard-deleted, only deactivated
-// (is_active = false via PUT) — see organizations_active_change_guard and
-// the "No delete policy" note in rls-policies.sql. There is no delete
-// policy for this table at all, so a delete would fail regardless.

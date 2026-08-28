@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server"
-import { createClient } from "@/lib/supabase/server"
 import { requireOrgId, verifyBelongsToOrg } from "@/lib/database/require-org"
 
 async function verifyPurchaseBillInOrg(
-  supabase: Awaited<ReturnType<typeof createClient>>,
+  supabase: SupabaseClient,
   purchaseBillId: string,
   orgId: string | null,
   isSuperadmin: boolean,
@@ -31,7 +30,7 @@ export async function GET(request: Request) {
     )
   }
 
-  const supabase = await createClient()
+  const supabase = auth.supabase
   const { ok, error: verifyError } = await verifyPurchaseBillInOrg(
     supabase,
     purchaseBillId,
@@ -65,7 +64,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: '"purchase_bill_id" is required' }, { status: 400 })
   }
 
-  const supabase = await createClient()
+  const supabase = auth.supabase
   const { ok, error: verifyError } = await verifyPurchaseBillInOrg(
     supabase,
     body.purchase_bill_id,
@@ -106,7 +105,7 @@ export async function PUT(request: Request) {
     )
   }
 
-  const supabase = await createClient()
+  const supabase = auth.supabase
   const { data: existing, error: existingError } = await supabase
     .schema("billing")
     .from("purchase_bill_items")
@@ -153,7 +152,7 @@ export async function DELETE(request: Request) {
     )
   }
 
-  const supabase = await createClient()
+  const supabase = auth.supabase
   const { data: existing, error: existingError } = await supabase
     .schema("billing")
     .from("purchase_bill_items")

@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server"
-import { createClient } from "@/lib/supabase/server"
 import { requireOrgId, verifyBelongsToOrg } from "@/lib/database/require-org"
 
 export async function GET(request: Request) {
@@ -13,7 +12,7 @@ export async function GET(request: Request) {
 
   const { searchParams } = new URL(request.url)
   const planId = searchParams.get("plan_id")
-  const supabase = await createClient()
+  const supabase = auth.supabase
 
   // Scoped to one plan — used by the invoice detail page's EMI schedule.
   if (planId) {
@@ -75,7 +74,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: '"invoice_id" is required' }, { status: 400 })
   }
 
-  const supabase = await createClient()
+  const supabase = auth.supabase
   if (!(await verifyBelongsToOrg(supabase, "installment_plans", body.plan_id, orgId, auth.isSuperadmin))) {
     return NextResponse.json({ error: "plan_id does not belong to this org" }, { status: 400 })
   }

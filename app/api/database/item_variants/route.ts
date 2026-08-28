@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server"
-import { createClient } from "@/lib/supabase/server"
-import { requireOrgId } from "@/lib/database/require-org"
+import { requireOrgId, type SupabaseClient } from "@/lib/database/require-org"
 
 async function verifyItemInOrg(
-  supabase: Awaited<ReturnType<typeof createClient>>,
+  supabase: SupabaseClient,
   itemId: string,
   orgId: string | null,
   isSuperadmin: boolean,
@@ -27,7 +26,7 @@ export async function GET(request: Request) {
   const itemId = url.searchParams.get("item_id")
   const itemIdsParam = url.searchParams.get("item_ids")
   const warehouseId = url.searchParams.get("warehouse_id")
-  const supabase = await createClient()
+  const supabase = auth.supabase
 
   // Bulk mode — every requested item's variants in one request, instead of
   // one request per item. item_variants carries its own org_id (unlike

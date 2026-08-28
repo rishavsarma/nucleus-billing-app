@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server"
-import { createClient } from "@/lib/supabase/server"
 import { requireUserId } from "@/lib/database/require-org"
 
 // Global catalog, not org-scoped — readable by any signed-in user (and by
@@ -12,8 +11,7 @@ export async function GET() {
     return NextResponse.json({ error: auth.error }, { status: 401 })
   }
 
-  const supabase = await createClient()
-  const { data, error } = await supabase.schema("billing").from("addons").select("*").order("name")
+  const { data, error } = await auth.supabase.schema("billing").from("addons").select("*").order("name")
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json(data)

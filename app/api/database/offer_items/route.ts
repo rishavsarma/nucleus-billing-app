@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server"
-import { createClient } from "@/lib/supabase/server"
 import { requireOrgId, verifyBelongsToOrg } from "@/lib/database/require-org"
 
 async function verifyOfferInOrg(
-  supabase: Awaited<ReturnType<typeof createClient>>,
+  supabase: SupabaseClient,
   offerId: string,
   orgId: string | null,
   isSuperadmin: boolean,
@@ -28,7 +27,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Query param "offer_id" is required' }, { status: 400 })
   }
 
-  const supabase = await createClient()
+  const supabase = auth.supabase
   const { ok, error: verifyError } = await verifyOfferInOrg(
     supabase,
     offerId,
@@ -62,7 +61,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: '"offer_id" and "item_id" are required' }, { status: 400 })
   }
 
-  const supabase = await createClient()
+  const supabase = auth.supabase
   const { ok, error: verifyError } = await verifyOfferInOrg(
     supabase,
     body.offer_id,
@@ -107,7 +106,7 @@ export async function DELETE(request: Request) {
     )
   }
 
-  const supabase = await createClient()
+  const supabase = auth.supabase
   const { ok, error: verifyError } = await verifyOfferInOrg(
     supabase,
     offerId,

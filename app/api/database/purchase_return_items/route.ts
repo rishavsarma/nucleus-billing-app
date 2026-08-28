@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server"
-import { createClient } from "@/lib/supabase/server"
 import { requireOrgId, verifyBelongsToOrg, verifyChildBelongsToOrg } from "@/lib/database/require-org"
 
 async function verifyPurchaseReturnInOrg(
-  supabase: Awaited<ReturnType<typeof createClient>>,
+  supabase: SupabaseClient,
   purchaseReturnId: string,
   orgId: string | null,
   isSuperadmin: boolean,
@@ -31,7 +30,7 @@ export async function GET(request: Request) {
     )
   }
 
-  const supabase = await createClient()
+  const supabase = auth.supabase
   const { ok, error: verifyError } = await verifyPurchaseReturnInOrg(
     supabase,
     purchaseReturnId,
@@ -65,7 +64,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: '"purchase_return_id" is required' }, { status: 400 })
   }
 
-  const supabase = await createClient()
+  const supabase = auth.supabase
   const { ok, error: verifyError } = await verifyPurchaseReturnInOrg(
     supabase,
     body.purchase_return_id,
@@ -120,7 +119,7 @@ export async function PUT(request: Request) {
     )
   }
 
-  const supabase = await createClient()
+  const supabase = auth.supabase
   const { data: existing, error: existingError } = await supabase
     .schema("billing")
     .from("purchase_return_items")
@@ -167,7 +166,7 @@ export async function DELETE(request: Request) {
     )
   }
 
-  const supabase = await createClient()
+  const supabase = auth.supabase
   const { data: existing, error: existingError } = await supabase
     .schema("billing")
     .from("purchase_return_items")

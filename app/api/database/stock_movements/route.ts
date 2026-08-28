@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server"
 import { applyListParams } from "@/lib/database/list-params"
-import { createClient } from "@/lib/supabase/server"
 import { requireOrgId, verifyBelongsToOrg } from "@/lib/database/require-org"
 
 export async function GET(request: Request) {
@@ -17,7 +16,7 @@ export async function GET(request: Request) {
   const page = Number(searchParams.get("page") ?? 1)
   const pageSize = Number(searchParams.get("pageSize") ?? 10)
 
-  const supabase = await createClient()
+  const supabase = auth.supabase
   // Embeds the item name and warehouse name via their FKs — avoids the list
   // page separately fetching every item and every warehouse (pageSize: 9999
   // each) just to resolve these by id.
@@ -64,7 +63,7 @@ export async function POST(request: Request) {
     )
   }
 
-  const supabase = await createClient()
+  const supabase = auth.supabase
   if (!(await verifyBelongsToOrg(supabase, "items", body.item_id, orgId, auth.isSuperadmin))) {
     return NextResponse.json({ error: "item_id does not belong to this org" }, { status: 400 })
   }

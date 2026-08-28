@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server"
 import { applyListParams } from "@/lib/database/list-params"
-import { createClient } from "@/lib/supabase/server"
 import { requireOrgId, verifyBelongsToOrg } from "@/lib/database/require-org"
 
 export async function GET(request: Request) {
@@ -14,7 +13,7 @@ export async function GET(request: Request) {
 
   const { searchParams } = new URL(request.url)
   const invoiceId = searchParams.get("invoice_id")
-  const supabase = await createClient()
+  const supabase = auth.supabase
 
   // Scoped to one invoice — used by the invoice detail page's payment
   // history. Was previously fetched via the "all payments" endpoint
@@ -73,7 +72,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: '"invoice_id" is required' }, { status: 400 })
   }
 
-  const supabase = await createClient()
+  const supabase = auth.supabase
   if (!(await verifyBelongsToOrg(supabase, "invoices", body.invoice_id, orgId, auth.isSuperadmin))) {
     return NextResponse.json({ error: "invoice_id does not belong to this org" }, { status: 400 })
   }
@@ -110,7 +109,7 @@ export async function PUT(request: Request) {
   }
 
   const body = await request.json()
-  const supabase = await createClient()
+  const supabase = auth.supabase
   let query = supabase.schema("billing").from("payments").update(body).eq("id", id)
   if (!auth.isSuperadmin) query = query.eq("org_id", auth.orgId)
   const { data, error } = await query.select().maybeSingle()

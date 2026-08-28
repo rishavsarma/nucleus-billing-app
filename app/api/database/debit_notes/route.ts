@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server"
 import { applyListParams } from "@/lib/database/list-params"
-import { createClient } from "@/lib/supabase/server"
 import { requireOrgId, verifyBelongsToOrg } from "@/lib/database/require-org"
 
 export async function GET(request: Request) {
@@ -15,7 +14,7 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const id = searchParams.get("id")
 
-  const supabase = await createClient()
+  const supabase = auth.supabase
 
   // A single-record fetch — used by detail pages instead of pulling every
   // row via the paginated branch below and finding it client-side.
@@ -65,7 +64,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: '"vendor_id" is required' }, { status: 400 })
   }
 
-  const supabase = await createClient()
+  const supabase = auth.supabase
   if (!(await verifyBelongsToOrg(supabase, "vendors", body.vendor_id, orgId, auth.isSuperadmin))) {
     return NextResponse.json({ error: "vendor_id does not belong to this org" }, { status: 400 })
   }
@@ -102,7 +101,7 @@ export async function PUT(request: Request) {
   }
 
   const body = await request.json()
-  const supabase = await createClient()
+  const supabase = auth.supabase
   let query = supabase.schema("billing").from("debit_notes").update(body).eq("id", id)
   if (!auth.isSuperadmin) query = query.eq("org_id", auth.orgId)
   const { data, error } = await query.select().maybeSingle()
