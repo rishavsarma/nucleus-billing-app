@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { requireOrgId, verifyBelongsToOrg } from "@/lib/database/require-org"
+import { requireOrgId, verifyBelongsToOrg, type SupabaseClient } from "@/lib/database/require-org"
 
 async function verifyInvoiceInOrg(
   supabase: SupabaseClient,
