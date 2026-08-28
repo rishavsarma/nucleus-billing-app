@@ -1,6 +1,35 @@
 import { NextResponse } from "next/server"
-import { applyListParams } from "@/lib/database/list-params"
+import { applyListParams, isRangeError } from "@/lib/database/list-params"
 import { requireOrgId } from "@/lib/database/require-org"
+import { cacheDel, cacheGet, cacheSet } from "@/lib/cache"
+import { redis } from "@/lib/redis"
+
+const TAX_CACHE_TTL_SECONDS = 300
+
+function taxCacheKey(orgId: string, id: string) {
+  return `tax-rate:${orgId}:${id}`
+}
+
+async function getListVersion(orgId: string): Promise<number> {
+  try {
+    const v = await redis.get(`tax-rate-list-version:${orgId}`)
+    return v ? parseInt(v, 10) : 0
+  } catch {
+    return 0
+  }
+}
+
+async function bumpListVersion(orgId: string): Promise<void> {
+  try {
+    await redis.incr(`tax-rate-list-version:${orgId}`)
+  } catch {
+    // swallow
+  }
+}
+
+function taxListCacheKey(orgId: string, version: number, search: string, page: number, pageSize: number) {
+  return `tax-rate-list:${orgId}:v${version}:${search}:${page}:${pageSize}`
+}
 
 export async function GET(request: Request) {
   const auth = await requireOrgId()
@@ -12,17 +41,63 @@ export async function GET(request: Request) {
   }
 
   const { searchParams } = new URL(request.url)
-  const search = searchParams.get("search") ?? undefined
+  const id = searchParams.get("id")
+  const supabase = auth.supabase
+
+  if (id) {
+    if (!auth.isSuperadmin) {
+      const cached = await cacheGet(taxCacheKey(auth.orgId!, id))
+      if (cached) return NextResponse.json(JSON.parse(cached))
+    }
+
+    let recordQuery = supabase.schema("billing").from("tax_rates").select("*").eq("id", id)
+    if (!auth.isSuperadmin) recordQuery = recordQuery.eq("org_id", auth.orgId)
+    const { data, error } = await recordQuery.maybeSingle()
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (!data) return NextResponse.json({ error: "Not found" }, { status: 404 })
+
+    if (!auth.isSuperadmin) {
+      await cacheSet(taxCacheKey(auth.orgId!, id), JSON.stringify(data), TAX_CACHE_TTL_SECONDS)
+    }
+    return NextResponse.json(data)
+  }
+
+  const search = searchParams.get("search") ?? ""
   const page = Number(searchParams.get("page") ?? 1)
   const pageSize = Number(searchParams.get("pageSize") ?? 10)
 
-  const supabase = auth.supabase
+  if (!auth.isSuperadmin) {
+    const version = await getListVersion(auth.orgId!)
+    const listKey = taxListCacheKey(auth.orgId!, version, search, page, pageSize)
+    const cached = await cacheGet(listKey)
+    if (cached) return NextResponse.json(JSON.parse(cached))
+
+    let query = supabase.schema("billing").from("tax_rates").select("*", { count: "exact" })
+    query = query.eq("org_id", auth.orgId)
+    query = applyListParams(query, ["name"], { search: search || undefined, page, pageSize })
+    const { data, error, count } = await query
+
+    if (error) {
+      if (isRangeError(error)) {
+        const emptyPayload = { data: [], total: count ?? 0 }
+        await cacheSet(listKey, JSON.stringify(emptyPayload), TAX_CACHE_TTL_SECONDS)
+        return NextResponse.json(emptyPayload)
+      }
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+    const payload = { data: data ?? [], total: count ?? 0 }
+    await cacheSet(listKey, JSON.stringify(payload), TAX_CACHE_TTL_SECONDS)
+    return NextResponse.json(payload)
+  }
+
   let query = supabase.schema("billing").from("tax_rates").select("*", { count: "exact" })
-  if (!auth.isSuperadmin) query = query.eq("org_id", auth.orgId)
-  query = applyListParams(query, ["name"], { search, page, pageSize })
+  query = applyListParams(query, ["name"], { search: search || undefined, page, pageSize })
   const { data, error, count } = await query
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) {
+    if (isRangeError(error)) return NextResponse.json({ data: [], total: count ?? 0 })
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
   return NextResponse.json({ data: data ?? [], total: count ?? 0 })
 }
 
@@ -50,6 +125,7 @@ export async function POST(request: Request) {
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  void bumpListVersion(orgId)
   return NextResponse.json(data, { status: 201 })
 }
 
@@ -75,28 +151,8 @@ export async function PUT(request: Request) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   if (!data) return NextResponse.json({ error: "Not found" }, { status: 404 })
+
+  await cacheDel(taxCacheKey(data.org_id, id))
+  void bumpListVersion(data.org_id)
   return NextResponse.json(data)
-}
-
-export async function DELETE(request: Request) {
-  const id = new URL(request.url).searchParams.get("id")
-  if (!id) {
-    return NextResponse.json({ error: 'Query param "id" is required' }, { status: 400 })
-  }
-
-  const auth = await requireOrgId()
-  if (auth.error) {
-    return NextResponse.json(
-      { error: auth.error },
-      { status: auth.error === "unauthorized" ? 401 : 403 },
-    )
-  }
-
-  const supabase = auth.supabase
-  let query = supabase.schema("billing").from("tax_rates").delete().eq("id", id)
-  if (!auth.isSuperadmin) query = query.eq("org_id", auth.orgId)
-  const { error } = await query
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return new NextResponse(null, { status: 204 })
 }

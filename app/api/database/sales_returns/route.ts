@@ -1,6 +1,41 @@
 import { NextResponse } from "next/server"
 import { applyListParams } from "@/lib/database/list-params"
 import { requireOrgId, verifyBelongsToOrg } from "@/lib/database/require-org"
+import { cacheDel, cacheGet, cacheSet } from "@/lib/cache"
+import { redis } from "@/lib/redis"
+
+const SALES_RETURN_CACHE_TTL_SECONDS = 60
+
+function salesReturnCacheKey(orgId: string, id: string) {
+  return `sales-return:${orgId}:${id}`
+}
+
+async function getListVersion(orgId: string): Promise<number> {
+  try {
+    const v = await redis.get(`sales-return-list-version:${orgId}`)
+    return v ? parseInt(v, 10) : 0
+  } catch {
+    return 0
+  }
+}
+
+async function bumpListVersion(orgId: string): Promise<void> {
+  try {
+    await redis.incr(`sales-return-list-version:${orgId}`)
+  } catch {
+    // swallow
+  }
+}
+
+function salesReturnListCacheKey(
+  orgId: string,
+  version: number,
+  search: string,
+  page: number,
+  pageSize: number,
+) {
+  return `sales-return-list:${orgId}:v${version}:${search}:${page}:${pageSize}`
+}
 
 export async function GET(request: Request) {
   const auth = await requireOrgId()
@@ -13,33 +48,55 @@ export async function GET(request: Request) {
 
   const { searchParams } = new URL(request.url)
   const id = searchParams.get("id")
-
   const supabase = auth.supabase
 
-  // A single-record fetch — used by detail pages instead of pulling every
-  // row via the paginated branch below and finding it client-side.
   if (id) {
+    if (!auth.isSuperadmin) {
+      const cached = await cacheGet(salesReturnCacheKey(auth.orgId!, id))
+      if (cached) return NextResponse.json(JSON.parse(cached))
+    }
+
     let recordQuery = supabase.schema("billing").from("sales_returns").select("*").eq("id", id)
     if (!auth.isSuperadmin) recordQuery = recordQuery.eq("org_id", auth.orgId)
     const { data, error } = await recordQuery.maybeSingle()
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
     if (!data) return NextResponse.json({ error: "Not found" }, { status: 404 })
+
+    if (!auth.isSuperadmin) {
+      await cacheSet(salesReturnCacheKey(auth.orgId!, id), JSON.stringify(data), SALES_RETURN_CACHE_TTL_SECONDS)
+    }
     return NextResponse.json(data)
   }
 
-  const search = searchParams.get("search") ?? undefined
+  const search = searchParams.get("search") ?? ""
   const page = Number(searchParams.get("page") ?? 1)
   const pageSize = Number(searchParams.get("pageSize") ?? 10)
 
-  // Embeds the customer name and original invoice number via their FKs —
-  // avoids the list page separately fetching every customer and every
-  // invoice (pageSize: 9999 each) just to resolve these by id.
+  if (!auth.isSuperadmin) {
+    const version = await getListVersion(auth.orgId!)
+    const listKey = salesReturnListCacheKey(auth.orgId!, version, search, page, pageSize)
+    const cached = await cacheGet(listKey)
+    if (cached) return NextResponse.json(JSON.parse(cached))
+
+    let query = supabase
+      .schema("billing")
+      .from("sales_returns")
+      .select("*, customer:customers(name), invoice:invoices(invoice_number)", { count: "exact" })
+      .eq("org_id", auth.orgId)
+    query = applyListParams(query, ["sales_return_number"], { search: search || undefined, page, pageSize })
+    const { data, error, count } = await query
+
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    const payload = { data: data ?? [], total: count ?? 0 }
+    await cacheSet(listKey, JSON.stringify(payload), SALES_RETURN_CACHE_TTL_SECONDS)
+    return NextResponse.json(payload)
+  }
+
   let query = supabase
     .schema("billing")
     .from("sales_returns")
     .select("*, customer:customers(name), invoice:invoices(invoice_number)", { count: "exact" })
-  if (!auth.isSuperadmin) query = query.eq("org_id", auth.orgId)
-  query = applyListParams(query, ["sales_return_number"], { search, page, pageSize })
+  query = applyListParams(query, ["sales_return_number"], { search: search || undefined, page, pageSize })
   const { data, error, count } = await query
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
@@ -60,26 +117,20 @@ export async function POST(request: Request) {
   if (!orgId) {
     return NextResponse.json({ error: '"org_id" is required' }, { status: 400 })
   }
-  if (!body.invoice_id || !body.customer_id) {
-    return NextResponse.json(
-      { error: '"invoice_id" and "customer_id" are required' },
-      { status: 400 },
-    )
+  if (!body.customer_id) {
+    return NextResponse.json({ error: '"customer_id" is required' }, { status: 400 })
   }
 
   const supabase = auth.supabase
-  if (!(await verifyBelongsToOrg(supabase, "invoices", body.invoice_id, orgId, auth.isSuperadmin))) {
-    return NextResponse.json({ error: "invoice_id does not belong to this org" }, { status: 400 })
-  }
-  if (!(await verifyBelongsToOrg(supabase, "customers", body.customer_id, orgId, auth.isSuperadmin))) {
-    return NextResponse.json({ error: "customer_id does not belong to this org" }, { status: 400 })
-  }
-  if (
-    body.warehouse_id &&
-    !(await verifyBelongsToOrg(supabase, "warehouses", body.warehouse_id, orgId, auth.isSuperadmin))
-  ) {
-    return NextResponse.json({ error: "warehouse_id does not belong to this org" }, { status: 400 })
-  }
+  const [custOk, invOk, whOk] = await Promise.all([
+    verifyBelongsToOrg(supabase, "customers", body.customer_id, orgId, auth.isSuperadmin),
+    body.invoice_id ? verifyBelongsToOrg(supabase, "invoices", body.invoice_id, orgId, auth.isSuperadmin) : Promise.resolve(true),
+    body.warehouse_id ? verifyBelongsToOrg(supabase, "warehouses", body.warehouse_id, orgId, auth.isSuperadmin) : Promise.resolve(true),
+  ])
+
+  if (!custOk) return NextResponse.json({ error: "customer_id does not belong to this org" }, { status: 400 })
+  if (!invOk) return NextResponse.json({ error: "invoice_id does not belong to this org" }, { status: 400 })
+  if (!whOk) return NextResponse.json({ error: "warehouse_id does not belong to this org" }, { status: 400 })
 
   const { data, error } = await supabase
     .schema("billing")
@@ -89,6 +140,7 @@ export async function POST(request: Request) {
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  void bumpListVersion(orgId)
   return NextResponse.json(data, { status: 201 })
 }
 
@@ -114,8 +166,8 @@ export async function PUT(request: Request) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   if (!data) return NextResponse.json({ error: "Not found" }, { status: 404 })
+
+  await cacheDel(salesReturnCacheKey(data.org_id, id))
+  void bumpListVersion(data.org_id)
   return NextResponse.json(data)
 }
-
-// No DELETE: sales returns are financial records — cancel via status =
-// 'void', never hard-deleted. No delete policy exists for this table.

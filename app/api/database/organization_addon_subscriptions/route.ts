@@ -1,5 +1,12 @@
 import { NextResponse } from "next/server"
 import { requireOrgId, requireSuperadmin } from "@/lib/database/require-org"
+import { cacheDel, cacheGet, cacheSet } from "@/lib/cache"
+
+const SUB_CACHE_TTL_SECONDS = 180
+
+function subCacheKey(orgId: string) {
+  return `org-addon-subs:${orgId}`
+}
 
 export async function GET() {
   const auth = await requireOrgId()
@@ -10,18 +17,24 @@ export async function GET() {
     )
   }
 
+  if (!auth.isSuperadmin) {
+    const cached = await cacheGet(subCacheKey(auth.orgId!))
+    if (cached) return NextResponse.json(JSON.parse(cached))
+  }
+
   let query = auth.supabase.schema("billing").from("organization_addon_subscriptions").select("*")
   if (!auth.isSuperadmin) query = query.eq("org_id", auth.orgId)
   const { data, error } = await query
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  if (!auth.isSuperadmin) {
+    await cacheSet(subCacheKey(auth.orgId!), JSON.stringify(data ?? []), SUB_CACHE_TTL_SECONDS)
+  }
+
   return NextResponse.json(data)
 }
 
-// Writes only ever go through billing.subscribe_org_to_addon /
-// billing.cancel_org_addon — both superadmin-gated inside the function body
-// (see 003_rls_policies.sql), so this route requires requireSuperadmin() too
-// rather than relying on the DB to reject a non-superadmin's call.
 export async function POST(request: Request) {
   const auth = await requireSuperadmin()
   if (auth.error) {
@@ -40,6 +53,7 @@ export async function POST(request: Request) {
   })
 
   if (error) return NextResponse.json({ error: error.message }, { status: 400 })
+  await cacheDel(subCacheKey(org_id))
   return NextResponse.json({ id: data }, { status: 201 })
 }
 
@@ -62,5 +76,6 @@ export async function DELETE(request: Request) {
   })
 
   if (error) return NextResponse.json({ error: error.message }, { status: 400 })
+  await cacheDel(subCacheKey(org_id))
   return new NextResponse(null, { status: 204 })
 }

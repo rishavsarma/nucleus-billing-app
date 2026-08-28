@@ -1,5 +1,12 @@
 import { NextResponse } from "next/server"
 import { requireOrgId, type SupabaseClient } from "@/lib/database/require-org"
+import { cacheDel, cacheGet, cacheSet } from "@/lib/cache"
+
+const NOTE_ITEMS_CACHE_TTL_SECONDS = 120
+
+function debitNoteItemsCacheKey(orgId: string, debitNoteId: string) {
+  return `debit-note-items:${orgId}:${debitNoteId}`
+}
 
 async function verifyDebitNoteInOrg(
   supabase: SupabaseClient,
@@ -30,6 +37,11 @@ export async function GET(request: Request) {
     )
   }
 
+  if (!auth.isSuperadmin) {
+    const cached = await cacheGet(debitNoteItemsCacheKey(auth.orgId!, debitNoteId))
+    if (cached) return NextResponse.json(JSON.parse(cached))
+  }
+
   const supabase = auth.supabase
   const { ok, error: verifyError } = await verifyDebitNoteInOrg(
     supabase,
@@ -47,12 +59,14 @@ export async function GET(request: Request) {
     .eq("debit_note_id", debitNoteId)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  if (!auth.isSuperadmin) {
+    await cacheSet(debitNoteItemsCacheKey(auth.orgId!, debitNoteId), JSON.stringify(data ?? []), NOTE_ITEMS_CACHE_TTL_SECONDS)
+  }
+
   return NextResponse.json(data)
 }
 
-// A line here is a pure value adjustment — description + amount + tax_rate,
-// no item_id/quantity/purchase_bill_item_id — so there's no catalog-item FK
-// to verify beyond the parent debit_note_id.
 export async function POST(request: Request) {
   const auth = await requireOrgId()
   if (auth.error) {
@@ -85,6 +99,14 @@ export async function POST(request: Request) {
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  if (auth.orgId) {
+    await Promise.all([
+      cacheDel(debitNoteItemsCacheKey(auth.orgId, body.debit_note_id)),
+      cacheDel(`debit-note:${auth.orgId}:${body.debit_note_id}`),
+    ])
+  }
+
   return NextResponse.json(data, { status: 201 })
 }
 
@@ -132,6 +154,14 @@ export async function PUT(request: Request) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   if (!data) return NextResponse.json({ error: "Not found" }, { status: 404 })
+
+  if (auth.orgId) {
+    await Promise.all([
+      cacheDel(debitNoteItemsCacheKey(auth.orgId, existing.debit_note_id)),
+      cacheDel(`debit-note:${auth.orgId}:${existing.debit_note_id}`),
+    ])
+  }
+
   return NextResponse.json(data)
 }
 
@@ -168,11 +198,15 @@ export async function DELETE(request: Request) {
   if (verifyError) return NextResponse.json({ error: verifyError.message }, { status: 500 })
   if (!ok) return NextResponse.json({ error: "Not found" }, { status: 404 })
 
-  const { error } = await supabase
-    .schema("billing")
-    .from("debit_note_items")
-    .delete()
-    .eq("id", id)
+  const { error } = await supabase.schema("billing").from("debit_note_items").delete().eq("id", id)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  if (auth.orgId) {
+    await Promise.all([
+      cacheDel(debitNoteItemsCacheKey(auth.orgId, existing.debit_note_id)),
+      cacheDel(`debit-note:${auth.orgId}:${existing.debit_note_id}`),
+    ])
+  }
+
   return new NextResponse(null, { status: 204 })
 }

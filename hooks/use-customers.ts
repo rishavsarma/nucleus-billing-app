@@ -1,7 +1,7 @@
 "use client"
 
 import type { ListParams } from "@/lib/database/list-params-types"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { fetchCustomerById, fetchCustomersPaginated,
   createCustomer,
   updateCustomer,
@@ -14,6 +14,7 @@ export function useCustomersList(params: ListParams) {
   return useQuery({
     queryKey: ["customers", "list", params],
     queryFn: () => fetchCustomersPaginated(params),
+    placeholderData: keepPreviousData,
   })
 }
 

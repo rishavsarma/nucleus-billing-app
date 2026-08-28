@@ -1,5 +1,12 @@
 import { NextResponse } from "next/server"
 import { requireOrgId, verifyBelongsToOrg, type SupabaseClient } from "@/lib/database/require-org"
+import { cacheDel, cacheGet, cacheSet } from "@/lib/cache"
+
+const OFFER_ITEMS_CACHE_TTL_SECONDS = 180
+
+function offerItemsCacheKey(orgId: string, offerId: string) {
+  return `offer-items:${orgId}:${offerId}`
+}
 
 async function verifyOfferInOrg(
   supabase: SupabaseClient,
@@ -27,6 +34,11 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Query param "offer_id" is required' }, { status: 400 })
   }
 
+  if (!auth.isSuperadmin) {
+    const cached = await cacheGet(offerItemsCacheKey(auth.orgId!, offerId))
+    if (cached) return NextResponse.json(JSON.parse(cached))
+  }
+
   const supabase = auth.supabase
   const { ok, error: verifyError } = await verifyOfferInOrg(
     supabase,
@@ -44,6 +56,11 @@ export async function GET(request: Request) {
     .eq("offer_id", offerId)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  if (!auth.isSuperadmin) {
+    await cacheSet(offerItemsCacheKey(auth.orgId!, offerId), JSON.stringify(data ?? []), OFFER_ITEMS_CACHE_TTL_SECONDS)
+  }
+
   return NextResponse.json(data)
 }
 
@@ -58,21 +75,21 @@ export async function POST(request: Request) {
 
   const body = await request.json()
   if (!body.offer_id || !body.item_id) {
-    return NextResponse.json({ error: '"offer_id" and "item_id" are required' }, { status: 400 })
+    return NextResponse.json(
+      { error: '"offer_id" and "item_id" are required' },
+      { status: 400 },
+    )
   }
 
   const supabase = auth.supabase
-  const { ok, error: verifyError } = await verifyOfferInOrg(
-    supabase,
-    body.offer_id,
-    auth.orgId,
-    auth.isSuperadmin,
-  )
-  if (verifyError) return NextResponse.json({ error: verifyError.message }, { status: 500 })
-  if (!ok) return NextResponse.json({ error: "Not found" }, { status: 404 })
-  if (!(await verifyBelongsToOrg(supabase, "items", body.item_id, auth.orgId, auth.isSuperadmin))) {
-    return NextResponse.json({ error: "item_id does not belong to this org" }, { status: 400 })
-  }
+  const [offerCheck, itemCheck] = await Promise.all([
+    verifyOfferInOrg(supabase, body.offer_id, auth.orgId, auth.isSuperadmin),
+    verifyBelongsToOrg(supabase, "items", body.item_id, auth.orgId, auth.isSuperadmin),
+  ])
+
+  if (offerCheck.error) return NextResponse.json({ error: offerCheck.error.message }, { status: 500 })
+  if (!offerCheck.ok) return NextResponse.json({ error: "Not found" }, { status: 404 })
+  if (!itemCheck) return NextResponse.json({ error: "item_id does not belong to this org" }, { status: 400 })
 
   const { data, error } = await supabase
     .schema("billing")
@@ -82,10 +99,16 @@ export async function POST(request: Request) {
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  if (auth.orgId) {
+    await Promise.all([
+      cacheDel(offerItemsCacheKey(auth.orgId, body.offer_id)),
+      cacheDel(`offer:${auth.orgId}:${body.offer_id}`),
+    ])
+  }
+
   return NextResponse.json(data, { status: 201 })
 }
-
-// No PUT: offer_items is a pure (offer_id, item_id) link with no other columns to update.
 
 export async function DELETE(request: Request) {
   const url = new URL(request.url)
@@ -124,5 +147,13 @@ export async function DELETE(request: Request) {
     .eq("item_id", itemId)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  if (auth.orgId) {
+    await Promise.all([
+      cacheDel(offerItemsCacheKey(auth.orgId, offerId)),
+      cacheDel(`offer:${auth.orgId}:${offerId}`),
+    ])
+  }
+
   return new NextResponse(null, { status: 204 })
 }

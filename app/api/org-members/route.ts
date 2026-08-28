@@ -1,16 +1,24 @@
 import { NextResponse } from "next/server"
-import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { requireOrgId } from "@/lib/database/require-org"
+import { cacheGet, cacheSet } from "@/lib/cache"
 
-// Composed read, not a direct billing-table passthrough: `billing.memberships`
-// only stores `user_id` (no name/email — that lives in `auth.users`, a
-// different schema the browser client can't join against). This route
-// enriches each membership with its email via the service-role admin client,
-// scoped strictly to the caller's own org's memberships, so it never exposes
-// another org's users. Read-only — inviting/removing members still goes
-// through the plain `billing.memberships` CRUD in
-// app/api/database/memberships/route.ts.
+const ORG_MEMBERS_CACHE_TTL_SECONDS = 120
+const USER_EMAIL_CACHE_TTL_SECONDS = 300
+
+async function getUserEmail(admin: ReturnType<typeof createAdminClient>, userId: string): Promise<string | null> {
+  const cacheKey = `user-email:${userId}`
+  const cached = await cacheGet(cacheKey)
+  if (cached) return cached
+
+  const { data } = await admin.auth.admin.getUserById(userId)
+  const email = data?.user?.email ?? null
+  if (email) {
+    await cacheSet(cacheKey, email, USER_EMAIL_CACHE_TTL_SECONDS)
+  }
+  return email
+}
+
 export async function GET() {
   const auth = await requireOrgId()
   if (auth.error) {
@@ -20,14 +28,18 @@ export async function GET() {
     )
   }
 
-  // Superadmins aren't scoped to a single org, so there's no "my org's
-  // members" list to return here.
+  // Superadmins aren't scoped to a single org, so there's no "my org's members" list to return here.
   if (!auth.orgId) {
     return NextResponse.json([])
   }
 
-  const supabase = await createClient()
-  const { data: memberships, error } = await supabase
+  const listCacheKey = `org-members:${auth.orgId}`
+  const cachedList = await cacheGet(listCacheKey)
+  if (cachedList) {
+    return NextResponse.json(JSON.parse(cachedList))
+  }
+
+  const { data: memberships, error } = await auth.supabase
     .schema("billing")
     .from("memberships")
     .select("*")
@@ -37,11 +49,13 @@ export async function GET() {
 
   const admin = createAdminClient()
   const enriched = await Promise.all(
-    memberships.map(async (membership) => {
-      const { data } = await admin.auth.admin.getUserById(membership.user_id)
-      return { ...membership, email: data?.user?.email ?? null }
+    (memberships ?? []).map(async (membership) => {
+      const email = await getUserEmail(admin, membership.user_id)
+      return { ...membership, email }
     }),
   )
+
+  await cacheSet(listCacheKey, JSON.stringify(enriched), ORG_MEMBERS_CACHE_TTL_SECONDS)
 
   return NextResponse.json(enriched)
 }

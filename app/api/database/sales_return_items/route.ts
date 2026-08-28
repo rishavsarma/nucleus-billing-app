@@ -1,5 +1,12 @@
 import { NextResponse } from "next/server"
-import { requireOrgId, verifyBelongsToOrg, verifyChildBelongsToOrg, type SupabaseClient } from "@/lib/database/require-org"
+import { requireOrgId, verifyBelongsToOrg, type SupabaseClient } from "@/lib/database/require-org"
+import { cacheDel, cacheGet, cacheSet } from "@/lib/cache"
+
+const RETURN_ITEMS_CACHE_TTL_SECONDS = 120
+
+function salesReturnItemsCacheKey(orgId: string, salesReturnId: string) {
+  return `sales-return-items:${orgId}:${salesReturnId}`
+}
 
 async function verifySalesReturnInOrg(
   supabase: SupabaseClient,
@@ -30,6 +37,11 @@ export async function GET(request: Request) {
     )
   }
 
+  if (!auth.isSuperadmin) {
+    const cached = await cacheGet(salesReturnItemsCacheKey(auth.orgId!, salesReturnId))
+    if (cached) return NextResponse.json(JSON.parse(cached))
+  }
+
   const supabase = auth.supabase
   const { ok, error: verifyError } = await verifySalesReturnInOrg(
     supabase,
@@ -47,6 +59,11 @@ export async function GET(request: Request) {
     .eq("sales_return_id", salesReturnId)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  if (!auth.isSuperadmin) {
+    await cacheSet(salesReturnItemsCacheKey(auth.orgId!, salesReturnId), JSON.stringify(data ?? []), RETURN_ITEMS_CACHE_TTL_SECONDS)
+  }
+
   return NextResponse.json(data)
 }
 
@@ -65,34 +82,14 @@ export async function POST(request: Request) {
   }
 
   const supabase = auth.supabase
-  const { ok, error: verifyError } = await verifySalesReturnInOrg(
-    supabase,
-    body.sales_return_id,
-    auth.orgId,
-    auth.isSuperadmin,
-  )
-  if (verifyError) return NextResponse.json({ error: verifyError.message }, { status: 500 })
-  if (!ok) return NextResponse.json({ error: "Not found" }, { status: 404 })
-  if (
-    body.item_id &&
-    !(await verifyBelongsToOrg(supabase, "items", body.item_id, auth.orgId, auth.isSuperadmin))
-  ) {
-    return NextResponse.json({ error: "item_id does not belong to this org" }, { status: 400 })
-  }
-  if (
-    body.invoice_item_id &&
-    !(await verifyChildBelongsToOrg(
-      supabase,
-      "invoice_items",
-      body.invoice_item_id,
-      "invoice_id",
-      "invoices",
-      auth.orgId,
-      auth.isSuperadmin,
-    ))
-  ) {
-    return NextResponse.json({ error: "invoice_item_id does not belong to this org" }, { status: 400 })
-  }
+  const [retCheck, itemCheck] = await Promise.all([
+    verifySalesReturnInOrg(supabase, body.sales_return_id, auth.orgId, auth.isSuperadmin),
+    body.item_id ? verifyBelongsToOrg(supabase, "items", body.item_id, auth.orgId, auth.isSuperadmin) : Promise.resolve(true),
+  ])
+
+  if (retCheck.error) return NextResponse.json({ error: retCheck.error.message }, { status: 500 })
+  if (!retCheck.ok) return NextResponse.json({ error: "Not found" }, { status: 404 })
+  if (!itemCheck) return NextResponse.json({ error: "item_id does not belong to this org" }, { status: 400 })
 
   const { data, error } = await supabase
     .schema("billing")
@@ -102,6 +99,14 @@ export async function POST(request: Request) {
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  if (auth.orgId) {
+    await Promise.all([
+      cacheDel(salesReturnItemsCacheKey(auth.orgId, body.sales_return_id)),
+      cacheDel(`sales-return:${auth.orgId}:${body.sales_return_id}`),
+    ])
+  }
+
   return NextResponse.json(data, { status: 201 })
 }
 
@@ -149,6 +154,14 @@ export async function PUT(request: Request) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   if (!data) return NextResponse.json({ error: "Not found" }, { status: 404 })
+
+  if (auth.orgId) {
+    await Promise.all([
+      cacheDel(salesReturnItemsCacheKey(auth.orgId, existing.sales_return_id)),
+      cacheDel(`sales-return:${auth.orgId}:${existing.sales_return_id}`),
+    ])
+  }
+
   return NextResponse.json(data)
 }
 
@@ -185,11 +198,15 @@ export async function DELETE(request: Request) {
   if (verifyError) return NextResponse.json({ error: verifyError.message }, { status: 500 })
   if (!ok) return NextResponse.json({ error: "Not found" }, { status: 404 })
 
-  const { error } = await supabase
-    .schema("billing")
-    .from("sales_return_items")
-    .delete()
-    .eq("id", id)
+  const { error } = await supabase.schema("billing").from("sales_return_items").delete().eq("id", id)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  if (auth.orgId) {
+    await Promise.all([
+      cacheDel(salesReturnItemsCacheKey(auth.orgId, existing.sales_return_id)),
+      cacheDel(`sales-return:${auth.orgId}:${existing.sales_return_id}`),
+    ])
+  }
+
   return new NextResponse(null, { status: 204 })
 }

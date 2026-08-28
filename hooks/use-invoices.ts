@@ -1,7 +1,7 @@
 "use client"
 
 import type { ListParams } from "@/lib/database/list-params-types"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { fetchInvoiceById, fetchInvoicesPaginated, createInvoice, updateInvoice } from "@/lib/database/services/invoices"
 import type { Invoice } from "@/lib/database/types"
 
@@ -13,6 +13,7 @@ export function useInvoicesList(params: ListParams & { customer_id?: string }, e
   return useQuery({
     queryKey: ["invoices", "list", params],
     queryFn: () => fetchInvoicesPaginated(params),
+    placeholderData: keepPreviousData,
     enabled,
   })
 }

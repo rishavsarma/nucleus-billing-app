@@ -1,17 +1,14 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
+import { cacheGet, cacheSet } from "@/lib/cache"
 
-// This route deliberately does NOT use requireOrgId(): that helper resolves
-// org membership through the regular (RLS-enabled) client, and
-// memberships_select's RLS policy requires is_org_member(org_id) — which
-// itself requires the org to be is_active AND have a healthy
-// subscription_status. That means a member of a suspended or lapsed org
-// can't even resolve their own org_id through the normal path, so every
-// route built on requireOrgId() (correctly) 403s "no_org" for them. Since
-// this route's entire purpose is telling a locked-out member *why* that's
-// happening, it has to bypass that same gate via the service-role client —
-// otherwise the diagnostic endpoint fails for exactly the users who need it.
+const ME_CACHE_TTL_SECONDS = 60
+
+function meCacheKey(userId: string) {
+  return `me:${userId}`
+}
+
 export async function GET() {
   const supabase = await createClient()
   const {
@@ -22,15 +19,36 @@ export async function GET() {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 })
   }
 
+  // Fast path: cached resolution in Redis
+  const cached = await cacheGet(meCacheKey(user.id))
+  if (cached) {
+    return NextResponse.json(JSON.parse(cached))
+  }
+
   const admin = createAdminClient()
 
-  const { data: superadminRow } = await admin
-    .schema("billing")
-    .from("superadmins")
-    .select("user_id")
-    .eq("user_id", user.id)
-    .maybeSingle()
-  const isSuperadmin = !!superadminRow
+  // Parallelize superadmin check and enriched membership+org query in a single DB round-trip
+  const [superadminResult, membershipResult] = await Promise.all([
+    admin
+      .schema("billing")
+      .from("superadmins")
+      .select("user_id")
+      .eq("user_id", user.id)
+      .maybeSingle(),
+    admin
+      .schema("billing")
+      .from("memberships")
+      .select(`
+        org_id,
+        role,
+        org:organizations(is_active, subscription_status, subscription_current_period_end)
+      `)
+      .eq("user_id", user.id)
+      .limit(1)
+      .maybeSingle(),
+  ])
+
+  const isSuperadmin = !!superadminResult.data
 
   let orgId: string | null = null
   let role: "owner" | "admin" | "member" | null = null
@@ -41,27 +59,16 @@ export async function GET() {
   } | null = null
 
   if (!isSuperadmin) {
-    const { data: membership } = await admin
-      .schema("billing")
-      .from("memberships")
-      .select("org_id, role")
-      .eq("user_id", user.id)
-      .limit(1)
-      .maybeSingle()
-
+    const membership = membershipResult.data
     if (!membership) {
       return NextResponse.json({ error: "no_org" }, { status: 403 })
     }
+
     orgId = membership.org_id
-    role = membership.role
+    role = membership.role as "owner" | "admin" | "member"
 
-    const { data: org } = await admin
-      .schema("billing")
-      .from("organizations")
-      .select("is_active, subscription_status, subscription_current_period_end")
-      .eq("id", orgId)
-      .maybeSingle()
-
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const org = (membership as any).org
     if (org) {
       orgStatus = {
         isActive: org.is_active,
@@ -71,7 +78,7 @@ export async function GET() {
     }
   }
 
-  return NextResponse.json({
+  const payload = {
     userId: user.id,
     email: user.email ?? null,
     name: (user.user_metadata?.full_name as string | undefined) ?? null,
@@ -79,5 +86,9 @@ export async function GET() {
     role,
     isSuperadmin,
     orgStatus,
-  })
+  }
+
+  await cacheSet(meCacheKey(user.id), JSON.stringify(payload), ME_CACHE_TTL_SECONDS)
+
+  return NextResponse.json(payload)
 }

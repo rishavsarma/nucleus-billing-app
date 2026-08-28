@@ -1,6 +1,13 @@
 import { NextResponse } from "next/server"
 import { applyListParams } from "@/lib/database/list-params"
 import { requireOrgId, requireSuperadmin, requireMemberOf } from "@/lib/database/require-org"
+import { cacheDel, cacheGet, cacheSet } from "@/lib/cache"
+
+const ORG_CACHE_TTL_SECONDS = 300
+
+function orgCacheKey(orgId: string) {
+  return `org:${orgId}`
+}
 
 export async function GET(request: Request) {
   const auth = await requireOrgId()
@@ -15,21 +22,28 @@ export async function GET(request: Request) {
   const id = searchParams.get("id")
   const supabase = auth.supabase
 
-  // Single org — either an explicit lookup (id given; the superadmin admin
-  // org-detail page) or, for a non-superadmin caller with no id, always
-  // their own org (a non-superadmin never has any other org to fetch).
+  // Single org — either explicit lookup or user's own org
   if (id || !auth.isSuperadmin) {
-    const query = supabase.schema("billing").from("organizations").select("*").eq("id", id ?? auth.orgId!)
+    const targetOrgId = id ?? auth.orgId!
+
+    if (!auth.isSuperadmin) {
+      const cached = await cacheGet(orgCacheKey(targetOrgId))
+      if (cached) return NextResponse.json(JSON.parse(cached))
+    }
+
+    const query = supabase.schema("billing").from("organizations").select("*").eq("id", targetOrgId)
     const { data, error } = await query.maybeSingle()
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
     if (!data) return NextResponse.json({ error: "Not found" }, { status: 404 })
+
+    if (!auth.isSuperadmin) {
+      await cacheSet(orgCacheKey(targetOrgId), JSON.stringify(data), ORG_CACHE_TTL_SECONDS)
+    }
     return NextResponse.json(data)
   }
 
-  // Paginated list — superadmin only in practice (a non-superadmin caller
-  // is always short-circuited above to their own single org), for the
-  // Admin > All Organizations list page.
+  // Paginated list for superadmin
   const search = searchParams.get("search") ?? undefined
   const page = Number(searchParams.get("page") ?? 1)
   const pageSize = Number(searchParams.get("pageSize") ?? 10)
@@ -42,10 +56,6 @@ export async function GET(request: Request) {
   return NextResponse.json({ data: data ?? [], total: count ?? 0 })
 }
 
-// Organization provisioning is superadmin-only (see organizations_insert in
-// rls-policies.sql — an ordinary user has no insert path, even for their own
-// org). The superadmin creates the org here, then adds its first member(s)
-// via POST /api/database/memberships.
 export async function POST(request: Request) {
   const auth = await requireSuperadmin()
   if (auth.error) {
@@ -79,11 +89,6 @@ export async function PUT(request: Request) {
 
   const body = await request.json()
 
-  // is_active/subscription_status are already DB-trigger-guarded to
-  // superadmin-only (organizations_active_change_guard /
-  // organizations_subscription_change_guard in 002_functions_triggers.sql)
-  // — this is defense-in-depth so a non-superadmin gets a clear 403 instead
-  // of relying solely on the trigger's exception.
   if ("is_active" in body || "subscription_status" in body) {
     if (!auth.isSuperadmin) {
       return NextResponse.json({ error: "Only a superadmin can change is_active or subscription_status" }, { status: 403 })
@@ -101,5 +106,7 @@ export async function PUT(request: Request) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   if (!data) return NextResponse.json({ error: "Not found" }, { status: 404 })
+
+  await cacheDel(orgCacheKey(id))
   return NextResponse.json(data)
 }

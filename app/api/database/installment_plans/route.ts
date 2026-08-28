@@ -1,5 +1,12 @@
 import { NextResponse } from "next/server"
 import { requireOrgId, verifyBelongsToOrg } from "@/lib/database/require-org"
+import { cacheDel, cacheGet, cacheSet } from "@/lib/cache"
+
+const PLAN_CACHE_TTL_SECONDS = 120
+
+function planCacheKey(orgId: string, invoiceId: string) {
+  return `installment-plan:${orgId}:${invoiceId}`
+}
 
 export async function GET(request: Request) {
   const auth = await requireOrgId()
@@ -15,12 +22,22 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Query param "invoice_id" is required' }, { status: 400 })
   }
 
+  if (!auth.isSuperadmin) {
+    const cached = await cacheGet(planCacheKey(auth.orgId!, invoiceId))
+    if (cached) return NextResponse.json(JSON.parse(cached))
+  }
+
   const supabase = auth.supabase
   let query = supabase.schema("billing").from("installment_plans").select("*").eq("invoice_id", invoiceId)
   if (!auth.isSuperadmin) query = query.eq("org_id", auth.orgId!)
   const { data, error } = await query.maybeSingle()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  if (!auth.isSuperadmin && data) {
+    await cacheSet(planCacheKey(auth.orgId!, invoiceId), JSON.stringify(data), PLAN_CACHE_TTL_SECONDS)
+  }
+
   return NextResponse.json(data)
 }
 
@@ -80,9 +97,7 @@ export async function PUT(request: Request) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   if (!data) return NextResponse.json({ error: "Not found" }, { status: 404 })
+
+  await cacheDel(planCacheKey(data.org_id, data.invoice_id))
   return NextResponse.json(data)
 }
-
-// No DELETE: cancellation is a status update (status = 'cancelled'), same
-// convention as the financial documents this attaches to. No delete policy
-// exists for this table.

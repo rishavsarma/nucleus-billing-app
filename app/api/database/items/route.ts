@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { applyListParams } from "@/lib/database/list-params"
+import { applyListParams, isRangeError } from "@/lib/database/list-params"
 import { requireOrgId } from "@/lib/database/require-org"
 import { cacheDel, cacheGet, cacheSet } from "@/lib/cache"
 import { redis } from "@/lib/redis"
@@ -99,7 +99,14 @@ export async function GET(request: Request) {
     query = applyListParams(query, ["name", "sku"], { search: search || undefined, page, pageSize })
     const { data, error, count } = await query
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) {
+      if (isRangeError(error)) {
+        const body = { data: [], total: count ?? 0 }
+        await cacheSet(listKey, JSON.stringify(body), ITEM_CACHE_TTL_SECONDS)
+        return NextResponse.json(body)
+      }
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
     const body = { data: data ?? [], total: count ?? 0 }
     await cacheSet(listKey, JSON.stringify(body), ITEM_CACHE_TTL_SECONDS)
     return NextResponse.json(body)
@@ -113,7 +120,10 @@ export async function GET(request: Request) {
   query = applyListParams(query, ["name", "sku"], { search: search || undefined, page, pageSize })
   const { data, error, count } = await query
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) {
+    if (isRangeError(error)) return NextResponse.json({ data: [], total: count ?? 0 })
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
   return NextResponse.json({ data: data ?? [], total: count ?? 0 })
 }
 

@@ -1,6 +1,31 @@
 import { NextResponse } from "next/server"
 import { applyListParams } from "@/lib/database/list-params"
 import { requireOrgId, verifyBelongsToOrg } from "@/lib/database/require-org"
+import { cacheDel, cacheGet, cacheSet } from "@/lib/cache"
+import { redis } from "@/lib/redis"
+
+const MOVEMENTS_CACHE_TTL_SECONDS = 60
+
+async function getListVersion(orgId: string): Promise<number> {
+  try {
+    const v = await redis.get(`movements-list-version:${orgId}`)
+    return v ? parseInt(v, 10) : 0
+  } catch {
+    return 0
+  }
+}
+
+async function bumpListVersion(orgId: string): Promise<void> {
+  try {
+    await redis.incr(`movements-list-version:${orgId}`)
+  } catch {
+    // swallow
+  }
+}
+
+function movementsListCacheKey(orgId: string, version: number, search: string, page: number, pageSize: number) {
+  return `movements-list:${orgId}:v${version}:${search}:${page}:${pageSize}`
+}
 
 export async function GET(request: Request) {
   const auth = await requireOrgId()
@@ -12,20 +37,37 @@ export async function GET(request: Request) {
   }
 
   const { searchParams } = new URL(request.url)
-  const search = searchParams.get("search") ?? undefined
+  const search = searchParams.get("search") ?? ""
   const page = Number(searchParams.get("page") ?? 1)
   const pageSize = Number(searchParams.get("pageSize") ?? 10)
 
+  if (!auth.isSuperadmin) {
+    const version = await getListVersion(auth.orgId!)
+    const listKey = movementsListCacheKey(auth.orgId!, version, search, page, pageSize)
+    const cached = await cacheGet(listKey)
+    if (cached) return NextResponse.json(JSON.parse(cached))
+
+    const supabase = auth.supabase
+    let query = supabase
+      .schema("billing")
+      .from("stock_movements")
+      .select("*, item:items(name), warehouse:warehouses(name)", { count: "exact" })
+      .eq("org_id", auth.orgId)
+    query = applyListParams(query, ["notes"], { search: search || undefined, page, pageSize })
+    const { data, error, count } = await query
+
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    const payload = { data: data ?? [], total: count ?? 0 }
+    await cacheSet(listKey, JSON.stringify(payload), MOVEMENTS_CACHE_TTL_SECONDS)
+    return NextResponse.json(payload)
+  }
+
   const supabase = auth.supabase
-  // Embeds the item name and warehouse name via their FKs — avoids the list
-  // page separately fetching every item and every warehouse (pageSize: 9999
-  // each) just to resolve these by id.
   let query = supabase
     .schema("billing")
     .from("stock_movements")
     .select("*, item:items(name), warehouse:warehouses(name)", { count: "exact" })
-  if (!auth.isSuperadmin) query = query.eq("org_id", auth.orgId)
-  query = applyListParams(query, ["notes"], { search, page, pageSize })
+  query = applyListParams(query, ["notes"], { search: search || undefined, page, pageSize })
   const { data, error, count } = await query
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
@@ -52,39 +94,37 @@ export async function POST(request: Request) {
       { status: 400 },
     )
   }
-  // stock_movements_insert (rls-policies.sql) only allows movement_type =
-  // 'adjustment' through this client — 'sale'/'purchase'/etc. are written
-  // exclusively by the SECURITY DEFINER stock-effect triggers. Reject early
-  // with a clear message instead of surfacing a raw RLS-violation error.
   if (body.movement_type && body.movement_type !== "adjustment") {
     return NextResponse.json(
-      { error: 'movement_type must be "adjustment" — other types are system-derived' },
+      { error: 'Only movement_type "adjustment" is allowed via the manual adjustment endpoint' },
       { status: 400 },
     )
   }
 
   const supabase = auth.supabase
-  if (!(await verifyBelongsToOrg(supabase, "items", body.item_id, orgId, auth.isSuperadmin))) {
-    return NextResponse.json({ error: "item_id does not belong to this org" }, { status: 400 })
-  }
-  if (
-    !(await verifyBelongsToOrg(supabase, "warehouses", body.warehouse_id, orgId, auth.isSuperadmin))
-  ) {
-    return NextResponse.json({ error: "warehouse_id does not belong to this org" }, { status: 400 })
-  }
+  const [itemOk, whOk] = await Promise.all([
+    verifyBelongsToOrg(supabase, "items", body.item_id, orgId, auth.isSuperadmin),
+    verifyBelongsToOrg(supabase, "warehouses", body.warehouse_id, orgId, auth.isSuperadmin),
+  ])
+
+  if (!itemOk) return NextResponse.json({ error: "item_id does not belong to this org" }, { status: 400 })
+  if (!whOk) return NextResponse.json({ error: "warehouse_id does not belong to this org" }, { status: 400 })
 
   const { data, error } = await supabase
     .schema("billing")
     .from("stock_movements")
-    .insert({ ...body, org_id: orgId, movement_type: "adjustment", created_by: auth.userId })
+    .insert({
+      ...body,
+      org_id: orgId,
+      created_by: auth.userId,
+      movement_type: "adjustment",
+    })
     .select()
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  void bumpListVersion(orgId)
+  await cacheDel(`item-stock:single:${orgId}:${body.item_id}`)
   return NextResponse.json(data, { status: 201 })
 }
-
-// No PUT/DELETE: stock_movements is an append-only ledger — corrections are
-// offsetting rows, never edits (see billing.stock_movements_immutable() in
-// functions-trigger.sql, which raises on any update/delete regardless of
-// RLS). rls-policies.sql grants only select/insert for this table.

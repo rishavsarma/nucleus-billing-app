@@ -48,21 +48,36 @@ type AuthPayload = { userId: string; orgId: string | null; isSuperadmin: boolean
 async function getAccessToken(): Promise<string | null> {
   const jar = await cookies()
   const all = jar.getAll()
-  // Cookie name pattern: "sb-<project-ref>-auth-token"
-  const tokenCookie = all.find(
-    (c) => c.name.startsWith("sb-") && c.name.endsWith("-auth-token"),
-  )
-  if (!tokenCookie) return null
+
+  // Handle single cookie or chunked cookies (sb-<ref>-auth-token.0, .1, etc.)
+  const single = all.find((c) => c.name.startsWith("sb-") && c.name.endsWith("-auth-token"))
+  let raw = ""
+  if (single) {
+    raw = single.value
+  } else {
+    const chunks = all
+      .filter((c) => c.name.startsWith("sb-") && c.name.includes("-auth-token."))
+      .sort((a, b) => {
+        const idxA = parseInt(a.name.split(".").pop() || "0", 10)
+        const idxB = parseInt(b.name.split(".").pop() || "0", 10)
+        return idxA - idxB
+      })
+    if (chunks.length > 0) {
+      raw = chunks.map((c) => c.value).join("")
+    }
+  }
+
+  if (!raw) return null
+
   try {
-    const raw = tokenCookie.value
-    // Handle both the current "base64-<b64 JSON>" format and any future
-    // plain-JSON format so this survives a @supabase/ssr minor version bump.
     const jsonStr = raw.startsWith("base64-")
       ? Buffer.from(raw.slice(7), "base64").toString("utf8")
       : raw
-    const session = JSON.parse(jsonStr) as { access_token?: string }
-    return session.access_token ?? null
+    const session = JSON.parse(jsonStr)
+    if (Array.isArray(session)) return typeof session[0] === "string" ? session[0] : null
+    return (session as { access_token?: string })?.access_token ?? null
   } catch {
+    if (raw.startsWith("eyJ")) return raw
     return null
   }
 }
@@ -200,6 +215,17 @@ export async function requireUserId(): Promise<RequireUserResult> {
 /** Verifies the requesting user belongs to the given org (any role), or is a superadmin. */
 export async function requireMemberOf(orgId: string): Promise<RequireUserResult> {
   const supabase = await createClient()
+
+  // Fast path: check Redis before hitting Supabase Auth server
+  const accessToken = await getAccessToken()
+  if (accessToken) {
+    const tokenHash = hashToken(accessToken)
+    const cached = await authCacheGet(tokenHash)
+    if (cached && !cached.isSuperadmin && cached.orgId === orgId) {
+      return { userId: cached.userId, isSuperadmin: false, supabase }
+    }
+  }
+
   const {
     data: { user },
   } = await supabase.auth.getUser()

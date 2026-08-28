@@ -1,18 +1,24 @@
 import { NextResponse } from "next/server"
 import { requireUserId } from "@/lib/database/require-org"
+import { cacheGet, cacheSet } from "@/lib/cache"
 
-// Global catalog, not org-scoped — readable by any signed-in user (and by
-// anonymous requests too, per 005_delivery_and_public_pricing.sql, but this
-// route only serves the authenticated app, so requireUserId() is enough).
-// Writes are superadmin-only, done directly in SQL — no POST/PUT/DELETE here.
+const ADDONS_CACHE_KEY = "global:addons:list"
+const ADDONS_TTL_SECONDS = 600
+
+// Global catalog, not org-scoped — readable by any signed-in user.
+// Cached in Redis for 10 minutes.
 export async function GET() {
   const auth = await requireUserId()
   if (auth.error) {
     return NextResponse.json({ error: auth.error }, { status: 401 })
   }
 
+  const cached = await cacheGet(ADDONS_CACHE_KEY)
+  if (cached) return NextResponse.json(JSON.parse(cached))
+
   const { data, error } = await auth.supabase.schema("billing").from("addons").select("*").order("name")
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  await cacheSet(ADDONS_CACHE_KEY, JSON.stringify(data ?? []), ADDONS_TTL_SECONDS)
   return NextResponse.json(data)
 }

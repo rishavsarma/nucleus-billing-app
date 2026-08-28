@@ -1,7 +1,7 @@
 "use client"
 
 import type { ListParams } from "@/lib/database/list-params-types"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { fetchItemById, fetchItemsPaginated, createItem, updateItem, deleteItem } from "@/lib/database/services/items"
 import type { Item } from "@/lib/database/types"
 
@@ -10,6 +10,7 @@ export function useItemsList(params: ListParams) {
   return useQuery({
     queryKey: ["items", "list", params],
     queryFn: () => fetchItemsPaginated(params),
+    placeholderData: keepPreviousData,
   })
 }
 

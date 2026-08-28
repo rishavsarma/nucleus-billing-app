@@ -1,19 +1,9 @@
 "use client"
 
 import * as React from "react"
-import { createColumnHelper } from "@tanstack/react-table"
-import { tableFeatures, columnVisibilityFeature, rowPaginationFeature, rowSelectionFeature } from "@tanstack/react-table"
-
 import { useDebouncedValue } from "@/hooks/use-debounced-value"
 import { EntityTable, type EntityTableProps } from "@/components/entity-table"
 import type { PaginatedResponse } from "@/lib/database/list-params-types"
-
-// We re-export the column helper feature set so page-level column defs compile correctly
-const features = tableFeatures({
-  columnVisibilityFeature,
-  rowPaginationFeature,
-  rowSelectionFeature,
-})
 
 type OmitControlled<T extends { id: string }> = Omit<
   EntityTableProps<T>,
@@ -36,19 +26,6 @@ export type ServerTableProps<TData extends { id: string }> = OmitControlled<TDat
 
 /**
  * Owns search/page/pageSize state and debounce, wires them to EntityTable.
- * Pass the hook result directly; ServerTable handles re-fetching by driving params.
- *
- * Usage in a list page:
- * ```tsx
- * const [params, setParams] = useServerTableParams()
- * const { data: result, isLoading } = useInvoicesList(params)
- *
- * <ServerTable columns={columns} result={result} isLoading={isLoading} />
- * ```
- * Or use the built-in state management:
- * ```tsx
- * <ServerTable columns={columns} result={result} isLoading={isLoading} />
- * ```
  */
 export function ServerTable<TData extends { id: string }>({
   result,
@@ -60,13 +37,10 @@ export function ServerTable<TData extends { id: string }>({
   const [page, setPage] = React.useState(1)
   const [pageSize, setPageSize] = React.useState(defaultPageSize)
 
-  // Expose current params via ref so parent can read them if needed
-  const debouncedSearch = useDebouncedValue(search, 300)
-
-  // When debounced search changes, reset to page 1
-  React.useEffect(() => {
+  const handleSearchChange = React.useCallback((val: string) => {
+    setSearch(val)
     setPage(1)
-  }, [debouncedSearch])
+  }, [])
 
   return (
     <EntityTable
@@ -82,14 +56,14 @@ export function ServerTable<TData extends { id: string }>({
         setPage(1)
       }}
       search={search}
-      onSearchChange={setSearch}
+      onSearchChange={handleSearchChange}
     />
   )
 }
 
 /**
  * Hook that owns the server-table state and returns both the current params
- * (to pass to your data hook) and handlers (to pass to ServerTable).
+ * (to pass to your data hook) and handlers (to pass to ServerTable / EntityTable).
  * Use when the parent component needs to read or control search/page/pageSize.
  */
 export function useServerTableParams(defaultPageSize = 10) {
@@ -98,9 +72,10 @@ export function useServerTableParams(defaultPageSize = 10) {
   const [pageSize, setPageSize] = React.useState(defaultPageSize)
   const debouncedSearch = useDebouncedValue(search, 300)
 
-  React.useEffect(() => {
+  const handleSearchChange = React.useCallback((val: string) => {
+    setSearch(val)
     setPage(1)
-  }, [debouncedSearch])
+  }, [])
 
   const params = React.useMemo(
     () => ({ search: debouncedSearch || undefined, page, pageSize }),
@@ -109,7 +84,7 @@ export function useServerTableParams(defaultPageSize = 10) {
 
   const tableControlProps = {
     search,
-    onSearchChange: setSearch,
+    onSearchChange: handleSearchChange,
     page,
     onPageChange: setPage,
     pageSize,

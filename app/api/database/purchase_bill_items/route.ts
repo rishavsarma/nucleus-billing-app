@@ -1,5 +1,12 @@
 import { NextResponse } from "next/server"
 import { requireOrgId, verifyBelongsToOrg, type SupabaseClient } from "@/lib/database/require-org"
+import { cacheDel, cacheGet, cacheSet } from "@/lib/cache"
+
+const BILL_ITEMS_CACHE_TTL_SECONDS = 120
+
+function billItemsCacheKey(orgId: string, purchaseBillId: string) {
+  return `purchase-bill-items:${orgId}:${purchaseBillId}`
+}
 
 async function verifyPurchaseBillInOrg(
   supabase: SupabaseClient,
@@ -30,6 +37,11 @@ export async function GET(request: Request) {
     )
   }
 
+  if (!auth.isSuperadmin) {
+    const cached = await cacheGet(billItemsCacheKey(auth.orgId!, purchaseBillId))
+    if (cached) return NextResponse.json(JSON.parse(cached))
+  }
+
   const supabase = auth.supabase
   const { ok, error: verifyError } = await verifyPurchaseBillInOrg(
     supabase,
@@ -47,6 +59,11 @@ export async function GET(request: Request) {
     .eq("purchase_bill_id", purchaseBillId)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  if (!auth.isSuperadmin) {
+    await cacheSet(billItemsCacheKey(auth.orgId!, purchaseBillId), JSON.stringify(data ?? []), BILL_ITEMS_CACHE_TTL_SECONDS)
+  }
+
   return NextResponse.json(data)
 }
 
@@ -65,20 +82,14 @@ export async function POST(request: Request) {
   }
 
   const supabase = auth.supabase
-  const { ok, error: verifyError } = await verifyPurchaseBillInOrg(
-    supabase,
-    body.purchase_bill_id,
-    auth.orgId,
-    auth.isSuperadmin,
-  )
-  if (verifyError) return NextResponse.json({ error: verifyError.message }, { status: 500 })
-  if (!ok) return NextResponse.json({ error: "Not found" }, { status: 404 })
-  if (
-    body.item_id &&
-    !(await verifyBelongsToOrg(supabase, "items", body.item_id, auth.orgId, auth.isSuperadmin))
-  ) {
-    return NextResponse.json({ error: "item_id does not belong to this org" }, { status: 400 })
-  }
+  const [billCheck, itemCheck] = await Promise.all([
+    verifyPurchaseBillInOrg(supabase, body.purchase_bill_id, auth.orgId, auth.isSuperadmin),
+    body.item_id ? verifyBelongsToOrg(supabase, "items", body.item_id, auth.orgId, auth.isSuperadmin) : Promise.resolve(true),
+  ])
+
+  if (billCheck.error) return NextResponse.json({ error: billCheck.error.message }, { status: 500 })
+  if (!billCheck.ok) return NextResponse.json({ error: "Not found" }, { status: 404 })
+  if (!itemCheck) return NextResponse.json({ error: "item_id does not belong to this org" }, { status: 400 })
 
   const { data, error } = await supabase
     .schema("billing")
@@ -88,6 +99,14 @@ export async function POST(request: Request) {
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  if (auth.orgId) {
+    await Promise.all([
+      cacheDel(billItemsCacheKey(auth.orgId, body.purchase_bill_id)),
+      cacheDel(`purchase-bill:${auth.orgId}:${body.purchase_bill_id}`),
+    ])
+  }
+
   return NextResponse.json(data, { status: 201 })
 }
 
@@ -135,6 +154,14 @@ export async function PUT(request: Request) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   if (!data) return NextResponse.json({ error: "Not found" }, { status: 404 })
+
+  if (auth.orgId) {
+    await Promise.all([
+      cacheDel(billItemsCacheKey(auth.orgId, existing.purchase_bill_id)),
+      cacheDel(`purchase-bill:${auth.orgId}:${existing.purchase_bill_id}`),
+    ])
+  }
+
   return NextResponse.json(data)
 }
 
@@ -171,11 +198,15 @@ export async function DELETE(request: Request) {
   if (verifyError) return NextResponse.json({ error: verifyError.message }, { status: 500 })
   if (!ok) return NextResponse.json({ error: "Not found" }, { status: 404 })
 
-  const { error } = await supabase
-    .schema("billing")
-    .from("purchase_bill_items")
-    .delete()
-    .eq("id", id)
+  const { error } = await supabase.schema("billing").from("purchase_bill_items").delete().eq("id", id)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  if (auth.orgId) {
+    await Promise.all([
+      cacheDel(billItemsCacheKey(auth.orgId, existing.purchase_bill_id)),
+      cacheDel(`purchase-bill:${auth.orgId}:${existing.purchase_bill_id}`),
+    ])
+  }
+
   return new NextResponse(null, { status: 204 })
 }

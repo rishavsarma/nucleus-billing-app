@@ -1,5 +1,12 @@
 import { NextResponse } from "next/server"
 import { requireOrgId, verifyBelongsToOrg } from "@/lib/database/require-org"
+import { cacheDel, cacheGet, cacheSet } from "@/lib/cache"
+
+const DELIVERY_CACHE_TTL_SECONDS = 120
+
+function deliveryCacheKey(orgId: string, key: string) {
+  return `delivery:${orgId}:${key}`
+}
 
 export async function GET(request: Request) {
   const auth = await requireOrgId()
@@ -20,6 +27,13 @@ export async function GET(request: Request) {
     )
   }
 
+  const lookupKey = id ? `id:${id}` : `inv:${invoiceId}`
+
+  if (!auth.isSuperadmin) {
+    const cached = await cacheGet(deliveryCacheKey(auth.orgId!, lookupKey))
+    if (cached) return NextResponse.json(JSON.parse(cached))
+  }
+
   const supabase = auth.supabase
   let query = supabase.schema("billing").from("deliveries").select("*")
   query = id ? query.eq("id", id) : query.eq("invoice_id", invoiceId!)
@@ -27,6 +41,15 @@ export async function GET(request: Request) {
   const { data, error } = await query.maybeSingle()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (!data) return NextResponse.json({ error: "Not found" }, { status: 404 })
+
+  if (!auth.isSuperadmin) {
+    await Promise.all([
+      cacheSet(deliveryCacheKey(auth.orgId!, `id:${data.id}`), JSON.stringify(data), DELIVERY_CACHE_TTL_SECONDS),
+      cacheSet(deliveryCacheKey(auth.orgId!, `inv:${data.invoice_id}`), JSON.stringify(data), DELIVERY_CACHE_TTL_SECONDS),
+    ])
+  }
+
   return NextResponse.json(data)
 }
 
@@ -49,15 +72,13 @@ export async function POST(request: Request) {
   }
 
   const supabase = auth.supabase
-  if (!(await verifyBelongsToOrg(supabase, "invoices", body.invoice_id, orgId, auth.isSuperadmin))) {
-    return NextResponse.json({ error: "invoice_id does not belong to this org" }, { status: 400 })
-  }
-  if (
-    body.delivery_person_id &&
-    !(await verifyBelongsToOrg(supabase, "staff", body.delivery_person_id, orgId, auth.isSuperadmin))
-  ) {
-    return NextResponse.json({ error: "delivery_person_id does not belong to this org" }, { status: 400 })
-  }
+  const [invOk, staffOk] = await Promise.all([
+    verifyBelongsToOrg(supabase, "invoices", body.invoice_id, orgId, auth.isSuperadmin),
+    body.delivery_person_id ? verifyBelongsToOrg(supabase, "staff", body.delivery_person_id, orgId, auth.isSuperadmin) : Promise.resolve(true),
+  ])
+
+  if (!invOk) return NextResponse.json({ error: "invoice_id does not belong to this org" }, { status: 400 })
+  if (!staffOk) return NextResponse.json({ error: "delivery_person_id does not belong to this org" }, { status: 400 })
 
   const { data, error } = await supabase
     .schema("billing")
@@ -99,6 +120,12 @@ export async function PUT(request: Request) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   if (!data) return NextResponse.json({ error: "Not found" }, { status: 404 })
+
+  await Promise.all([
+    cacheDel(deliveryCacheKey(data.org_id, `id:${data.id}`)),
+    cacheDel(deliveryCacheKey(data.org_id, `inv:${data.invoice_id}`)),
+  ])
+
   return NextResponse.json(data)
 }
 
@@ -119,8 +146,14 @@ export async function DELETE(request: Request) {
   const supabase = auth.supabase
   let query = supabase.schema("billing").from("deliveries").delete().eq("id", id)
   if (!auth.isSuperadmin) query = query.eq("org_id", auth.orgId)
-  const { error } = await query
+  const { data, error } = await query.select().maybeSingle()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (data) {
+    await Promise.all([
+      cacheDel(deliveryCacheKey(data.org_id, `id:${data.id}`)),
+      cacheDel(deliveryCacheKey(data.org_id, `inv:${data.invoice_id}`)),
+    ])
+  }
   return new NextResponse(null, { status: 204 })
 }

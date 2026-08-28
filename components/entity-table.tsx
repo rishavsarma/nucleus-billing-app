@@ -4,9 +4,7 @@ import * as React from "react"
 import {
   columnVisibilityFeature,
   createColumnHelper,
-  createPaginatedRowModel,
   FlexRender,
-  rowPaginationFeature,
   rowSelectionFeature,
   tableFeatures,
   useTable,
@@ -53,9 +51,7 @@ import {
 
 const features = tableFeatures({
   columnVisibilityFeature,
-  rowPaginationFeature,
   rowSelectionFeature,
-  paginatedRowModel: createPaginatedRowModel(),
 })
 
 // Matches tanstack/table-core's own RowData constraint (Record<string, any> | any[]).
@@ -165,9 +161,7 @@ export function EntityTable<TData extends { id: string }>({
     state: {
       columnVisibility,
       rowSelection,
-      pagination: { pageIndex: page - 1, pageSize },
     },
-    pageCount,
     getRowId: (row) => row.id,
     enableRowSelection,
     onRowSelectionChange: (updater) => {
@@ -181,13 +175,6 @@ export function EntityTable<TData extends { id: string }>({
       })
     },
     onColumnVisibilityChange: setColumnVisibility,
-    // Pagination navigation is driven by onPageChange callbacks, not the table itself
-    onPaginationChange: (updater) => {
-      const prev = { pageIndex: page - 1, pageSize }
-      const next = typeof updater === "function" ? updater(prev) : updater
-      if (next.pageIndex !== prev.pageIndex) onPageChange(next.pageIndex + 1)
-      if (next.pageSize !== prev.pageSize) onPageSizeChange(next.pageSize)
-    },
   })
 
   const rows = table.getRowModel().rows
@@ -203,11 +190,7 @@ export function EntityTable<TData extends { id: string }>({
               <SearchIcon className="pointer-events-none absolute top-1/2 start-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 value={search}
-                onChange={(e) => {
-                  onSearchChange(e.target.value)
-                  // Reset to page 1 on new search
-                  if (page !== 1) onPageChange(1)
-                }}
+                onChange={(e) => onSearchChange(e.target.value)}
                 placeholder={searchPlaceholder ?? t("searchPlaceholder")}
                 className="ps-8 h-9"
               />
@@ -331,7 +314,6 @@ export function EntityTable<TData extends { id: string }>({
               value={`${pageSize}`}
               onValueChange={(value) => {
                 onPageSizeChange(Number(value))
-                onPageChange(1)
               }}
             >
               <SelectTrigger size="sm" className="w-20" id="rows-per-page">
