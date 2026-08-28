@@ -166,9 +166,9 @@ export function InvoiceItemsSection({
           </Button>
         ) : null}
       </div>
-      <div className="p-4">
+      <div className="p-3 sm:p-4 overflow-x-auto">
         {lineItems?.length ? (
-          <Table>
+          <Table className="whitespace-nowrap text-xs sm:text-sm">
             <TableHeader>
               <TableRow>
                 <TableHead>{t("descriptionLabel")}</TableHead>
@@ -182,11 +182,11 @@ export function InvoiceItemsSection({
             <TableBody>
               {lineItems.map((line) => (
                 <TableRow key={line.id}>
-                  <TableCell>{line.description}</TableCell>
+                  <TableCell className="font-medium max-w-[200px] truncate">{line.description}</TableCell>
                   <TableCell className="text-right">{line.quantity}</TableCell>
                   <TableCell className="text-right">{money(line.unit_price)}</TableCell>
                   <TableCell className="text-right">{line.tax_rate}%</TableCell>
-                  <TableCell className="text-right font-medium">{money(line.line_total)}</TableCell>
+                  <TableCell className="text-right font-semibold">{money(line.line_total)}</TableCell>
                   {editable ? (
                     <TableCell>
                       <div className="flex justify-end gap-1">
@@ -256,7 +256,7 @@ export function InvoiceItemsSection({
           <FieldLabel htmlFor="li-description">{t("descriptionLabel")}</FieldLabel>
           <Input id="li-description" {...form.register("description")} />
         </Field>
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
           <Field>
             <FieldLabel htmlFor="li-quantity">{t("quantityLabel")}</FieldLabel>
             <Input id="li-quantity" type="number" step="any" min={0} {...form.register("quantity", { valueAsNumber: true })} />

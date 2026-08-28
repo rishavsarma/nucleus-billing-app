@@ -145,7 +145,7 @@ export function ItemForm({
           <h2 className="text-sm font-semibold">{t("basicDetailsTitle")}</h2>
         </div>
         <div className="flex flex-col gap-4 p-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field data-invalid={!!formState.errors.name}>
               <FieldLabel htmlFor="item-name">{t("nameLabel")}</FieldLabel>
               <Input id="item-name" {...register("name")} />
@@ -166,7 +166,7 @@ export function ItemForm({
         <div className="border-b px-4 py-3">
           <h2 className="text-sm font-semibold">{t("classificationTitle")}</h2>
         </div>
-        <div className="grid grid-cols-3 gap-4 p-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4">
           <Field>
             <FieldLabel htmlFor="item-hsn">{t("hsnLabel")}</FieldLabel>
             <Input id="item-hsn" {...register("hsn_sac_code")} />
@@ -200,7 +200,7 @@ export function ItemForm({
             {trackInventory ? t("pricingDescriptionTracked") : t("pricingDescription")}
           </p>
         </div>
-        <div className="grid grid-cols-2 gap-4 p-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4">
           {!trackInventory ? (
             <Field>
               <FieldLabel htmlFor="item-unit-price">{t("unitPriceLabel")}</FieldLabel>

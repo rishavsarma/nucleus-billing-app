@@ -14,15 +14,15 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     <SidebarProvider >
       <AppSidebar variant="inset" className="print:hidden"/>
       <SidebarInset className="print:m-0 print:rounded-none print:shadow-none">
-        <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4 print:hidden">
+        <header className="flex h-14 shrink-0 items-center gap-1.5 sm:gap-2 border-b px-2.5 sm:px-4 print:hidden">
           <SidebarTrigger />
           <Breadcrumbs />
-          <div className="flex-1" />
+          <div className="flex-1 min-w-0" />
           <ThemePresetSelector />
           <ModeToggle />
           <LanguageSwitcher />
         </header>
-        <div className="flex-1 p-6 print:p-0">{children}</div>
+        <div className="flex-1 p-3 sm:p-4 md:p-6 print:p-0 overflow-x-hidden">{children}</div>
       </SidebarInset>
       <SubscriptionStatusDialog />
     </SidebarProvider>

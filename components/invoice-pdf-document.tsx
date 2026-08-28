@@ -294,6 +294,7 @@ export function InvoicePdfDocument({
 
           <View style={styles.sellerRow}>
             <View style={styles.sellerCol}>
+              {/* eslint-disable-next-line jsx-a11y/alt-text */}
               {organization?.pdf_logo_url ? <Image src={organization.pdf_logo_url} style={styles.logo} /> : null}
               <View>
                 <Text style={styles.orgName}>{organization?.name ?? "—"}</Text>

@@ -111,7 +111,7 @@ export function PartyForm({
         </div>
         <div className="p-4">
           <FieldGroup>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Field data-invalid={!!formState.errors.name}>
                 <FieldLabel htmlFor="name">{nameLabel}</FieldLabel>
                 <Input id="name" {...register("name")} aria-invalid={!!formState.errors.name} />
@@ -122,7 +122,7 @@ export function PartyForm({
                 <Input id="email" type="email" {...register("email")} />
               </Field>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Field>
                 <FieldLabel htmlFor="phone">{t("phone")}</FieldLabel>
                 <Input id="phone" {...register("phone")} />
@@ -143,7 +143,7 @@ export function PartyForm({
         </div>
         <div className="p-4">
           <FieldGroup>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Field>
                 <FieldLabel htmlFor="address_line">{t("addressLine")}</FieldLabel>
                 <Input id="address_line" {...register("address_line")} />
@@ -153,7 +153,7 @@ export function PartyForm({
                 <Input id="city" {...register("city")} />
               </Field>
             </div>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <Field>
                 <FieldLabel htmlFor="state">{t("state")}</FieldLabel>
                 <Input id="state" {...register("state")} />

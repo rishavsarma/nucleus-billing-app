@@ -64,7 +64,7 @@ export function RecordPaymentDialog({
       isSubmitting={isSubmitting}
       submitLabel={t("submit")}
     >
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
         <Field data-invalid={!!formState.errors.amount}>
           <FieldLabel htmlFor="pay-amount">{t("amountLabel")}</FieldLabel>
           <Input id="pay-amount" type="number" step="0.01" min={0.01} {...register("amount", { valueAsNumber: true })} />

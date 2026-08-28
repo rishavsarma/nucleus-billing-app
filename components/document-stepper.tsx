@@ -23,12 +23,12 @@ export function DocumentStepper({
   return (
     <div
       className={cn(
-        "flex items-center justify-center gap-0 rounded-xl bg-card p-4 ring-1 ring-foreground/10",
+        "flex items-center justify-start sm:justify-center gap-0 rounded-xl bg-card p-3 sm:p-4 ring-1 ring-foreground/10 overflow-x-auto whitespace-nowrap -mx-3 sm:mx-0",
         className
       )}
     >
       {steps.map((step, i) => (
-        <div key={step.label} className="flex items-center gap-0">
+        <div key={step.label} className="flex items-center gap-0 shrink-0">
           <div className="flex items-center gap-2.5">
             <div
               className={cn(

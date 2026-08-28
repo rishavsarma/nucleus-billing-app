@@ -182,9 +182,9 @@ export function EntityTable<TData extends { id: string }>({
   const canNext = page < pageCount
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-1 items-center gap-2 min-w-[200px] max-w-sm">
+    <div className="flex flex-col gap-3 sm:gap-4">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 sm:gap-3">
+        <div className="flex flex-1 items-center gap-2 w-full sm:max-w-sm">
           {showSearch && (
             <div className="relative w-full">
               <SearchIcon className="pointer-events-none absolute top-1/2 start-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -192,19 +192,19 @@ export function EntityTable<TData extends { id: string }>({
                 value={search}
                 onChange={(e) => onSearchChange(e.target.value)}
                 placeholder={searchPlaceholder ?? t("searchPlaceholder")}
-                className="ps-8 h-9"
+                className="ps-8 h-9 w-full"
               />
             </div>
           )}
         </div>
-        <div className="flex items-center gap-2 ms-auto">
+        <div className="flex items-center gap-2 justify-end">
           {toolbarExtra}
           {showColumnVisibility && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm">
                   <Columns3Icon data-icon="inline-start" />
-                  <span>{t("columns")}</span>
+                  <span className="hidden sm:inline">{t("columns")}</span>
                   <ChevronDownIcon data-icon="inline-end" />
                 </Button>
               </DropdownMenuTrigger>
@@ -242,13 +242,13 @@ export function EntityTable<TData extends { id: string }>({
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-lg border">
-        <Table>
+      <div className="overflow-x-auto rounded-lg border bg-card">
+        <Table className="whitespace-nowrap">
           <TableHeader className="sticky top-0 z-10 bg-muted">
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id} colSpan={header.colSpan}>
+                  <TableHead key={header.id} colSpan={header.colSpan} className="text-xs sm:text-sm">
                     {header.isPlaceholder ? null : (
                       <FlexRender header={header} />
                     )}
@@ -257,7 +257,7 @@ export function EntityTable<TData extends { id: string }>({
               </TableRow>
             ))}
           </TableHeader>
-          <TableBody className="**:data-[slot=table-cell]:first:w-8">
+          <TableBody className="**:data-[slot=table-cell]:first:w-8 text-xs sm:text-sm">
             {isLoading ? (
               <TableRow>
                 <TableCell
@@ -276,7 +276,7 @@ export function EntityTable<TData extends { id: string }>({
                   className={onRowClick ? "cursor-pointer" : undefined}
                 >
                   {row.getAllCells().map((cell) => (
-                    <TableCell key={cell.id}>
+                    <TableCell key={cell.id} className="py-2.5 sm:py-3">
                       <FlexRender cell={cell} />
                     </TableCell>
                   ))}
@@ -296,8 +296,8 @@ export function EntityTable<TData extends { id: string }>({
         </Table>
       </div>
 
-      <div className="flex items-center justify-between px-2 text-sm text-muted-foreground">
-        <div className="hidden flex-1 text-sm text-muted-foreground lg:flex">
+      <div className="flex items-center justify-between px-1 sm:px-2 text-xs sm:text-sm text-muted-foreground gap-2">
+        <div className="hidden flex-1 text-sm text-muted-foreground md:flex">
           {Object.keys(rowSelection).length > 0
             ? t("rowsSelected", {
                 selected: Object.keys(rowSelection).length,
@@ -305,9 +305,9 @@ export function EntityTable<TData extends { id: string }>({
               })
             : t("rowCount", { count: totalCount })}
         </div>
-        <div className="flex w-full items-center gap-6 lg:w-fit lg:gap-8 ms-auto">
-          <div className="hidden items-center gap-2 lg:flex">
-            <Label htmlFor="rows-per-page" className="text-sm font-medium">
+        <div className="flex w-full items-center justify-between sm:justify-end gap-3 sm:gap-6 lg:w-fit lg:gap-8 ms-auto">
+          <div className="hidden items-center gap-2 sm:flex">
+            <Label htmlFor="rows-per-page" className="text-xs sm:text-sm font-medium">
               {t("rowsPerPage")}
             </Label>
             <Select
@@ -316,7 +316,7 @@ export function EntityTable<TData extends { id: string }>({
                 onPageSizeChange(Number(value))
               }}
             >
-              <SelectTrigger size="sm" className="w-20" id="rows-per-page">
+              <SelectTrigger size="sm" className="w-18 sm:w-20" id="rows-per-page">
                 <SelectValue placeholder={pageSize} />
               </SelectTrigger>
               <SelectContent side="top">
@@ -330,10 +330,10 @@ export function EntityTable<TData extends { id: string }>({
               </SelectContent>
             </Select>
           </div>
-          <div className="flex w-fit items-center justify-center text-sm font-medium">
+          <div className="flex w-fit items-center justify-center text-xs sm:text-sm font-medium">
             {t("pageOf", { page, pages: pageCount })}
           </div>
-          <div className="ms-auto flex items-center gap-2 lg:ms-0">
+          <div className="flex items-center gap-1.5 sm:gap-2">
             <Button
               variant="outline"
               className="hidden size-8 lg:flex p-0"

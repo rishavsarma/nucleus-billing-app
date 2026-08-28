@@ -102,33 +102,33 @@ export function PurchaseBillDetailClient({ id }: { id: string }) {
         {t("backToList")}
       </Link>
 
-      <div className="mb-5 flex items-start justify-between gap-4">
+      <div className="mb-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <div className="mb-1.5 flex items-center gap-2.5">
-            <h1 className="text-2xl font-semibold">{bill.bill_number ?? "—"}</h1>
+          <div className="mb-1.5 flex flex-wrap items-center gap-2.5">
+            <h1 className="text-xl sm:text-2xl font-semibold">{bill.bill_number ?? "—"}</h1>
             <StatusBadge status={bill.status}>{tStatus(bill.status)}</StatusBadge>
           </div>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-xs sm:text-sm text-muted-foreground">
             {vendor?.name ?? "—"} • {t("billDateLabel")} {bill.bill_date}
             {bill.due_date ? ` • ${t("dueDateLabel")} ${bill.due_date}` : ""}
             {bill.vendor_invoice_number ? ` • ${t("vendorInvoiceNumberLabel")} ${bill.vendor_invoice_number}` : ""}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
           {isDraft ? (
-            <Button onClick={confirmBill} disabled={updateBill.isPending}>
+            <Button size="sm" onClick={confirmBill} disabled={updateBill.isPending}>
               <CheckIcon />
               {t("confirmBill")}
             </Button>
           ) : null}
           {canRecordPayment ? (
-            <Button variant="outline" onClick={() => setShowRecordPayment(true)}>
+            <Button variant="outline" size="sm" onClick={() => setShowRecordPayment(true)}>
               <BanknoteIcon />
               {t("recordPayment")}
             </Button>
           ) : null}
           {!isVoid ? (
-            <Button variant="destructive" size="icon" onClick={() => setConfirmVoid(true)} title={t("voidBill")}>
+            <Button variant="destructive" size="icon-sm" onClick={() => setConfirmVoid(true)} title={t("voidBill")}>
               <XIcon />
             </Button>
           ) : null}
@@ -141,8 +141,8 @@ export function PurchaseBillDetailClient({ id }: { id: string }) {
         </div>
       ) : null}
 
-      <div className="grid grid-cols-3 gap-5">
-        <div className="col-span-2 flex flex-col gap-5">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        <div className="lg:col-span-2 flex flex-col gap-5">
           <PurchaseBillItemsSection purchaseBillId={id} editable={isDraft} />
           {bill.notes ? (
             <div className="rounded-xl bg-card p-4 ring-1 ring-foreground/10">

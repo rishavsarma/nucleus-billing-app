@@ -83,26 +83,26 @@ export function CreditNoteDetailClient({ id }: { id: string }) {
         {t("backToList")}
       </Link>
 
-      <div className="mb-5 flex items-start justify-between gap-4">
+      <div className="mb-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <div className="mb-1.5 flex items-center gap-2.5">
-            <h1 className="text-2xl font-semibold">{creditNote.credit_note_number ?? "—"}</h1>
+          <div className="mb-1.5 flex flex-wrap items-center gap-2.5">
+            <h1 className="text-xl sm:text-2xl font-semibold">{creditNote.credit_note_number ?? "—"}</h1>
             <StatusBadge status={creditNote.status}>{tStatus(creditNote.status)}</StatusBadge>
           </div>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-xs sm:text-sm text-muted-foreground">
             {customer?.name ?? "—"}
             {relatedInvoice ? ` • ${t("columnInvoice")} ${relatedInvoice.invoice_number}` : ""}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
           {isDraft ? (
-            <Button onClick={issueCreditNote} disabled={updateCreditNote.isPending}>
+            <Button size="sm" onClick={issueCreditNote} disabled={updateCreditNote.isPending}>
               <CheckIcon />
               {t("issueCreditNote")}
             </Button>
           ) : null}
           {!isVoid ? (
-            <Button variant="destructive" size="icon" onClick={() => setConfirmVoid(true)} title={t("voidCreditNote")}>
+            <Button variant="destructive" size="icon-sm" onClick={() => setConfirmVoid(true)} title={t("voidCreditNote")}>
               <XIcon />
             </Button>
           ) : null}
@@ -115,8 +115,8 @@ export function CreditNoteDetailClient({ id }: { id: string }) {
         </div>
       ) : null}
 
-      <div className="grid grid-cols-3 gap-5">
-        <div className="col-span-2 flex flex-col gap-5">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        <div className="lg:col-span-2 flex flex-col gap-5">
           <CreditNoteItemsSection creditNoteId={id} editable={isDraft} />
           {creditNote.reason ? (
             <div className="rounded-xl bg-card p-4 ring-1 ring-foreground/10">

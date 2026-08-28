@@ -6,7 +6,6 @@ import { CircleUserRoundIcon, CreditCardIcon, EllipsisVerticalIcon, LogOutIcon, 
 
 import { Link, useRouter } from "@/i18n/navigation"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -73,7 +72,7 @@ export function NavUser({ me }: { me: Me }) {
             align="end"
             sideOffset={4}
           >
-            <DropdownMenuLabel className="p-0 font-normal">
+            <DropdownMenuLabel className="p-0 font-normal ">
               <div className="flex items-center gap-2 px-1 py-1.5 text-start text-sm">
                 <Avatar className="h-8 w-8 rounded-lg">
                   <AvatarFallback className="rounded-lg">{initialsLabel}</AvatarFallback>
@@ -83,11 +82,11 @@ export function NavUser({ me }: { me: Me }) {
                   {me.name && me.email ? (
                     <span className="truncate text-xs text-muted-foreground">{me.email}</span>
                   ) : null}
-                  {roleLabel ? (
+                  {/* {roleLabel ? (
                     <Badge variant="secondary" className="mt-0.5 w-fit text-xs">
                       {roleLabel}
                     </Badge>
-                  ) : null}
+                  ) : null} */}
                 </div>
               </div>
             </DropdownMenuLabel>

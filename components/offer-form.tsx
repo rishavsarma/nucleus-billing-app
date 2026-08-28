@@ -88,7 +88,7 @@ export function OfferForm({
           <h2 className="text-sm font-semibold">{t("detailsTitle")}</h2>
         </div>
         <div className="flex flex-col gap-4 p-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field>
               <FieldLabel htmlFor="offer-name">{t("nameLabel")}</FieldLabel>
               <Input id="offer-name" {...register("name")} />
@@ -143,7 +143,7 @@ export function OfferForm({
             />
           </Field>
           {!appliesToAll ? itemPicker : null}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field>
               <FieldLabel htmlFor="offer-starts">{t("startsOnLabel")}</FieldLabel>
               <DatePicker

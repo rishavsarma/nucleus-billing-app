@@ -242,46 +242,46 @@ export function InvoiceDetailClient({ id }: { id: string }) {
         {t("backToList")}
       </Link>
 
-      <div className="mb-5 flex items-start justify-between gap-4">
+      <div className="mb-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <div className="mb-1.5 flex items-center gap-2.5">
-            <h1 className="text-2xl font-semibold">{invoice.invoice_number ?? "—"}</h1>
+          <div className="mb-1.5 flex flex-wrap items-center gap-2.5">
+            <h1 className="text-xl sm:text-2xl font-semibold">{invoice.invoice_number ?? "—"}</h1>
             <StatusBadge status={invoice.status}>{tStatus(invoice.status)}</StatusBadge>
           </div>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-xs sm:text-sm text-muted-foreground">
             {customer?.name ?? "—"} • {t("issueDateLabel")} {invoice.issue_date}
             {invoice.due_date ? ` • ${t("dueDateLabel")} ${invoice.due_date}` : ""}
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={printPdf} disabled={isPreparingPrint}>
+        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+          <Button variant="outline" size="sm" onClick={printPdf} disabled={isPreparingPrint}>
             {isPreparingPrint ? <Loader2Icon className="animate-spin" /> : <PrinterIcon />}
-            {tPrint("printButton")}
+            <span className="hidden xs:inline">{tPrint("printButton")}</span>
           </Button>
-          <Button variant="outline" onClick={downloadPdf} disabled={isGeneratingPdf}>
+          <Button variant="outline" size="sm" onClick={downloadPdf} disabled={isGeneratingPdf}>
             {isGeneratingPdf ? <Loader2Icon className="animate-spin" /> : <DownloadIcon />}
-            {tPrint("downloadPdfButton")}
+            <span className="hidden xs:inline">{tPrint("downloadPdfButton")}</span>
           </Button>
           {isDraft ? (
-            <Button onClick={confirmInvoice} disabled={updateInvoice.isPending}>
+            <Button size="sm" onClick={confirmInvoice} disabled={updateInvoice.isPending}>
               <CheckIcon />
               {t("confirmInvoice")}
             </Button>
           ) : null}
           {canRecordPayment ? (
-            <Button variant="outline" onClick={() => setShowRecordPayment(true)}>
+            <Button variant="outline" size="sm" onClick={() => setShowRecordPayment(true)}>
               <BanknoteIcon />
               {t("recordPayment")}
             </Button>
           ) : null}
           {canRecordPayment && !emiPlan && !isPaid ? (
-            <Button variant="outline" onClick={() => setShowSetupEmi(true)}>
+            <Button variant="outline" size="sm" onClick={() => setShowSetupEmi(true)}>
               <CalendarClockIcon />
               {tEmi("setupButton")}
             </Button>
           ) : null}
           {!isVoid ? (
-            <Button variant="destructive" size="icon" onClick={() => setConfirmVoid(true)} title={t("voidInvoice")}>
+            <Button variant="destructive" size="icon-sm" onClick={() => setConfirmVoid(true)} title={t("voidInvoice")}>
               <XIcon />
             </Button>
           ) : null}
@@ -294,8 +294,8 @@ export function InvoiceDetailClient({ id }: { id: string }) {
         </div>
       ) : null}
 
-      <div className="grid grid-cols-3 gap-5">
-        <div className="col-span-2 flex flex-col gap-5">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        <div className="lg:col-span-2 flex flex-col gap-5">
           <InvoiceItemsSection invoiceId={id} warehouseId={invoice.warehouse_id} editable={isDraft} />
           {invoice.notes ? (
             <div className="rounded-xl bg-card p-4 ring-1 ring-foreground/10">

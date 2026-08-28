@@ -146,9 +146,9 @@ export function PurchaseBillItemsSection({ purchaseBillId, editable }: { purchas
           </Button>
         ) : null}
       </div>
-      <div className="p-4">
+      <div className="p-3 sm:p-4 overflow-x-auto">
         {lineItems?.length ? (
-          <Table>
+          <Table className="whitespace-nowrap text-xs sm:text-sm">
             <TableHeader>
               <TableRow>
                 <TableHead>{t("descriptionLabel")}</TableHead>
@@ -163,12 +163,12 @@ export function PurchaseBillItemsSection({ purchaseBillId, editable }: { purchas
             <TableBody>
               {lineItems.map((line) => (
                 <TableRow key={line.id}>
-                  <TableCell>{line.description}</TableCell>
+                  <TableCell className="font-medium max-w-[200px] truncate">{line.description}</TableCell>
                   <TableCell className="text-right">{line.quantity}</TableCell>
                   <TableCell className="text-right">{money(line.unit_cost)}</TableCell>
                   <TableCell className="text-right">{money(line.unit_price)}</TableCell>
                   <TableCell className="text-right">{line.tax_rate}%</TableCell>
-                  <TableCell className="text-right font-medium">{money(line.line_total)}</TableCell>
+                  <TableCell className="text-right font-semibold">{money(line.line_total)}</TableCell>
                   {editable ? (
                     <TableCell>
                       <div className="flex justify-end gap-1">
@@ -221,7 +221,7 @@ export function PurchaseBillItemsSection({ purchaseBillId, editable }: { purchas
           <FieldLabel htmlFor="pbi-description">{t("descriptionLabel")}</FieldLabel>
           <Input id="pbi-description" {...form.register("description")} />
         </Field>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
           <Field>
             <FieldLabel htmlFor="pbi-quantity">{t("quantityLabel")}</FieldLabel>
             <Input id="pbi-quantity" type="number" step="any" min={0} {...form.register("quantity", { valueAsNumber: true })} />

@@ -15,7 +15,6 @@ import { OfferSelect } from "@/components/offer-select"
 import { Button } from "@/components/ui/button"
 import { DatePicker } from "@/components/ui/date-picker"
 import { Field, FieldError, FieldLabel } from "@/components/ui/field"
-import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { useCreateInvoice } from "@/hooks/use-invoices"
 import { WarehouseSelect } from "@/components/warehouse-select"
@@ -29,17 +28,25 @@ const newInvoiceSchema = z.object({
   due_date: z.string().optional(),
   notes: z.string().optional(),
 })
-type NewInvoiceValues = z.infer<typeof newInvoiceSchema>
+type NewInvoiceFormValues = z.infer<typeof newInvoiceSchema>
 
 export default function NewInvoicePage() {
   const t = useTranslations("Invoices")
   const tCommon = useTranslations("Common")
   const router = useRouter()
+
   const createInvoice = useCreateInvoice()
 
-  const form = useForm<NewInvoiceValues>({
+  const form = useForm<NewInvoiceFormValues>({
     resolver: zodResolver(newInvoiceSchema),
-    defaultValues: { issue_date: new Date().toISOString().slice(0, 10) },
+    defaultValues: {
+      customer_id: "",
+      warehouse_id: undefined,
+      offer_id: undefined,
+      issue_date: new Date().toISOString().slice(0, 10),
+      due_date: undefined,
+      notes: "",
+    },
   })
   const { register, handleSubmit, formState, setValue, control } = form
   const customerId = useWatch({ control, name: "customer_id" })
@@ -49,11 +56,12 @@ export default function NewInvoicePage() {
   const dueDate = useWatch({ control, name: "due_date" })
 
   const steps: StepperStep[] = [
-    { label: t("stepInvoiceDetails"), done: false, current: true },
-    { label: t("stepAddItems"), done: false, current: false },
+    { label: t("stepDetails"), done: false, current: true, description: t("stepDetailsDesc") },
+    { label: t("stepLineItems"), done: false, current: false, description: t("stepLineItemsDesc") },
+    { label: t("stepFinalize"), done: false, current: false, description: t("stepFinalizeDesc") },
   ]
 
-  function onSubmit(values: NewInvoiceValues) {
+  function onSubmit(values: NewInvoiceFormValues) {
     createInvoice.mutate(
       {
         customer_id: values.customer_id,
@@ -79,14 +87,14 @@ export default function NewInvoicePage() {
         <ArrowLeftIcon className="size-3.5" />
         {t("backToList")}
       </Link>
-      <h1 className="mb-4 text-2xl font-semibold">{t("newInvoice")}</h1>
+      <h1 className="mb-4 text-xl sm:text-2xl font-semibold">{t("newInvoice")}</h1>
 
       <div className="mb-4">
         <DocumentStepper steps={steps} />
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4 rounded-xl bg-card p-4 ring-1 ring-foreground/10">
-        <div className="grid grid-cols-2 gap-4">
+      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4 rounded-xl bg-card p-3 sm:p-4 ring-1 ring-foreground/10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field data-invalid={!!formState.errors.customer_id}>
             <FieldLabel htmlFor="inv-customer">{t("customerLabel")}</FieldLabel>
             <CustomerSelect
@@ -109,7 +117,7 @@ export default function NewInvoicePage() {
             />
           </Field>
         </div>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field>
             <FieldLabel htmlFor="inv-offer">{t("offerLabel")}</FieldLabel>
             <OfferSelect
@@ -128,7 +136,7 @@ export default function NewInvoicePage() {
             />
           </Field>
         </div>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field>
             <FieldLabel htmlFor="inv-due-date">{t("dueDateLabel")}</FieldLabel>
             <DatePicker
