@@ -1,5 +1,8 @@
 import "server-only"
+import { createHash } from "crypto"
+import { cookies } from "next/headers"
 import { createClient } from "@/lib/supabase/server"
+import { redis } from "@/lib/redis"
 
 async function checkSuperadmin(
   supabase: Awaited<ReturnType<typeof createClient>>,
@@ -14,14 +17,101 @@ async function checkSuperadmin(
   return !!data
 }
 
+// ---------------------------------------------------------------------------
+// Auth-result cache
+// ---------------------------------------------------------------------------
+// supabase.auth.getUser() makes a network round-trip to the Supabase Auth
+// server on every call (~1s on warm Redis, ~150ms on cold). We cache the
+// resolved { userId, orgId, isSuperadmin } tuple in Redis keyed by a hash
+// of the access token so subsequent requests skip that round-trip entirely.
+//
+// TTL is intentionally short (60s) so that role/membership changes propagate
+// quickly. The access token itself rotates on every middleware refresh, which
+// naturally busts the cache entry for the old token anyway.
+const AUTH_CACHE_TTL_SECONDS = 60
+
+type AuthPayload = { userId: string; orgId: string | null; isSuperadmin: boolean }
+
+/**
+ * Extracts the real access_token JWT from the Supabase session cookie.
+ *
+ * @supabase/ssr 0.12.x encodes the session as:
+ *   "base64-<base64-encoded JSON>"
+ * where the JSON is { access_token, refresh_token, expires_at, token_type, ... }.
+ *
+ * We decode and extract access_token specifically — so the hash key is over
+ * the actual JWT, not the whole session blob. This matters if anyone later
+ * tries to forward this value as a real bearer token (e.g. getUser(token)).
+ * Caching still works either way since the blob is unique-per-session and
+ * rotates on refresh, but using the real JWT is semantically correct.
+ */
+async function getAccessToken(): Promise<string | null> {
+  const jar = await cookies()
+  const all = jar.getAll()
+  // Cookie name pattern: "sb-<project-ref>-auth-token"
+  const tokenCookie = all.find(
+    (c) => c.name.startsWith("sb-") && c.name.endsWith("-auth-token"),
+  )
+  if (!tokenCookie) return null
+  try {
+    const raw = tokenCookie.value
+    // Handle both the current "base64-<b64 JSON>" format and any future
+    // plain-JSON format so this survives a @supabase/ssr minor version bump.
+    const jsonStr = raw.startsWith("base64-")
+      ? Buffer.from(raw.slice(7), "base64").toString("utf8")
+      : raw
+    const session = JSON.parse(jsonStr) as { access_token?: string }
+    return session.access_token ?? null
+  } catch {
+    return null
+  }
+}
+
+function authCacheKey(tokenHash: string) {
+  return `auth:${tokenHash}`
+}
+
+/** SHA-256 hex of the access token — stable for the token's lifetime. */
+function hashToken(token: string): string {
+  return createHash("sha256").update(token).digest("hex")
+}
+
+/** Best-effort read from the auth cache. Returns null on any failure. */
+async function authCacheGet(tokenHash: string): Promise<AuthPayload | null> {
+  try {
+    const raw = await redis.get(authCacheKey(tokenHash))
+    if (!raw) return null
+    return JSON.parse(raw) as AuthPayload
+  } catch {
+    return null
+  }
+}
+
+/** Best-effort write to the auth cache. Never throws. */
+async function authCacheSet(tokenHash: string, payload: AuthPayload): Promise<void> {
+  try {
+    await redis.set(
+      authCacheKey(tokenHash),
+      JSON.stringify(payload),
+      "EX",
+      AUTH_CACHE_TTL_SECONDS,
+    )
+  } catch {
+    // swallow — a failed write just means the next request is a cache miss
+  }
+}
+
+type SupabaseClient = Awaited<ReturnType<typeof createClient>>
+
 type RequireOrgResult =
-  | { orgId: string | null; userId: string; isSuperadmin: boolean; error?: undefined }
+  | { orgId: string | null; userId: string; isSuperadmin: boolean; supabase: SupabaseClient; error?: undefined }
   | {
-      orgId?: undefined
-      userId?: undefined
-      isSuperadmin?: undefined
-      error: "unauthorized" | "no_org"
-    }
+    orgId?: undefined
+    userId?: undefined
+    isSuperadmin?: undefined
+    supabase?: undefined
+    error: "unauthorized" | "no_org"
+  }
 
 /**
  * Resolves the requesting user's org via billing.memberships, unless they're a
@@ -29,9 +119,27 @@ type RequireOrgResult =
  * "don't filter by org, they can see/touch every org." Callers must branch on
  * `isSuperadmin` and skip the `.eq("org_id", ...)` filter when it's true.
  * Assumes one org per (non-superadmin) user.
+ *
+ * Also returns the Supabase client so callers can reuse it for their own
+ * queries without a second createClient() call.
+ *
+ * Auth results are cached in Redis for AUTH_CACHE_TTL_SECONDS to avoid
+ * paying a Supabase Auth network round-trip on every hot-path request.
  */
 export async function requireOrgId(): Promise<RequireOrgResult> {
   const supabase = await createClient()
+
+  // Fast path: check Redis before hitting the Supabase Auth server.
+  const accessToken = await getAccessToken()
+  if (accessToken) {
+    const tokenHash = hashToken(accessToken)
+    const cached = await authCacheGet(tokenHash)
+    if (cached) {
+      return { userId: cached.userId, orgId: cached.orgId, isSuperadmin: cached.isSuperadmin, supabase }
+    }
+  }
+
+  // Slow path: validate token with Supabase Auth + resolve org membership.
   const {
     data: { user },
   } = await supabase.auth.getUser()
@@ -40,23 +148,35 @@ export async function requireOrgId(): Promise<RequireOrgResult> {
     return { error: "unauthorized" }
   }
 
-  if (await checkSuperadmin(supabase, user.id)) {
-    return { orgId: null, userId: user.id, isSuperadmin: true }
-  }
+  // Run the superadmin check and membership lookup in parallel — for the
+  // common non-superadmin case this saves one sequential round-trip.
+  const [isSuperadmin, membership] = await Promise.all([
+    checkSuperadmin(supabase, user.id),
+    supabase
+      .schema("billing")
+      .from("memberships")
+      .select("org_id")
+      .eq("user_id", user.id)
+      .limit(1)
+      .maybeSingle()
+      .then((r) => r.data),
+  ])
 
-  const { data: membership } = await supabase
-    .schema("billing")
-    .from("memberships")
-    .select("org_id")
-    .eq("user_id", user.id)
-    .limit(1)
-    .maybeSingle()
+  if (isSuperadmin) {
+    if (accessToken) {
+      void authCacheSet(hashToken(accessToken), { userId: user.id, orgId: null, isSuperadmin: true })
+    }
+    return { orgId: null, userId: user.id, isSuperadmin: true, supabase }
+  }
 
   if (!membership) {
     return { error: "no_org" }
   }
 
-  return { orgId: membership.org_id as string, userId: user.id, isSuperadmin: false }
+  const payload: AuthPayload = { userId: user.id, orgId: membership.org_id as string, isSuperadmin: false }
+  if (accessToken) void authCacheSet(hashToken(accessToken), payload)
+
+  return { orgId: payload.orgId, userId: user.id, isSuperadmin: false, supabase }
 }
 
 type RequireUserResult =
