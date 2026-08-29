@@ -1,109 +1,132 @@
 "use client"
 
-import { Badge } from "@/components/ui/badge"
 import {
   Card,
-  CardAction,
   CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { TrendingUpIcon, TrendingDownIcon } from "lucide-react"
+import { DollarSignIcon, ArrowDownLeftIcon, AlertCircleIcon, ShoppingBagIcon } from "lucide-react"
+import { useDashboardStats } from "@/hooks/use-dashboard-stats"
+import { Skeleton } from "@/components/ui/skeleton"
+
+const formatMoney = (n: number) =>
+  "₹" +
+  n.toLocaleString("en-IN", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })
 
 export function SectionCards() {
+  const { data: stats, isLoading } = useDashboardStats()
+
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-1 gap-4 px-4 lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-4">
+        {[1, 2, 3, 4].map((i) => (
+          <Card key={i} className="@container/card p-4">
+            <Skeleton className="h-4 w-28 mb-2" />
+            <Skeleton className="h-8 w-36 mb-2" />
+            <Skeleton className="h-3 w-44" />
+          </Card>
+        ))}
+      </div>
+    )
+  }
+
+  const revenue = stats?.totalRevenue ?? 0
+  const collected = stats?.totalCollected ?? 0
+  const outstanding = stats?.totalOutstanding ?? 0
+  const expenses = stats?.totalExpenses ?? 0
+
   return (
     <div className="grid grid-cols-1 gap-4 px-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card *:data-[slot=card]:shadow-xs lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-4 dark:*:data-[slot=card]:bg-card">
       <Card className="@container/card">
         <CardHeader>
-          <CardDescription>Total Revenue</CardDescription>
+          <div className="flex items-center justify-between">
+            <CardDescription>Total Invoiced Sales</CardDescription>
+            <div className="rounded-md bg-primary/10 p-1.5 text-primary">
+              <DollarSignIcon className="size-4" />
+            </div>
+          </div>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            $1,250.00
+            {formatMoney(revenue)}
           </CardTitle>
-          <CardAction>
-            <Badge variant="outline">
-              <TrendingUpIcon
-              />
-              +12.5%
-            </Badge>
-          </CardAction>
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
-          <div className="line-clamp-1 flex gap-2 font-medium">
-            Trending up this month{" "}
-            <TrendingUpIcon className="size-4" />
+          <div className="line-clamp-1 flex items-center gap-1.5 font-medium text-emerald-600 dark:text-emerald-400">
+            <span>{stats?.invoicesCount ?? 0} confirmed invoices</span>
           </div>
-          <div className="text-muted-foreground">
-            Visitors for the last 6 months
+          <div className="text-muted-foreground text-xs">
+            Total sales generated across all customers
           </div>
         </CardFooter>
       </Card>
+
       <Card className="@container/card">
         <CardHeader>
-          <CardDescription>New Customers</CardDescription>
-          <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            1,234
+          <div className="flex items-center justify-between">
+            <CardDescription>Total Collected Cash</CardDescription>
+            <div className="rounded-md bg-emerald-500/10 p-1.5 text-emerald-500">
+              <ArrowDownLeftIcon className="size-4" />
+            </div>
+          </div>
+          <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl text-emerald-600 dark:text-emerald-400">
+            {formatMoney(collected)}
           </CardTitle>
-          <CardAction>
-            <Badge variant="outline">
-              <TrendingDownIcon
-              />
-              -20%
-            </Badge>
-          </CardAction>
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
-          <div className="line-clamp-1 flex gap-2 font-medium">
-            Down 20% this period{" "}
-            <TrendingDownIcon className="size-4" />
+          <div className="line-clamp-1 flex items-center gap-1.5 font-medium text-emerald-600 dark:text-emerald-400">
+            <span>Realized Collections</span>
           </div>
-          <div className="text-muted-foreground">
-            Acquisition needs attention
+          <div className="text-muted-foreground text-xs">
+            Cash, UPI & bank payments recorded
           </div>
         </CardFooter>
       </Card>
+
       <Card className="@container/card">
         <CardHeader>
-          <CardDescription>Active Accounts</CardDescription>
-          <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            45,678
+          <div className="flex items-center justify-between">
+            <CardDescription>Outstanding Receivables</CardDescription>
+            <div className="rounded-md bg-amber-500/10 p-1.5 text-amber-500">
+              <AlertCircleIcon className="size-4" />
+            </div>
+          </div>
+          <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl text-amber-600 dark:text-amber-400">
+            {formatMoney(outstanding)}
           </CardTitle>
-          <CardAction>
-            <Badge variant="outline">
-              <TrendingUpIcon
-              />
-              +12.5%
-            </Badge>
-          </CardAction>
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
-          <div className="line-clamp-1 flex gap-2 font-medium">
-            Strong user retention{" "}
-            <TrendingUpIcon className="size-4" />
+          <div className="line-clamp-1 flex items-center gap-1.5 font-medium text-amber-600 dark:text-amber-400">
+            <span>Pending customer balances</span>
           </div>
-          <div className="text-muted-foreground">Engagement exceed targets</div>
+          <div className="text-muted-foreground text-xs">
+            Unpaid / partially paid invoice balances
+          </div>
         </CardFooter>
       </Card>
+
       <Card className="@container/card">
         <CardHeader>
-          <CardDescription>Growth Rate</CardDescription>
+          <div className="flex items-center justify-between">
+            <CardDescription>Purchase Bills & Expenses</CardDescription>
+            <div className="rounded-md bg-indigo-500/10 p-1.5 text-indigo-500">
+              <ShoppingBagIcon className="size-4" />
+            </div>
+          </div>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            4.5%
+            {formatMoney(expenses)}
           </CardTitle>
-          <CardAction>
-            <Badge variant="outline">
-              <TrendingUpIcon
-              />
-              +4.5%
-            </Badge>
-          </CardAction>
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
-          <div className="line-clamp-1 flex gap-2 font-medium">
-            Steady performance increase{" "}
-            <TrendingUpIcon className="size-4" />
+          <div className="line-clamp-1 flex items-center gap-1.5 font-medium">
+            <span>Vendor procurement</span>
           </div>
-          <div className="text-muted-foreground">Meets growth projections</div>
+          <div className="text-muted-foreground text-xs">
+            Total expenses & inventory purchase bills
+          </div>
         </CardFooter>
       </Card>
     </div>
