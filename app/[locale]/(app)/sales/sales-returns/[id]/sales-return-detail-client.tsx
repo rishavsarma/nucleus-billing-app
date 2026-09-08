@@ -9,7 +9,10 @@ import { Link } from "@/i18n/navigation"
 import { Button } from "@/components/ui/button"
 import { SalesReturnItemsSection } from "@/components/sales-return-items-section"
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog"
-import { DocumentStepper, type StepperStep } from "@/components/document-stepper"
+import {
+  DocumentStepper,
+  type StepperStep,
+} from "@/components/document-stepper"
 import { StatusBadge } from "@/components/status-badge"
 import { useCustomer } from "@/hooks/use-customers"
 import { useSalesReturn, useUpdateSalesReturn } from "@/hooks/use-sales-returns"
@@ -17,7 +20,12 @@ import { useInvoice } from "@/hooks/use-invoices"
 import { useWarehouse } from "@/hooks/use-warehouses"
 import { routes } from "@/lib/routes"
 
-const money = (n: number) => "₹" + n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+const money = (n: number) =>
+  "₹" +
+  n.toLocaleString("en-IN", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })
 
 export function SalesReturnDetailClient({ id }: { id: string }) {
   const t = useTranslations("SalesReturns")
@@ -26,19 +34,28 @@ export function SalesReturnDetailClient({ id }: { id: string }) {
 
   const { data: salesReturn, isLoading } = useSalesReturn(id)
   const { data: customer } = useCustomer(salesReturn?.customer_id)
-  const { data: originalInvoice } = useInvoice(salesReturn?.invoice_id ?? undefined)
-  const { data: warehouse } = useWarehouse(salesReturn?.warehouse_id ?? undefined)
+  const { data: originalInvoice } = useInvoice(
+    salesReturn?.invoice_id ?? undefined
+  )
+  const { data: warehouse } = useWarehouse(
+    salesReturn?.warehouse_id ?? undefined
+  )
   const updateSalesReturn = useUpdateSalesReturn()
   const [confirmVoid, setConfirmVoid] = useState(false)
 
   if (isLoading) {
-    return <div className="text-sm text-muted-foreground">{tCommon("loading")}</div>
+    return (
+      <div className="text-sm text-muted-foreground">{tCommon("loading")}</div>
+    )
   }
 
   if (!salesReturn) {
     return (
       <div className="flex flex-col gap-2">
-        <Link href={routes.sales.salesReturns.list} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+        <Link
+          href={routes.sales.salesReturns.list}
+          className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+        >
           <ArrowLeftIcon className="size-3.5" />
           {t("backToList")}
         </Link>
@@ -61,7 +78,7 @@ export function SalesReturnDetailClient({ id }: { id: string }) {
       {
         onSuccess: () => toast.success(tCommon("updatedSuccess")),
         onError: () => toast.error(tCommon("genericError")),
-      },
+      }
     )
   }
 
@@ -74,36 +91,53 @@ export function SalesReturnDetailClient({ id }: { id: string }) {
           setConfirmVoid(false)
         },
         onError: () => toast.error(tCommon("genericError")),
-      },
+      }
     )
   }
 
   return (
     <div className="flex flex-col gap-1">
-      <Link href={routes.sales.salesReturns.list} className="mb-2 flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+      <Link
+        href={routes.sales.salesReturns.list}
+        className="mb-2 flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+      >
         <ArrowLeftIcon className="size-3.5" />
         {t("backToList")}
       </Link>
 
-      <div className="mb-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="mb-5 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
         <div>
           <div className="mb-1.5 flex flex-wrap items-center gap-2.5">
-            <h1 className="text-xl sm:text-2xl font-semibold">{salesReturn.sales_return_number ?? "—"}</h1>
-            <StatusBadge status={salesReturn.status}>{tStatus(salesReturn.status)}</StatusBadge>
+            <h1 className="text-xl font-semibold sm:text-2xl">
+              {salesReturn.sales_return_number ?? "—"}
+            </h1>
+            <StatusBadge status={salesReturn.status}>
+              {tStatus(salesReturn.status)}
+            </StatusBadge>
           </div>
-          <p className="text-xs sm:text-sm text-muted-foreground">
-            {t("columnInvoice")} {originalInvoice?.invoice_number ?? "—"} • {customer?.name ?? "—"}
+          <p className="text-xs text-muted-foreground sm:text-sm">
+            {t("columnInvoice")} {originalInvoice?.invoice_number ?? "—"} •{" "}
+            {customer?.name ?? "—"}
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+        <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
           {isDraft ? (
-            <Button size="sm" onClick={issueSalesReturn} disabled={updateSalesReturn.isPending}>
+            <Button
+              size="sm"
+              onClick={issueSalesReturn}
+              disabled={updateSalesReturn.isPending}
+            >
               <CheckIcon />
               {t("issueSalesReturn")}
             </Button>
           ) : null}
           {!isVoid ? (
-            <Button variant="destructive" size="icon-sm" onClick={() => setConfirmVoid(true)} title={t("voidSalesReturn")}>
+            <Button
+              variant="destructive"
+              size="icon-sm"
+              onClick={() => setConfirmVoid(true)}
+              title={t("voidSalesReturn")}
+            >
               <XIcon />
             </Button>
           ) : null}
@@ -116,13 +150,19 @@ export function SalesReturnDetailClient({ id }: { id: string }) {
         </div>
       ) : null}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        <div className="lg:col-span-2 flex flex-col gap-5">
-          <SalesReturnItemsSection salesReturnId={id} invoiceId={salesReturn.invoice_id} editable={isDraft} />
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
+        <div className="flex flex-col gap-5 lg:col-span-2">
+          <SalesReturnItemsSection
+            salesReturnId={id}
+            invoiceId={salesReturn.invoice_id}
+            editable={isDraft}
+          />
           {salesReturn.reason ? (
             <div className="rounded-xl bg-card p-4 ring-1 ring-foreground/10">
               <h2 className="mb-2 text-sm font-semibold">{t("reasonLabel")}</h2>
-              <p className="text-sm text-muted-foreground">{salesReturn.reason}</p>
+              <p className="text-sm text-muted-foreground">
+                {salesReturn.reason}
+              </p>
             </div>
           ) : null}
         </div>
@@ -132,7 +172,9 @@ export function SalesReturnDetailClient({ id }: { id: string }) {
             <h2 className="mb-3 text-sm font-semibold">{t("summaryTitle")}</h2>
             <div className="flex flex-col gap-1.5 text-sm">
               <div className="flex justify-between">
-                <span className="text-muted-foreground">{t("subtotalLabel")}</span>
+                <span className="text-muted-foreground">
+                  {t("subtotalLabel")}
+                </span>
                 <span>{money(salesReturn.subtotal)}</span>
               </div>
               <div className="flex justify-between">
@@ -148,9 +190,13 @@ export function SalesReturnDetailClient({ id }: { id: string }) {
           </div>
 
           <div className="rounded-xl bg-card p-4 ring-1 ring-foreground/10">
-            <h2 className="mb-2 text-sm font-semibold">{t("restockingTitle")}</h2>
+            <h2 className="mb-2 text-sm font-semibold">
+              {t("restockingTitle")}
+            </h2>
             <p className="text-xs text-muted-foreground">
-              {warehouse ? `${t("restockingNote")} (${warehouse.name})` : t("restockingNote")}
+              {warehouse
+                ? `${t("restockingNote")} (${warehouse.name})`
+                : t("restockingNote")}
             </p>
           </div>
         </div>

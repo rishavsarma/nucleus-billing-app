@@ -17,7 +17,12 @@ import { routes } from "@/lib/routes"
 import type { ItemWithTaxRate } from "@/lib/database/types"
 
 const columnHelper = entityColumnHelper<ItemWithTaxRate>()
-const money = (n: number) => "₹" + n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+const money = (n: number) =>
+  "₹" +
+  n.toLocaleString("en-IN", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })
 
 export default function ItemsPage() {
   const t = useTranslations("Items")
@@ -31,7 +36,9 @@ export default function ItemsPage() {
   // recently received variant's selling price instead. One bulk request for
   // every tracked item on the visible page, instead of one per item.
   const items = result?.data ?? []
-  const trackedItemIds = items.filter((item) => item.track_inventory).map((item) => item.id)
+  const trackedItemIds = items
+    .filter((item) => item.track_inventory)
+    .map((item) => item.id)
   const { data: allVariants } = useItemVariantsBulk(trackedItemIds)
   const latestPriceByItemId = new Map<string, number>()
   allVariants?.forEach((variant) => {
@@ -45,16 +52,23 @@ export default function ItemsPage() {
       header: t("columnName"),
       cell: ({ getValue, row }) => (
         <div className="flex flex-col">
-          <Link href={routes.catalog.items.detail(row.original.id)} className="font-medium hover:underline">
+          <Link
+            href={routes.catalog.items.detail(row.original.id)}
+            className="font-medium hover:underline"
+          >
             {getValue()}
           </Link>
-          <span className="text-xs text-muted-foreground">{row.original.sku ?? ""}</span>
+          <span className="text-xs text-muted-foreground">
+            {row.original.sku ?? ""}
+          </span>
         </div>
       ),
     }),
     columnHelper.accessor("hsn_sac_code", {
       header: t("columnHsn"),
-      cell: ({ getValue }) => <span className="text-muted-foreground">{getValue() ?? "—"}</span>,
+      cell: ({ getValue }) => (
+        <span className="text-muted-foreground">{getValue() ?? "—"}</span>
+      ),
     }),
     columnHelper.accessor("unit", { header: t("columnUnit") }),
     columnHelper.accessor("unit_price", {
@@ -65,20 +79,28 @@ export default function ItemsPage() {
         }
         const latestPrice = latestPriceByItemId.get(row.original.id)
         return latestPrice !== undefined ? (
-          <span className="font-medium">{t("fromPrice", { price: money(latestPrice) })}</span>
+          <span className="font-medium">
+            {t("fromPrice", { price: money(latestPrice) })}
+          </span>
         ) : (
-          <span className="text-xs text-muted-foreground">{t("notYetPurchased")}</span>
+          <span className="text-xs text-muted-foreground">
+            {t("notYetPurchased")}
+          </span>
         )
       },
     }),
     columnHelper.accessor("purchase_price", {
       header: t("columnCostPrice"),
-      cell: ({ getValue }) => <span className="text-muted-foreground">{money(getValue())}</span>,
+      cell: ({ getValue }) => (
+        <span className="text-muted-foreground">{money(getValue())}</span>
+      ),
     }),
     columnHelper.accessor("tax_rate.name", {
       id: "tax_rate_id",
       header: t("columnTax"),
-      cell: ({ getValue }) => <span className="text-muted-foreground">{getValue() ?? "—"}</span>,
+      cell: ({ getValue }) => (
+        <span className="text-muted-foreground">{getValue() ?? "—"}</span>
+      ),
     }),
     columnHelper.accessor("is_active", {
       header: t("columnStatus"),
@@ -94,7 +116,10 @@ export default function ItemsPage() {
       cell: ({ row }) => (
         <div className="flex justify-end gap-1">
           <Button variant="ghost" size="icon-sm" asChild>
-            <Link href={routes.catalog.items.detail(row.original.id)} onClick={(event) => event.stopPropagation()}>
+            <Link
+              href={routes.catalog.items.detail(row.original.id)}
+              onClick={(event) => event.stopPropagation()}
+            >
               <PencilIcon />
             </Link>
           </Button>

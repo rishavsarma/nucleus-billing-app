@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { dbError } from "@/lib/api-response"
 import { requireUserId } from "@/lib/database/require-org"
 import { cacheGet, cacheSet } from "@/lib/cache"
 
@@ -16,9 +17,17 @@ export async function GET() {
   const cached = await cacheGet(ADDONS_CACHE_KEY)
   if (cached) return NextResponse.json(JSON.parse(cached))
 
-  const { data, error } = await auth.supabase.schema("billing").from("addons").select("*").order("name")
+  const { data, error } = await auth.supabase
+    .schema("billing")
+    .from("addons")
+    .select("*")
+    .order("name")
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  await cacheSet(ADDONS_CACHE_KEY, JSON.stringify(data ?? []), ADDONS_TTL_SECONDS)
+  if (error) return dbError(error, "addons:GET")
+  await cacheSet(
+    ADDONS_CACHE_KEY,
+    JSON.stringify(data ?? []),
+    ADDONS_TTL_SECONDS
+  )
   return NextResponse.json(data)
 }

@@ -5,7 +5,11 @@ import { toast } from "sonner"
 import { ArrowLeftIcon } from "lucide-react"
 
 import { Link, useRouter } from "@/i18n/navigation"
-import { ItemForm, formValuesToItemInput, type ItemFormValues } from "@/components/item-form"
+import {
+  ItemForm,
+  formValuesToItemInput,
+  type ItemFormValues,
+} from "@/components/item-form"
 import { useCreateItem } from "@/hooks/use-items"
 import { routes } from "@/lib/routes"
 
@@ -27,13 +31,20 @@ export default function NewItemPage() {
 
   return (
     <div className="flex flex-col gap-1">
-      <Link href={routes.catalog.items.list} className="mb-2 flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+      <Link
+        href={routes.catalog.items.list}
+        className="mb-2 flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+      >
         <ArrowLeftIcon className="size-3.5" />
         {t("backToList")}
       </Link>
       <h1 className="mb-4 text-2xl font-semibold">{t("newItem")}</h1>
 
-      <ItemForm onSubmit={onSubmit} isSubmitting={createItem.isPending} submitLabel={tCommon("create")} />
+      <ItemForm
+        onSubmit={onSubmit}
+        isSubmitting={createItem.isPending}
+        submitLabel={tCommon("create")}
+      />
     </div>
   )
 }

@@ -22,7 +22,8 @@ export default function AddonsPage() {
   const t = useTranslations("Addons")
   const tCommon = useTranslations("Common")
   const { data: addons, isLoading: addonsLoading } = useAddons()
-  const { data: subscriptions, isLoading: subscriptionsLoading } = useOrganizationAddonSubscriptions()
+  const { data: subscriptions, isLoading: subscriptionsLoading } =
+    useOrganizationAddonSubscriptions()
   const { data: me } = useMe()
   const subscribeToAddon = useSubscribeToAddon()
   const cancelAddon = useCancelAddon()
@@ -43,7 +44,7 @@ export default function AddonsPage() {
       {
         onSuccess: () => toast.success(tCommon("updatedSuccess")),
         onError: () => toast.error(tCommon("genericError")),
-      },
+      }
     )
   }
 
@@ -57,7 +58,7 @@ export default function AddonsPage() {
           setToCancel(null)
         },
         onError: () => toast.error(tCommon("genericError")),
-      },
+      }
     )
   }
 
@@ -83,29 +84,39 @@ export default function AddonsPage() {
           {addons.map((addon) => {
             const subscription = subscriptionFor(addon.id)
             const isActive = subscription?.status === "active"
-            const isMutating = subscribeToAddon.isPending || cancelAddon.isPending
+            const isMutating =
+              subscribeToAddon.isPending || cancelAddon.isPending
 
             return (
-              <div key={addon.id} className="flex flex-col gap-3 rounded-xl bg-card p-4 ring-1 ring-foreground/10">
+              <div
+                key={addon.id}
+                className="flex flex-col gap-3 rounded-xl bg-card p-4 ring-1 ring-foreground/10"
+              >
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex size-9 items-center justify-center rounded-lg bg-muted">
                     <PackageIcon className="size-4.5 text-muted-foreground" />
                   </div>
                   {subscription ? (
                     <StatusBadge status={subscription.status}>
-                      {subscription.status === "active" ? t("statusActive") : t("statusCancelled")}
+                      {subscription.status === "active"
+                        ? t("statusActive")
+                        : t("statusCancelled")}
                     </StatusBadge>
                   ) : null}
                 </div>
                 <div>
                   <h3 className="text-sm font-semibold">{addon.name}</h3>
-                  <p className="mt-1 text-xs text-muted-foreground">{addon.description}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {addon.description}
+                  </p>
                 </div>
                 <div className="text-sm font-medium">
                   {addon.price > 0 ? (
                     <>
                       ₹{addon.price}
-                      <span className="text-xs font-normal text-muted-foreground">{t("perMonth")}</span>
+                      <span className="text-xs font-normal text-muted-foreground">
+                        {t("perMonth")}
+                      </span>
                     </>
                   ) : (
                     t("free")
@@ -114,12 +125,22 @@ export default function AddonsPage() {
 
                 {canManage ? (
                   isActive ? (
-                    <Button variant="outline" size="sm" onClick={() => setToCancel(addon)}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setToCancel(addon)}
+                    >
                       {t("cancel")}
                     </Button>
                   ) : (
-                    <Button size="sm" onClick={() => handleSubscribe(addon)} disabled={isMutating}>
-                      {isMutating ? <Loader2Icon className="animate-spin" /> : null}
+                    <Button
+                      size="sm"
+                      onClick={() => handleSubscribe(addon)}
+                      disabled={isMutating}
+                    >
+                      {isMutating ? (
+                        <Loader2Icon className="animate-spin" />
+                      ) : null}
                       {subscription ? t("resubscribe") : t("subscribe")}
                     </Button>
                   )

@@ -26,17 +26,30 @@ export function ModeToggle() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative" aria-label={t("toggleLabel")}>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="relative"
+          aria-label={t("toggleLabel")}
+        >
           <Sun className="scale-100 rotate-0 transition-all dark:scale-0 dark:-rotate-90" />
           <Moon className="absolute scale-0 rotate-90 transition-all dark:scale-100 dark:rotate-0" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         {OPTIONS.map((option) => (
-          <DropdownMenuItem key={option.value} onClick={() => setTheme(option.value)}>
+          <DropdownMenuItem
+            key={option.value}
+            onClick={() => setTheme(option.value)}
+          >
             <option.icon />
             {t(option.labelKey)}
-            <Check className={cn("ml-auto size-4", theme === option.value ? "opacity-100" : "opacity-0")} />
+            <Check
+              className={cn(
+                "ml-auto size-4",
+                theme === option.value ? "opacity-100" : "opacity-0"
+              )}
+            />
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>

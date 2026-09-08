@@ -1,5 +1,17 @@
 import { NextResponse } from "next/server"
-import { requireOrgId, verifyBelongsToOrg, type SupabaseClient } from "@/lib/database/require-org"
+import { pickAllowed } from "@/lib/database/allowed-fields"
+import {
+  authError,
+  badRequest,
+  dbError,
+  notFound,
+  readJson,
+} from "@/lib/api-response"
+import {
+  requireOrgId,
+  verifyBelongsToOrg,
+  type SupabaseClient,
+} from "@/lib/database/require-org"
 import { cacheDel, cacheGet, cacheSet } from "@/lib/cache"
 
 const ITEMS_CACHE_TTL_SECONDS = 120
@@ -12,9 +24,13 @@ async function verifyInvoiceInOrg(
   supabase: SupabaseClient,
   invoiceId: string,
   orgId: string | null,
-  isSuperadmin: boolean,
+  isSuperadmin: boolean
 ) {
-  let query = supabase.schema("billing").from("invoices").select("id").eq("id", invoiceId)
+  let query = supabase
+    .schema("billing")
+    .from("invoices")
+    .select("id")
+    .eq("id", invoiceId)
   if (!isSuperadmin) query = query.eq("org_id", orgId!)
   const { data, error } = await query.maybeSingle()
   return { ok: !error && !!data, error }
@@ -23,17 +39,14 @@ async function verifyInvoiceInOrg(
 export async function GET(request: Request) {
   const auth = await requireOrgId()
   if (auth.error) {
-    return NextResponse.json(
-      { error: auth.error },
-      { status: auth.error === "unauthorized" ? 401 : 403 },
-    )
+    return authError(auth.error)
   }
 
   const invoiceId = new URL(request.url).searchParams.get("invoice_id")
   if (!invoiceId) {
     return NextResponse.json(
       { error: 'Query param "invoice_id" is required' },
-      { status: 400 },
+      { status: 400 }
     )
   }
 
@@ -47,10 +60,10 @@ export async function GET(request: Request) {
     supabase,
     invoiceId,
     auth.orgId,
-    auth.isSuperadmin,
+    auth.isSuperadmin
   )
-  if (verifyError) return NextResponse.json({ error: verifyError.message }, { status: 500 })
-  if (!ok) return NextResponse.json({ error: "Not found" }, { status: 404 })
+  if (verifyError) return dbError(verifyError, "invoice_items:GET")
+  if (!ok) return notFound()
 
   const { data, error } = await supabase
     .schema("billing")
@@ -58,10 +71,14 @@ export async function GET(request: Request) {
     .select("*")
     .eq("invoice_id", invoiceId)
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return dbError(error, "invoice_items:GET")
 
   if (!auth.isSuperadmin) {
-    await cacheSet(invoiceItemsCacheKey(auth.orgId!, invoiceId), JSON.stringify(data ?? []), ITEMS_CACHE_TTL_SECONDS)
+    await cacheSet(
+      invoiceItemsCacheKey(auth.orgId!, invoiceId),
+      JSON.stringify(data ?? []),
+      ITEMS_CACHE_TTL_SECONDS
+    )
   }
 
   return NextResponse.json(data)
@@ -70,37 +87,69 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   const auth = await requireOrgId()
   if (auth.error) {
-    return NextResponse.json(
-      { error: auth.error },
-      { status: auth.error === "unauthorized" ? 401 : 403 },
-    )
+    return authError(auth.error)
   }
 
-  const body = await request.json()
+  const body = await readJson(request)
+  if (!body)
+    return badRequest("invalid_json", "Request body must be valid JSON.")
   if (!body.invoice_id) {
-    return NextResponse.json({ error: '"invoice_id" is required' }, { status: 400 })
+    return NextResponse.json(
+      { error: '"invoice_id" is required' },
+      { status: 400 }
+    )
   }
 
   const supabase = auth.supabase
   const [invCheck, itemCheck, variantCheck] = await Promise.all([
-    verifyInvoiceInOrg(supabase, body.invoice_id, auth.orgId, auth.isSuperadmin),
-    body.item_id ? verifyBelongsToOrg(supabase, "items", body.item_id, auth.orgId, auth.isSuperadmin) : Promise.resolve(true),
-    body.item_variant_id ? verifyBelongsToOrg(supabase, "item_variants", body.item_variant_id, auth.orgId, auth.isSuperadmin) : Promise.resolve(true),
+    verifyInvoiceInOrg(
+      supabase,
+      body.invoice_id,
+      auth.orgId,
+      auth.isSuperadmin
+    ),
+    body.item_id
+      ? verifyBelongsToOrg(
+          supabase,
+          "items",
+          body.item_id,
+          auth.orgId,
+          auth.isSuperadmin
+        )
+      : Promise.resolve(true),
+    body.item_variant_id
+      ? verifyBelongsToOrg(
+          supabase,
+          "item_variants",
+          body.item_variant_id,
+          auth.orgId,
+          auth.isSuperadmin
+        )
+      : Promise.resolve(true),
   ])
 
-  if (invCheck.error) return NextResponse.json({ error: invCheck.error.message }, { status: 500 })
-  if (!invCheck.ok) return NextResponse.json({ error: "Not found" }, { status: 404 })
-  if (!itemCheck) return NextResponse.json({ error: "item_id does not belong to this org" }, { status: 400 })
-  if (!variantCheck) return NextResponse.json({ error: "item_variant_id does not belong to this org" }, { status: 400 })
+  if (invCheck.error)
+    return NextResponse.json({ error: invCheck.error.message }, { status: 500 })
+  if (!invCheck.ok) return notFound()
+  if (!itemCheck)
+    return NextResponse.json(
+      { error: "item_id does not belong to this org" },
+      { status: 400 }
+    )
+  if (!variantCheck)
+    return NextResponse.json(
+      { error: "item_variant_id does not belong to this org" },
+      { status: 400 }
+    )
 
   const { data, error } = await supabase
     .schema("billing")
     .from("invoice_items")
-    .insert(body)
+    .insert(pickAllowed("invoice_items", body))
     .select()
     .single()
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return dbError(error, "invoice_items:POST")
 
   if (auth.orgId) {
     await Promise.all([
@@ -115,15 +164,15 @@ export async function POST(request: Request) {
 export async function PUT(request: Request) {
   const id = new URL(request.url).searchParams.get("id")
   if (!id) {
-    return NextResponse.json({ error: 'Query param "id" is required' }, { status: 400 })
+    return NextResponse.json(
+      { error: 'Query param "id" is required' },
+      { status: 400 }
+    )
   }
 
   const auth = await requireOrgId()
   if (auth.error) {
-    return NextResponse.json(
-      { error: auth.error },
-      { status: auth.error === "unauthorized" ? 401 : 403 },
-    )
+    return authError(auth.error)
   }
 
   const supabase = auth.supabase
@@ -133,36 +182,63 @@ export async function PUT(request: Request) {
     .select("invoice_id")
     .eq("id", id)
     .maybeSingle()
-  if (existingError) return NextResponse.json({ error: existingError.message }, { status: 500 })
-  if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 })
+  if (existingError) return dbError(existingError, "invoice_items:PUT")
+  if (!existing) return notFound()
 
   const { ok, error: verifyError } = await verifyInvoiceInOrg(
     supabase,
     existing.invoice_id,
     auth.orgId,
-    auth.isSuperadmin,
+    auth.isSuperadmin
   )
-  if (verifyError) return NextResponse.json({ error: verifyError.message }, { status: 500 })
-  if (!ok) return NextResponse.json({ error: "Not found" }, { status: 404 })
+  if (verifyError) return dbError(verifyError, "invoice_items:PUT")
+  if (!ok) return notFound()
 
-  const body = await request.json()
+  const body = await readJson(request)
+  if (!body)
+    return badRequest("invalid_json", "Request body must be valid JSON.")
+  // item_id is re-verified here, not just on POST (audit NB-05): RLS on
+  // invoice_items only checks the parent invoice's org, never the item's, so
+  // a PUT could otherwise point a line at another org's item — which then
+  // flows into that org's stock via invoices_stock_effect on confirm.
+  if (
+    body.item_id &&
+    !(await verifyBelongsToOrg(
+      supabase,
+      "items",
+      body.item_id,
+      auth.orgId,
+      auth.isSuperadmin
+    ))
+  ) {
+    return badRequest("invalid_item_id", "item_id does not belong to this org")
+  }
   if (
     body.item_variant_id &&
-    !(await verifyBelongsToOrg(supabase, "item_variants", body.item_variant_id, auth.orgId, auth.isSuperadmin))
+    !(await verifyBelongsToOrg(
+      supabase,
+      "item_variants",
+      body.item_variant_id,
+      auth.orgId,
+      auth.isSuperadmin
+    ))
   ) {
-    return NextResponse.json({ error: "item_variant_id does not belong to this org" }, { status: 400 })
+    return NextResponse.json(
+      { error: "item_variant_id does not belong to this org" },
+      { status: 400 }
+    )
   }
 
   const { data, error } = await supabase
     .schema("billing")
     .from("invoice_items")
-    .update(body)
+    .update(pickAllowed("invoice_items", body))
     .eq("id", id)
     .select()
     .maybeSingle()
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  if (!data) return NextResponse.json({ error: "Not found" }, { status: 404 })
+  if (error) return dbError(error, "invoice_items:PUT")
+  if (!data) return notFound()
 
   if (auth.orgId) {
     await Promise.all([
@@ -177,15 +253,15 @@ export async function PUT(request: Request) {
 export async function DELETE(request: Request) {
   const id = new URL(request.url).searchParams.get("id")
   if (!id) {
-    return NextResponse.json({ error: 'Query param "id" is required' }, { status: 400 })
+    return NextResponse.json(
+      { error: 'Query param "id" is required' },
+      { status: 400 }
+    )
   }
 
   const auth = await requireOrgId()
   if (auth.error) {
-    return NextResponse.json(
-      { error: auth.error },
-      { status: auth.error === "unauthorized" ? 401 : 403 },
-    )
+    return authError(auth.error)
   }
 
   const supabase = auth.supabase
@@ -195,20 +271,24 @@ export async function DELETE(request: Request) {
     .select("invoice_id")
     .eq("id", id)
     .maybeSingle()
-  if (existingError) return NextResponse.json({ error: existingError.message }, { status: 500 })
-  if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 })
+  if (existingError) return dbError(existingError, "invoice_items:DELETE")
+  if (!existing) return notFound()
 
   const { ok, error: verifyError } = await verifyInvoiceInOrg(
     supabase,
     existing.invoice_id,
     auth.orgId,
-    auth.isSuperadmin,
+    auth.isSuperadmin
   )
-  if (verifyError) return NextResponse.json({ error: verifyError.message }, { status: 500 })
-  if (!ok) return NextResponse.json({ error: "Not found" }, { status: 404 })
+  if (verifyError) return dbError(verifyError, "invoice_items:DELETE")
+  if (!ok) return notFound()
 
-  const { error } = await supabase.schema("billing").from("invoice_items").delete().eq("id", id)
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  const { error } = await supabase
+    .schema("billing")
+    .from("invoice_items")
+    .delete()
+    .eq("id", id)
+  if (error) return dbError(error, "invoice_items:DELETE")
 
   if (auth.orgId) {
     await Promise.all([

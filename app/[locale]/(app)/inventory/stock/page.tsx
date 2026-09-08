@@ -28,7 +28,9 @@ export default function StockPage() {
       cell: ({ getValue, row }) => (
         <div className="flex flex-col">
           <span className="font-medium">{getValue()}</span>
-          <span className="text-xs text-muted-foreground">{row.original.item_sku ?? ""}</span>
+          <span className="text-xs text-muted-foreground">
+            {row.original.item_sku ?? ""}
+          </span>
         </div>
       ),
     }),
@@ -48,8 +50,13 @@ export default function StockPage() {
       id: "status",
       header: t("columnStatus"),
       cell: ({ row }) => {
-        const isLow = row.original.quantity_on_hand <= row.original.item_reorder_level
-        return <StatusBadge status={isLow ? "low" : "ok"}>{isLow ? t("statusLow") : t("statusOk")}</StatusBadge>
+        const isLow =
+          row.original.quantity_on_hand <= row.original.item_reorder_level
+        return (
+          <StatusBadge status={isLow ? "low" : "ok"}>
+            {isLow ? t("statusLow") : t("statusOk")}
+          </StatusBadge>
+        )
       },
     }),
   ]

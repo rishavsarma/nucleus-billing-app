@@ -9,7 +9,13 @@ import { z } from "zod"
 import { Button } from "@/components/ui/button"
 import { Field, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
@@ -92,7 +98,9 @@ export function ItemForm({
       <div className="rounded-xl bg-card ring-1 ring-foreground/10">
         <div className="border-b px-4 py-3">
           <h2 className="text-sm font-semibold">{t("itemTypeTitle")}</h2>
-          <p className="text-xs text-muted-foreground">{t("itemTypeDescription")}</p>
+          <p className="text-xs text-muted-foreground">
+            {t("itemTypeDescription")}
+          </p>
         </div>
         <div className="grid grid-cols-2 gap-3 p-4">
           <button
@@ -100,34 +108,44 @@ export function ItemForm({
             onClick={() => setValue("track_inventory", true)}
             className={cn(
               "flex flex-col items-start gap-1.5 rounded-lg border p-3 text-left transition-colors",
-              trackInventory ? "border-primary bg-primary/5" : "border-border hover:bg-muted/40",
+              trackInventory
+                ? "border-primary bg-primary/5"
+                : "border-border hover:bg-muted/40"
             )}
           >
             <span className="flex items-center gap-2 text-sm font-medium">
               <PackageIcon className="size-4 text-muted-foreground" />
               {t("productTypeLabel")}
             </span>
-            <span className="text-xs text-muted-foreground">{t("productTypeHint")}</span>
+            <span className="text-xs text-muted-foreground">
+              {t("productTypeHint")}
+            </span>
           </button>
           <button
             type="button"
             onClick={() => setValue("track_inventory", false)}
             className={cn(
               "flex flex-col items-start gap-1.5 rounded-lg border p-3 text-left transition-colors",
-              !trackInventory ? "border-primary bg-primary/5" : "border-border hover:bg-muted/40",
+              !trackInventory
+                ? "border-primary bg-primary/5"
+                : "border-border hover:bg-muted/40"
             )}
           >
             <span className="flex items-center gap-2 text-sm font-medium">
               <WrenchIcon className="size-4 text-muted-foreground" />
               {t("serviceTypeLabel")}
             </span>
-            <span className="text-xs text-muted-foreground">{t("serviceTypeHint")}</span>
+            <span className="text-xs text-muted-foreground">
+              {t("serviceTypeHint")}
+            </span>
           </button>
         </div>
         {trackInventory ? (
           <div className="border-t px-4 py-4">
             <Field className="max-w-xs">
-              <FieldLabel htmlFor="item-reorder-level">{t("reorderLevelLabel")}</FieldLabel>
+              <FieldLabel htmlFor="item-reorder-level">
+                {t("reorderLevelLabel")}
+              </FieldLabel>
               <Input
                 id="item-reorder-level"
                 type="number"
@@ -145,7 +163,7 @@ export function ItemForm({
           <h2 className="text-sm font-semibold">{t("basicDetailsTitle")}</h2>
         </div>
         <div className="flex flex-col gap-4 p-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field data-invalid={!!formState.errors.name}>
               <FieldLabel htmlFor="item-name">{t("nameLabel")}</FieldLabel>
               <Input id="item-name" {...register("name")} />
@@ -156,7 +174,9 @@ export function ItemForm({
             </Field>
           </div>
           <Field>
-            <FieldLabel htmlFor="item-description">{t("descriptionLabel")}</FieldLabel>
+            <FieldLabel htmlFor="item-description">
+              {t("descriptionLabel")}
+            </FieldLabel>
             <Textarea id="item-description" {...register("description")} />
           </Field>
         </div>
@@ -166,7 +186,7 @@ export function ItemForm({
         <div className="border-b px-4 py-3">
           <h2 className="text-sm font-semibold">{t("classificationTitle")}</h2>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4">
+        <div className="grid grid-cols-1 gap-4 p-4 sm:grid-cols-3">
           <Field>
             <FieldLabel htmlFor="item-hsn">{t("hsnLabel")}</FieldLabel>
             <Input id="item-hsn" {...register("hsn_sac_code")} />
@@ -177,7 +197,10 @@ export function ItemForm({
           </Field>
           <Field>
             <FieldLabel htmlFor="item-tax-rate">{t("taxRateLabel")}</FieldLabel>
-            <Select value={taxRateId} onValueChange={(value) => setValue("tax_rate_id", value)}>
+            <Select
+              value={taxRateId}
+              onValueChange={(value) => setValue("tax_rate_id", value)}
+            >
               <SelectTrigger id="item-tax-rate" className="w-full">
                 <SelectValue placeholder={t("taxRatePlaceholder")} />
               </SelectTrigger>
@@ -197,20 +220,42 @@ export function ItemForm({
         <div className="border-b px-4 py-3">
           <h2 className="text-sm font-semibold">{t("pricingTitle")}</h2>
           <p className="text-xs text-muted-foreground">
-            {trackInventory ? t("pricingDescriptionTracked") : t("pricingDescription")}
+            {trackInventory
+              ? t("pricingDescriptionTracked")
+              : t("pricingDescription")}
           </p>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4">
+        <div className="grid grid-cols-1 gap-4 p-4 sm:grid-cols-2">
           {!trackInventory ? (
             <Field>
-              <FieldLabel htmlFor="item-unit-price">{t("unitPriceLabel")}</FieldLabel>
-              <Input id="item-unit-price" type="number" step="0.01" min={0} {...register("unit_price", { valueAsNumber: true })} />
+              <FieldLabel htmlFor="item-unit-price">
+                {t("unitPriceLabel")}
+              </FieldLabel>
+              <Input
+                id="item-unit-price"
+                type="number"
+                step="0.01"
+                min={0}
+                {...register("unit_price", { valueAsNumber: true })}
+              />
             </Field>
           ) : null}
           <Field>
-            <FieldLabel htmlFor="item-purchase-price">{t("purchasePriceLabel")}</FieldLabel>
-            <Input id="item-purchase-price" type="number" step="0.01" min={0} {...register("purchase_price", { valueAsNumber: true })} />
-            {trackInventory ? <p className="text-xs text-muted-foreground">{t("purchasePriceHintTracked")}</p> : null}
+            <FieldLabel htmlFor="item-purchase-price">
+              {t("purchasePriceLabel")}
+            </FieldLabel>
+            <Input
+              id="item-purchase-price"
+              type="number"
+              step="0.01"
+              min={0}
+              {...register("purchase_price", { valueAsNumber: true })}
+            />
+            {trackInventory ? (
+              <p className="text-xs text-muted-foreground">
+                {t("purchasePriceHintTracked")}
+              </p>
+            ) : null}
           </Field>
         </div>
       </div>
@@ -223,9 +268,15 @@ export function ItemForm({
           <Field orientation="horizontal">
             <FieldLabel htmlFor="item-active">
               {t("activeLabel")}
-              <span className="block text-xs font-normal text-muted-foreground">{t("activeHint")}</span>
+              <span className="block text-xs font-normal text-muted-foreground">
+                {t("activeHint")}
+              </span>
             </FieldLabel>
-            <Switch id="item-active" checked={isActive} onCheckedChange={(checked) => setValue("is_active", checked)} />
+            <Switch
+              id="item-active"
+              checked={isActive}
+              onCheckedChange={(checked) => setValue("is_active", checked)}
+            />
           </Field>
         </div>
       </div>

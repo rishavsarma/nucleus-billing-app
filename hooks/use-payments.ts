@@ -1,8 +1,14 @@
 "use client"
 
+import { useRef } from "react"
 import type { ListParams } from "@/lib/database/list-params-types"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { fetchPaymentsByInvoiceId, fetchPaymentsPaginated, createPayment, updatePayment } from "@/lib/database/services/payments"
+import {
+  fetchPaymentsByInvoiceId,
+  fetchPaymentsPaginated,
+  createPayment,
+  updatePayment,
+} from "@/lib/database/services/payments"
 import type { Payment } from "@/lib/database/types"
 
 /** One invoice's payment history — for the invoice detail page. */
@@ -28,8 +34,14 @@ export function usePaymentsList(params: ListParams) {
 
 export function useCreatePayment() {
   const queryClient = useQueryClient()
+  // Stable for as long as an attempt is in flight (so a double-click before
+  // the button disables reuses the same key, and the server replays the
+  // first result instead of recording twice); rotated once the mutation
+  // settles so the next genuinely new submission gets its own key.
+  const idempotencyKeyRef = useRef<string>(crypto.randomUUID())
   return useMutation({
-    mutationFn: (input: Partial<Payment>) => createPayment(input),
+    mutationFn: (input: Partial<Payment>) =>
+      createPayment(input, idempotencyKeyRef.current),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["payments"] })
       queryClient.invalidateQueries({ queryKey: ["invoices"] })
@@ -37,6 +49,9 @@ export function useCreatePayment() {
       // via the payments_mark_installment_paid DB trigger — refetch so the
       // EMI schedule and the org-wide Installments list catch up.
       queryClient.invalidateQueries({ queryKey: ["installments"] })
+    },
+    onSettled: () => {
+      idempotencyKeyRef.current = crypto.randomUUID()
     },
   })
 }

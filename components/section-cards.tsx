@@ -1,5 +1,7 @@
 "use client"
 
+import { useTranslations } from "next-intl"
+
 import {
   Card,
   CardDescription,
@@ -7,7 +9,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { DollarSignIcon, ArrowDownLeftIcon, AlertCircleIcon, ShoppingBagIcon } from "lucide-react"
+import {
+  DollarSignIcon,
+  ArrowDownLeftIcon,
+  AlertCircleIcon,
+  ShoppingBagIcon,
+} from "lucide-react"
 import { useDashboardStats } from "@/hooks/use-dashboard-stats"
 import { Skeleton } from "@/components/ui/skeleton"
 
@@ -19,6 +26,7 @@ const formatMoney = (n: number) =>
   })
 
 export function SectionCards() {
+  const t = useTranslations("DashboardOverview")
   const { data: stats, isLoading } = useDashboardStats()
 
   if (isLoading) {
@@ -26,8 +34,8 @@ export function SectionCards() {
       <div className="grid grid-cols-1 gap-4 px-4 lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-4">
         {[1, 2, 3, 4].map((i) => (
           <Card key={i} className="@container/card p-4">
-            <Skeleton className="h-4 w-28 mb-2" />
-            <Skeleton className="h-8 w-36 mb-2" />
+            <Skeleton className="mb-2 h-4 w-28" />
+            <Skeleton className="mb-2 h-8 w-36" />
             <Skeleton className="h-3 w-44" />
           </Card>
         ))}
@@ -45,7 +53,7 @@ export function SectionCards() {
       <Card className="@container/card">
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardDescription>Total Invoiced Sales</CardDescription>
+            <CardDescription>{t("totalInvoicedSales")}</CardDescription>
             <div className="rounded-md bg-primary/10 p-1.5 text-primary">
               <DollarSignIcon className="size-4" />
             </div>
@@ -56,10 +64,14 @@ export function SectionCards() {
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
           <div className="line-clamp-1 flex items-center gap-1.5 font-medium text-emerald-600 dark:text-emerald-400">
-            <span>{stats?.invoicesCount ?? 0} confirmed invoices</span>
+            <span>
+              {t("confirmedInvoicesCount", {
+                count: stats?.invoicesCount ?? 0,
+              })}
+            </span>
           </div>
-          <div className="text-muted-foreground text-xs">
-            Total sales generated across all customers
+          <div className="text-xs text-muted-foreground">
+            {t("totalSalesDescription")}
           </div>
         </CardFooter>
       </Card>
@@ -67,21 +79,21 @@ export function SectionCards() {
       <Card className="@container/card">
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardDescription>Total Collected Cash</CardDescription>
+            <CardDescription>{t("totalCollectedCash")}</CardDescription>
             <div className="rounded-md bg-emerald-500/10 p-1.5 text-emerald-500">
               <ArrowDownLeftIcon className="size-4" />
             </div>
           </div>
-          <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl text-emerald-600 dark:text-emerald-400">
+          <CardTitle className="text-2xl font-semibold text-emerald-600 tabular-nums @[250px]/card:text-3xl dark:text-emerald-400">
             {formatMoney(collected)}
           </CardTitle>
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
           <div className="line-clamp-1 flex items-center gap-1.5 font-medium text-emerald-600 dark:text-emerald-400">
-            <span>Realized Collections</span>
+            <span>{t("realizedCollections")}</span>
           </div>
-          <div className="text-muted-foreground text-xs">
-            Cash, UPI & bank payments recorded
+          <div className="text-xs text-muted-foreground">
+            {t("collectedDescription")}
           </div>
         </CardFooter>
       </Card>
@@ -89,21 +101,21 @@ export function SectionCards() {
       <Card className="@container/card">
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardDescription>Outstanding Receivables</CardDescription>
+            <CardDescription>{t("outstandingReceivables")}</CardDescription>
             <div className="rounded-md bg-amber-500/10 p-1.5 text-amber-500">
               <AlertCircleIcon className="size-4" />
             </div>
           </div>
-          <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl text-amber-600 dark:text-amber-400">
+          <CardTitle className="text-2xl font-semibold text-amber-600 tabular-nums @[250px]/card:text-3xl dark:text-amber-400">
             {formatMoney(outstanding)}
           </CardTitle>
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
           <div className="line-clamp-1 flex items-center gap-1.5 font-medium text-amber-600 dark:text-amber-400">
-            <span>Pending customer balances</span>
+            <span>{t("pendingBalances")}</span>
           </div>
-          <div className="text-muted-foreground text-xs">
-            Unpaid / partially paid invoice balances
+          <div className="text-xs text-muted-foreground">
+            {t("outstandingDescription")}
           </div>
         </CardFooter>
       </Card>
@@ -111,7 +123,7 @@ export function SectionCards() {
       <Card className="@container/card">
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardDescription>Purchase Bills & Expenses</CardDescription>
+            <CardDescription>{t("purchaseBillsExpenses")}</CardDescription>
             <div className="rounded-md bg-indigo-500/10 p-1.5 text-indigo-500">
               <ShoppingBagIcon className="size-4" />
             </div>
@@ -122,10 +134,10 @@ export function SectionCards() {
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
           <div className="line-clamp-1 flex items-center gap-1.5 font-medium">
-            <span>Vendor procurement</span>
+            <span>{t("vendorProcurement")}</span>
           </div>
-          <div className="text-muted-foreground text-xs">
-            Total expenses & inventory purchase bills
+          <div className="text-xs text-muted-foreground">
+            {t("expensesDescription")}
           </div>
         </CardFooter>
       </Card>

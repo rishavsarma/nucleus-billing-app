@@ -2,7 +2,12 @@
 
 import type { ListParams } from "@/lib/database/list-params-types"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { fetchSalesReturnById, fetchSalesReturnsPaginated, createSalesReturn, updateSalesReturn } from "@/lib/database/services/sales-returns"
+import {
+  fetchSalesReturnById,
+  fetchSalesReturnsPaginated,
+  createSalesReturn,
+  updateSalesReturn,
+} from "@/lib/database/services/sales-returns"
 import type { SalesReturn } from "@/lib/database/types"
 
 /** Paginated + searched list — use in list-view table pages. */
@@ -26,7 +31,8 @@ export function useCreateSalesReturn() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (input: Partial<SalesReturn>) => createSalesReturn(input),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["sales-returns"] }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["sales-returns"] }),
   })
 }
 
@@ -35,7 +41,8 @@ export function useUpdateSalesReturn() {
   return useMutation({
     mutationFn: ({ id, input }: { id: string; input: Partial<SalesReturn> }) =>
       updateSalesReturn(id, input),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["sales-returns"] }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["sales-returns"] }),
   })
 }
 

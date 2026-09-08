@@ -43,7 +43,9 @@ export default function StockMovementsPage() {
     }),
     columnHelper.accessor("movement_type", {
       header: t("columnType"),
-      cell: ({ getValue }) => <Badge variant="outline">{tTypes(getValue())}</Badge>,
+      cell: ({ getValue }) => (
+        <Badge variant="outline">{tTypes(getValue())}</Badge>
+      ),
     }),
     columnHelper.accessor("item.name", {
       id: "item_id",
@@ -60,7 +62,13 @@ export default function StockMovementsPage() {
       cell: ({ getValue }) => {
         const value = getValue()
         return (
-          <span className={value > 0 ? "font-semibold text-emerald-600 dark:text-emerald-400" : "font-semibold text-destructive"}>
+          <span
+            className={
+              value > 0
+                ? "font-semibold text-emerald-600 dark:text-emerald-400"
+                : "font-semibold text-destructive"
+            }
+          >
             {value > 0 ? "+" : ""}
             {value}
           </span>
@@ -72,15 +80,24 @@ export default function StockMovementsPage() {
       header: t("columnReference"),
       cell: ({ row }) => {
         const { reference_type, reference_id, notes } = row.original
-        const routeFn = reference_type ? REFERENCE_ROUTE[reference_type] : undefined
+        const routeFn = reference_type
+          ? REFERENCE_ROUTE[reference_type]
+          : undefined
         if (routeFn && reference_id) {
           return (
-            <Link href={routeFn(reference_id)} className="text-muted-foreground hover:underline">
+            <Link
+              href={routeFn(reference_id)}
+              className="text-muted-foreground hover:underline"
+            >
               {tReference(reference_type!)}
             </Link>
           )
         }
-        return <span className="text-muted-foreground">{notes ?? (reference_type ? tReference(reference_type) : "—")}</span>
+        return (
+          <span className="text-muted-foreground">
+            {notes ?? (reference_type ? tReference(reference_type) : "—")}
+          </span>
+        )
       },
     }),
   ]

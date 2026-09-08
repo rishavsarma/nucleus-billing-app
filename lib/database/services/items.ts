@@ -1,6 +1,9 @@
 import { api } from "@/lib/axios"
 import type { Item, ItemWithTaxRate } from "@/lib/database/types"
-import type { ListParams, PaginatedResponse } from "@/lib/database/list-params-types"
+import type {
+  ListParams,
+  PaginatedResponse,
+} from "@/lib/database/list-params-types"
 
 /** Fetch a single record by id — for detail pages. */
 export async function fetchItemById(id: string): Promise<Item> {
@@ -10,8 +13,13 @@ export async function fetchItemById(id: string): Promise<Item> {
 
 /** Fetch a paginated + searched page of items, with each row's tax rate
  * name embedded via a real server-side join. */
-export async function fetchItemsPaginated(params: ListParams): Promise<PaginatedResponse<ItemWithTaxRate>> {
-  const { data } = await api.get<PaginatedResponse<ItemWithTaxRate>>("/database/items", { params })
+export async function fetchItemsPaginated(
+  params: ListParams
+): Promise<PaginatedResponse<ItemWithTaxRate>> {
+  const { data } = await api.get<PaginatedResponse<ItemWithTaxRate>>(
+    "/database/items",
+    { params }
+  )
   return data
 }
 
@@ -20,8 +28,13 @@ export async function createItem(input: Partial<Item>): Promise<Item> {
   return data
 }
 
-export async function updateItem(id: string, input: Partial<Item>): Promise<Item> {
-  const { data } = await api.put<Item>("/database/items", input, { params: { id } })
+export async function updateItem(
+  id: string,
+  input: Partial<Item>
+): Promise<Item> {
+  const { data } = await api.put<Item>("/database/items", input, {
+    params: { id },
+  })
   return data
 }
 

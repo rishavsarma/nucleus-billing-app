@@ -1,16 +1,16 @@
 /**
  * High-Performance Concurrent Load Tester for Nucleus Billing App
- * 
+ *
  * Usage:
  *   bun run scripts/load-test.ts [scenario] --cookie="sb-supabase-auth-token=..." [options]
- * 
+ *
  * Scenarios:
  *   mixed        (Default) Realistic mixed traffic (items, invoices, customers, tax rates)
  *   items        Catalog search & pagination across items
  *   invoices     Invoices list with customer data
  *   customers    Customer search queries
  *   url <path>   Test a specific endpoint (e.g. /api/database/warehouses)
- * 
+ *
  * Options:
  *   --cookie="<str>"       Auth cookie (e.g. sb-supabase-auth-token=...)
  *   -c, --connections=<n>  Number of concurrent simulated users (default: 25)
@@ -66,14 +66,27 @@ Example:
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i]
-    if (arg === "mixed" || arg === "items" || arg === "invoices" || arg === "customers") {
+    if (
+      arg === "mixed" ||
+      arg === "items" ||
+      arg === "invoices" ||
+      arg === "customers"
+    ) {
       target = arg
     } else if (arg === "url") {
       target = args[++i]
-    } else if (arg.startsWith("http://") || arg.startsWith("https://") || arg.startsWith("/api/")) {
+    } else if (
+      arg.startsWith("http://") ||
+      arg.startsWith("https://") ||
+      arg.startsWith("/api/")
+    ) {
       target = arg
     } else if (arg.startsWith("--cookie=")) {
-      cookie = arg.split("=").slice(1).join("=").replace(/^["']|["']$/g, "")
+      cookie = arg
+        .split("=")
+        .slice(1)
+        .join("=")
+        .replace(/^["']|["']$/g, "")
     } else if (arg.startsWith("-c=") || arg.startsWith("--connections=")) {
       connections = parseInt(arg.split("=")[1], 10)
     } else if (arg === "-c" || arg === "--connections") {
@@ -100,7 +113,15 @@ function getRequestUrl(config: Config, reqIndex: number): string {
 
   if (config.target === "items") {
     const pages = [1, 2, 3, 5, 10]
-    const searchTerms = ["", "Widget", "Sensor", "Pro", "Ultra", "Standard", "Cable"]
+    const searchTerms = [
+      "",
+      "Widget",
+      "Sensor",
+      "Pro",
+      "Ultra",
+      "Standard",
+      "Cable",
+    ]
     const page = pages[reqIndex % pages.length]
     const search = searchTerms[reqIndex % searchTerms.length]
     return `${base}/api/database/items?page=${page}&pageSize=20&search=${encodeURIComponent(search)}`
@@ -152,7 +173,9 @@ async function run() {
   console.log(`Base Host:         ${config.host}`)
   console.log(`Concurrent Users:  ${config.connections} concurrent connections`)
   console.log(`Total Requests:    ${config.totalRequests}`)
-  console.log(`Cookie:            ${config.cookie ? config.cookie.slice(0, 35) + "..." : "⚠️ None (requests will 401)"}`)
+  console.log(
+    `Cookie:            ${config.cookie ? config.cookie.slice(0, 35) + "..." : "⚠️ None (requests will 401)"}`
+  )
   console.log("========================================================\n")
 
   const headers: Record<string, string> = {
@@ -172,14 +195,18 @@ async function run() {
       console.log("--------------------------------------------------------")
       console.log("The server rejected the provided cookie.")
       console.log("Please copy the fresh sb-supabase-auth-token from DevTools:")
-      console.log('  bun run scripts/load-test.ts mixed --cookie="sb-supabase-auth-token=..."')
+      console.log(
+        '  bun run scripts/load-test.ts mixed --cookie="sb-supabase-auth-token=..."'
+      )
       console.log("--------------------------------------------------------\n")
       process.exit(1)
     }
     console.log(`✅ OK (HTTP ${preflightRes.status})\n`)
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err)
-    console.log(`\n❌ Failed to connect to server at ${config.host}: ${message}`)
+    console.log(
+      `\n❌ Failed to connect to server at ${config.host}: ${message}`
+    )
     console.log("Make sure your dev server is running (e.g. bun run dev).\n")
     process.exit(1)
   }
@@ -211,21 +238,35 @@ async function run() {
           errorCount++
           if (sampleErrors.length < 5) {
             const body = await res.text().catch(() => "")
-            sampleErrors.push({ url, status: res.status, body: body.slice(0, 200) })
+            sampleErrors.push({
+              url,
+              status: res.status,
+              body: body.slice(0, 200),
+            })
           }
         }
       } catch (err: unknown) {
         errorCount++
         statusCodes[0] = (statusCodes[0] || 0) + 1
         if (sampleErrors.length < 5) {
-          sampleErrors.push({ url, status: 0, body: err instanceof Error ? err.message : String(err) })
+          sampleErrors.push({
+            url,
+            status: 0,
+            body: err instanceof Error ? err.message : String(err),
+          })
         }
       } finally {
         completed++
-        if (completed % Math.max(1, Math.floor(config.totalRequests / 20)) === 0 || completed === config.totalRequests) {
+        if (
+          completed % Math.max(1, Math.floor(config.totalRequests / 20)) ===
+            0 ||
+          completed === config.totalRequests
+        ) {
           const progress = Math.round((completed / config.totalRequests) * 100)
           const barLen = Math.floor(progress / 5)
-          process.stdout.write(`\rProgress: [${"█".repeat(barLen)}${"-".repeat(20 - barLen)}] ${progress}% (${completed}/${config.totalRequests})`)
+          process.stdout.write(
+            `\rProgress: [${"█".repeat(barLen)}${"-".repeat(20 - barLen)}] ${progress}% (${completed}/${config.totalRequests})`
+          )
         }
       }
     }
@@ -238,7 +279,9 @@ async function run() {
   latencies.sort((a, b) => a - b)
 
   const rps = (completed / totalTimeSec).toFixed(1)
-  const avg = (latencies.reduce((a, b) => a + b, 0) / (latencies.length || 1)).toFixed(1)
+  const avg = (
+    latencies.reduce((a, b) => a + b, 0) / (latencies.length || 1)
+  ).toFixed(1)
   const min = (latencies[0] || 0).toFixed(1)
   const max = (latencies[latencies.length - 1] || 0).toFixed(1)
   const p50 = calculatePercentile(latencies, 50).toFixed(1)
@@ -252,7 +295,9 @@ async function run() {
   console.log(`Total Elapsed Time:  ${totalTimeSec.toFixed(2)}s`)
   console.log(`Total Requests:      ${completed}`)
   console.log(`Throughput:          ${rps} req/sec`)
-  console.log(`Success Rate:        ${(((completed - errorCount) / completed) * 100).toFixed(2)}%`)
+  console.log(
+    `Success Rate:        ${(((completed - errorCount) / completed) * 100).toFixed(2)}%`
+  )
   console.log("--------------------------------------------------------")
   console.log("Latency Distribution (ms):")
   console.log(`  Min (fastest):     ${min} ms`)
@@ -267,7 +312,9 @@ async function run() {
   console.log("HTTP Status Codes:")
   for (const [code, count] of Object.entries(statusCodes)) {
     const label = code === "0" ? "Network Failure / Timeout" : `HTTP ${code}`
-    console.log(`  ${label}: ${count} (${((count / completed) * 100).toFixed(1)}%)`)
+    console.log(
+      `  ${label}: ${count} (${((count / completed) * 100).toFixed(1)}%)`
+    )
   }
   if (sampleErrors.length > 0) {
     console.log("--------------------------------------------------------")

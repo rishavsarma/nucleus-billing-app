@@ -20,7 +20,8 @@ export function useCreateMembership() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (input: Partial<Membership>) => createMembership(input),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["memberships"] }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["memberships"] }),
   })
 }
 
@@ -29,7 +30,8 @@ export function useUpdateMembership() {
   return useMutation({
     mutationFn: ({ id, input }: { id: string; input: Partial<Membership> }) =>
       updateMembership(id, input),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["memberships"] }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["memberships"] }),
   })
 }
 
@@ -37,6 +39,7 @@ export function useDeleteMembership() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (id: string) => deleteMembership(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["memberships"] }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["memberships"] }),
   })
 }

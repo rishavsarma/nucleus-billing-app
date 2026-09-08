@@ -24,33 +24,49 @@ export function usePurchaseReturnItems(purchaseReturnId: string | undefined) {
 export function useCreatePurchaseReturnItem() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (input: Partial<PurchaseReturnItem> & { purchase_return_id: string }) =>
-      createPurchaseReturnItem(input),
+    mutationFn: (
+      input: Partial<PurchaseReturnItem> & { purchase_return_id: string }
+    ) => createPurchaseReturnItem(input),
     onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["purchase-return-items", variables.purchase_return_id] })
+      queryClient.invalidateQueries({
+        queryKey: ["purchase-return-items", variables.purchase_return_id],
+      })
       queryClient.invalidateQueries({ queryKey: ["purchase-returns"] })
     },
   })
 }
 
-export function useUpdatePurchaseReturnItem(purchaseReturnId: string | undefined) {
+export function useUpdatePurchaseReturnItem(
+  purchaseReturnId: string | undefined
+) {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, input }: { id: string; input: Partial<PurchaseReturnItem> }) =>
-      updatePurchaseReturnItem(id, input),
+    mutationFn: ({
+      id,
+      input,
+    }: {
+      id: string
+      input: Partial<PurchaseReturnItem>
+    }) => updatePurchaseReturnItem(id, input),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["purchase-return-items", purchaseReturnId] })
+      queryClient.invalidateQueries({
+        queryKey: ["purchase-return-items", purchaseReturnId],
+      })
       queryClient.invalidateQueries({ queryKey: ["purchase-returns"] })
     },
   })
 }
 
-export function useDeletePurchaseReturnItem(purchaseReturnId: string | undefined) {
+export function useDeletePurchaseReturnItem(
+  purchaseReturnId: string | undefined
+) {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (id: string) => deletePurchaseReturnItem(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["purchase-return-items", purchaseReturnId] })
+      queryClient.invalidateQueries({
+        queryKey: ["purchase-return-items", purchaseReturnId],
+      })
       queryClient.invalidateQueries({ queryKey: ["purchase-returns"] })
     },
   })

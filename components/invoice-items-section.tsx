@@ -14,16 +14,39 @@ import { EntityFormDialog } from "@/components/entity-form-dialog"
 import { Field, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { SearchableSelect } from "@/components/searchable-select"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
 import { useDebouncedValue } from "@/hooks/use-debounced-value"
-import { useCreateInvoiceItem, useDeleteInvoiceItem, useInvoiceItems, useUpdateInvoiceItem } from "@/hooks/use-invoice-items"
+import {
+  useCreateInvoiceItem,
+  useDeleteInvoiceItem,
+  useInvoiceItems,
+  useUpdateInvoiceItem,
+} from "@/hooks/use-invoice-items"
 import { useItem, useItemsList } from "@/hooks/use-items"
 import { useItemVariants } from "@/hooks/use-item-variants"
 import { useTaxRates } from "@/hooks/use-tax-rates"
 import type { InvoiceItem } from "@/lib/database/types"
 
-const money = (n: number) => "₹" + n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+const money = (n: number) =>
+  "₹" +
+  n.toLocaleString("en-IN", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })
 
 const lineItemSchema = z.object({
   item_id: z.string().optional(),
@@ -62,11 +85,12 @@ export function InvoiceItemsSection({
   // in the catalog (pageSize: 9999) and filtering client-side.
   const [itemSearch, setItemSearch] = useState("")
   const debouncedItemSearch = useDebouncedValue(itemSearch, 300)
-  const { data: catalogItemsResult, isFetching: isFetchingCatalogItems } = useItemsList({
-    search: debouncedItemSearch,
-    page: 1,
-    pageSize: 30,
-  })
+  const { data: catalogItemsResult, isFetching: isFetchingCatalogItems } =
+    useItemsList({
+      search: debouncedItemSearch,
+      page: 1,
+      pageSize: 30,
+    })
   const catalogItems = catalogItemsResult?.data ?? []
 
   const form = useForm<LineItemFormValues>({
@@ -81,17 +105,27 @@ export function InvoiceItemsSection({
             unit_price: editing.unit_price,
             tax_rate: editing.tax_rate,
           }
-        : { item_id: undefined, item_variant_id: undefined, description: "", quantity: 1, unit_price: 0, tax_rate: 0 },
+        : {
+            item_id: undefined,
+            item_variant_id: undefined,
+            description: "",
+            quantity: 1,
+            unit_price: 0,
+            tax_rate: 0,
+          },
   })
   const selectedItemId = useWatch({ control: form.control, name: "item_id" })
-  const selectedVariantId = useWatch({ control: form.control, name: "item_variant_id" })
+  const selectedVariantId = useWatch({
+    control: form.control,
+    name: "item_variant_id",
+  })
   // Resolved directly by id rather than found in catalogItems, since the
   // currently-selected item (e.g. when editing an existing line) may not
   // be part of the current search page.
   const { data: selectedItem } = useItem(selectedItemId)
   const { data: variants } = useItemVariants(
     selectedItem?.track_inventory ? selectedItemId : undefined,
-    warehouseId ?? undefined,
+    warehouseId ?? undefined
   )
 
   function onPickCatalogItem(itemId: string) {
@@ -137,7 +171,7 @@ export function InvoiceItemsSection({
             setEditing(null)
           },
           onError: () => toast.error(tCommon("genericError")),
-        },
+        }
       )
     } else {
       createLineItem.mutate(
@@ -148,7 +182,7 @@ export function InvoiceItemsSection({
             setEditing(null)
           },
           onError: () => toast.error(tCommon("genericError")),
-        },
+        }
       )
     }
   }
@@ -166,34 +200,56 @@ export function InvoiceItemsSection({
           </Button>
         ) : null}
       </div>
-      <div className="p-3 sm:p-4 overflow-x-auto">
+      <div className="overflow-x-auto p-3 sm:p-4">
         {lineItems?.length ? (
-          <Table className="whitespace-nowrap text-xs sm:text-sm">
+          <Table className="text-xs whitespace-nowrap sm:text-sm">
             <TableHeader>
               <TableRow>
                 <TableHead>{t("descriptionLabel")}</TableHead>
-                <TableHead className="text-right">{t("quantityLabel")}</TableHead>
-                <TableHead className="text-right">{t("unitPriceLabel")}</TableHead>
-                <TableHead className="text-right">{t("taxRateLabel")}</TableHead>
-                <TableHead className="text-right">{t("lineTotalLabel")}</TableHead>
+                <TableHead className="text-right">
+                  {t("quantityLabel")}
+                </TableHead>
+                <TableHead className="text-right">
+                  {t("unitPriceLabel")}
+                </TableHead>
+                <TableHead className="text-right">
+                  {t("taxRateLabel")}
+                </TableHead>
+                <TableHead className="text-right">
+                  {t("lineTotalLabel")}
+                </TableHead>
                 {editable ? <TableHead /> : null}
               </TableRow>
             </TableHeader>
             <TableBody>
               {lineItems.map((line) => (
                 <TableRow key={line.id}>
-                  <TableCell className="font-medium max-w-[200px] truncate">{line.description}</TableCell>
+                  <TableCell className="max-w-[200px] truncate font-medium">
+                    {line.description}
+                  </TableCell>
                   <TableCell className="text-right">{line.quantity}</TableCell>
-                  <TableCell className="text-right">{money(line.unit_price)}</TableCell>
+                  <TableCell className="text-right">
+                    {money(line.unit_price)}
+                  </TableCell>
                   <TableCell className="text-right">{line.tax_rate}%</TableCell>
-                  <TableCell className="text-right font-semibold">{money(line.line_total)}</TableCell>
+                  <TableCell className="text-right font-semibold">
+                    {money(line.line_total)}
+                  </TableCell>
                   {editable ? (
                     <TableCell>
                       <div className="flex justify-end gap-1">
-                        <Button variant="ghost" size="icon-sm" onClick={() => setEditing(line)}>
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          onClick={() => setEditing(line)}
+                        >
                           <PencilIcon />
                         </Button>
-                        <Button variant="ghost" size="icon-sm" onClick={() => setToDelete(line)}>
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          onClick={() => setToDelete(line)}
+                        >
                           <TrashIcon />
                         </Button>
                       </div>
@@ -204,7 +260,9 @@ export function InvoiceItemsSection({
             </TableBody>
           </Table>
         ) : (
-          <p className="py-4 text-center text-sm text-muted-foreground">{t("noLineItems")}</p>
+          <p className="py-4 text-center text-sm text-muted-foreground">
+            {t("noLineItems")}
+          </p>
         )}
       </div>
 
@@ -225,10 +283,14 @@ export function InvoiceItemsSection({
             placeholder={t("itemPlaceholder")}
             options={[
               { value: NO_ITEM, label: t("itemPlaceholder") },
-              ...(selectedItem && !catalogItems.some((item) => item.id === selectedItem.id)
+              ...(selectedItem &&
+              !catalogItems.some((item) => item.id === selectedItem.id)
                 ? [{ value: selectedItem.id, label: selectedItem.name }]
                 : []),
-              ...catalogItems.map((item) => ({ value: item.id, label: item.name })),
+              ...catalogItems.map((item) => ({
+                value: item.id,
+                label: item.name,
+              })),
             ]}
             search={itemSearch}
             onSearchChange={setItemSearch}
@@ -240,12 +302,21 @@ export function InvoiceItemsSection({
             <FieldLabel htmlFor="li-variant">{t("variantLabel")}</FieldLabel>
             <Select value={selectedVariantId} onValueChange={onPickVariant}>
               <SelectTrigger id="li-variant" className="w-full">
-                <SelectValue placeholder={variants?.length ? t("variantPlaceholder") : t("variantNoneAvailable")} />
+                <SelectValue
+                  placeholder={
+                    variants?.length
+                      ? t("variantPlaceholder")
+                      : t("variantNoneAvailable")
+                  }
+                />
               </SelectTrigger>
               <SelectContent>
                 {variants?.map((variant) => (
                   <SelectItem key={variant.id} value={variant.id}>
-                    {t("variantOption", { price: money(variant.unit_price), qty: variant.quantity_remaining })}
+                    {t("variantOption", {
+                      price: money(variant.unit_price),
+                      qty: variant.quantity_remaining,
+                    })}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -253,21 +324,44 @@ export function InvoiceItemsSection({
           </Field>
         ) : null}
         <Field>
-          <FieldLabel htmlFor="li-description">{t("descriptionLabel")}</FieldLabel>
+          <FieldLabel htmlFor="li-description">
+            {t("descriptionLabel")}
+          </FieldLabel>
           <Input id="li-description" {...form.register("description")} />
         </Field>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
           <Field>
             <FieldLabel htmlFor="li-quantity">{t("quantityLabel")}</FieldLabel>
-            <Input id="li-quantity" type="number" step="any" min={0} {...form.register("quantity", { valueAsNumber: true })} />
+            <Input
+              id="li-quantity"
+              type="number"
+              step="any"
+              min={0}
+              {...form.register("quantity", { valueAsNumber: true })}
+            />
           </Field>
           <Field>
-            <FieldLabel htmlFor="li-unit-price">{t("unitPriceLabel")}</FieldLabel>
-            <Input id="li-unit-price" type="number" step="0.01" min={0} {...form.register("unit_price", { valueAsNumber: true })} />
+            <FieldLabel htmlFor="li-unit-price">
+              {t("unitPriceLabel")}
+            </FieldLabel>
+            <Input
+              id="li-unit-price"
+              type="number"
+              step="0.01"
+              min={0}
+              {...form.register("unit_price", { valueAsNumber: true })}
+            />
           </Field>
           <Field>
             <FieldLabel htmlFor="li-tax-rate">{t("taxRateLabel")}</FieldLabel>
-            <Input id="li-tax-rate" type="number" step="0.01" min={0} max={100} {...form.register("tax_rate", { valueAsNumber: true })} />
+            <Input
+              id="li-tax-rate"
+              type="number"
+              step="0.01"
+              min={0}
+              max={100}
+              {...form.register("tax_rate", { valueAsNumber: true })}
+            />
           </Field>
         </div>
       </EntityFormDialog>

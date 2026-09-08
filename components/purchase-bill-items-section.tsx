@@ -14,7 +14,14 @@ import { EntityFormDialog } from "@/components/entity-form-dialog"
 import { Field, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { SearchableSelect } from "@/components/searchable-select"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
 import { useDebouncedValue } from "@/hooks/use-debounced-value"
 import {
   useCreatePurchaseBillItem,
@@ -26,7 +33,12 @@ import { useItem, useItemsList } from "@/hooks/use-items"
 import { useTaxRates } from "@/hooks/use-tax-rates"
 import type { PurchaseBillItem } from "@/lib/database/types"
 
-const money = (n: number) => "₹" + n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+const money = (n: number) =>
+  "₹" +
+  n.toLocaleString("en-IN", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })
 
 const lineItemSchema = z.object({
   item_id: z.string().optional(),
@@ -40,7 +52,13 @@ type LineItemFormValues = z.infer<typeof lineItemSchema>
 
 const NO_ITEM = "__none__"
 
-export function PurchaseBillItemsSection({ purchaseBillId, editable }: { purchaseBillId: string; editable: boolean }) {
+export function PurchaseBillItemsSection({
+  purchaseBillId,
+  editable,
+}: {
+  purchaseBillId: string
+  editable: boolean
+}) {
   const t = useTranslations("PurchaseBills")
   const tCommon = useTranslations("Common")
 
@@ -57,11 +75,12 @@ export function PurchaseBillItemsSection({ purchaseBillId, editable }: { purchas
   // in the catalog (pageSize: 9999) and filtering client-side.
   const [itemSearch, setItemSearch] = useState("")
   const debouncedItemSearch = useDebouncedValue(itemSearch, 300)
-  const { data: catalogItemsResult, isFetching: isFetchingCatalogItems } = useItemsList({
-    search: debouncedItemSearch,
-    page: 1,
-    pageSize: 30,
-  })
+  const { data: catalogItemsResult, isFetching: isFetchingCatalogItems } =
+    useItemsList({
+      search: debouncedItemSearch,
+      page: 1,
+      pageSize: 30,
+    })
   const catalogItems = catalogItemsResult?.data ?? []
 
   const form = useForm<LineItemFormValues>({
@@ -76,7 +95,14 @@ export function PurchaseBillItemsSection({ purchaseBillId, editable }: { purchas
             unit_price: editing.unit_price,
             tax_rate: editing.tax_rate,
           }
-        : { item_id: undefined, description: "", quantity: 1, unit_cost: 0, unit_price: 0, tax_rate: 0 },
+        : {
+            item_id: undefined,
+            description: "",
+            quantity: 1,
+            unit_cost: 0,
+            unit_price: 0,
+            tax_rate: 0,
+          },
   })
   const selectedItemId = useWatch({ control: form.control, name: "item_id" })
   // Resolved directly by id rather than found in catalogItems, since the
@@ -117,7 +143,7 @@ export function PurchaseBillItemsSection({ purchaseBillId, editable }: { purchas
             setEditing(null)
           },
           onError: () => toast.error(tCommon("genericError")),
-        },
+        }
       )
     } else {
       createLineItem.mutate(
@@ -128,7 +154,7 @@ export function PurchaseBillItemsSection({ purchaseBillId, editable }: { purchas
             setEditing(null)
           },
           onError: () => toast.error(tCommon("genericError")),
-        },
+        }
       )
     }
   }
@@ -146,36 +172,62 @@ export function PurchaseBillItemsSection({ purchaseBillId, editable }: { purchas
           </Button>
         ) : null}
       </div>
-      <div className="p-3 sm:p-4 overflow-x-auto">
+      <div className="overflow-x-auto p-3 sm:p-4">
         {lineItems?.length ? (
-          <Table className="whitespace-nowrap text-xs sm:text-sm">
+          <Table className="text-xs whitespace-nowrap sm:text-sm">
             <TableHeader>
               <TableRow>
                 <TableHead>{t("descriptionLabel")}</TableHead>
-                <TableHead className="text-right">{t("quantityLabel")}</TableHead>
-                <TableHead className="text-right">{t("unitCostLabel")}</TableHead>
-                <TableHead className="text-right">{t("sellingPriceLabel")}</TableHead>
-                <TableHead className="text-right">{t("taxRateLabel")}</TableHead>
-                <TableHead className="text-right">{t("lineTotalLabel")}</TableHead>
+                <TableHead className="text-right">
+                  {t("quantityLabel")}
+                </TableHead>
+                <TableHead className="text-right">
+                  {t("unitCostLabel")}
+                </TableHead>
+                <TableHead className="text-right">
+                  {t("sellingPriceLabel")}
+                </TableHead>
+                <TableHead className="text-right">
+                  {t("taxRateLabel")}
+                </TableHead>
+                <TableHead className="text-right">
+                  {t("lineTotalLabel")}
+                </TableHead>
                 {editable ? <TableHead /> : null}
               </TableRow>
             </TableHeader>
             <TableBody>
               {lineItems.map((line) => (
                 <TableRow key={line.id}>
-                  <TableCell className="font-medium max-w-[200px] truncate">{line.description}</TableCell>
+                  <TableCell className="max-w-[200px] truncate font-medium">
+                    {line.description}
+                  </TableCell>
                   <TableCell className="text-right">{line.quantity}</TableCell>
-                  <TableCell className="text-right">{money(line.unit_cost)}</TableCell>
-                  <TableCell className="text-right">{money(line.unit_price)}</TableCell>
+                  <TableCell className="text-right">
+                    {money(line.unit_cost)}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    {money(line.unit_price)}
+                  </TableCell>
                   <TableCell className="text-right">{line.tax_rate}%</TableCell>
-                  <TableCell className="text-right font-semibold">{money(line.line_total)}</TableCell>
+                  <TableCell className="text-right font-semibold">
+                    {money(line.line_total)}
+                  </TableCell>
                   {editable ? (
                     <TableCell>
                       <div className="flex justify-end gap-1">
-                        <Button variant="ghost" size="icon-sm" onClick={() => setEditing(line)}>
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          onClick={() => setEditing(line)}
+                        >
                           <PencilIcon />
                         </Button>
-                        <Button variant="ghost" size="icon-sm" onClick={() => setToDelete(line)}>
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          onClick={() => setToDelete(line)}
+                        >
                           <TrashIcon />
                         </Button>
                       </div>
@@ -186,7 +238,9 @@ export function PurchaseBillItemsSection({ purchaseBillId, editable }: { purchas
             </TableBody>
           </Table>
         ) : (
-          <p className="py-4 text-center text-sm text-muted-foreground">{t("noLineItems")}</p>
+          <p className="py-4 text-center text-sm text-muted-foreground">
+            {t("noLineItems")}
+          </p>
         )}
       </div>
 
@@ -207,10 +261,14 @@ export function PurchaseBillItemsSection({ purchaseBillId, editable }: { purchas
             placeholder={t("itemPlaceholder")}
             options={[
               { value: NO_ITEM, label: t("itemPlaceholder") },
-              ...(selectedItem && !catalogItems.some((item) => item.id === selectedItem.id)
+              ...(selectedItem &&
+              !catalogItems.some((item) => item.id === selectedItem.id)
                 ? [{ value: selectedItem.id, label: selectedItem.name }]
                 : []),
-              ...catalogItems.map((item) => ({ value: item.id, label: item.name })),
+              ...catalogItems.map((item) => ({
+                value: item.id,
+                label: item.name,
+              })),
             ]}
             search={itemSearch}
             onSearchChange={setItemSearch}
@@ -218,26 +276,59 @@ export function PurchaseBillItemsSection({ purchaseBillId, editable }: { purchas
           />
         </Field>
         <Field>
-          <FieldLabel htmlFor="pbi-description">{t("descriptionLabel")}</FieldLabel>
+          <FieldLabel htmlFor="pbi-description">
+            {t("descriptionLabel")}
+          </FieldLabel>
           <Input id="pbi-description" {...form.register("description")} />
         </Field>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
           <Field>
             <FieldLabel htmlFor="pbi-quantity">{t("quantityLabel")}</FieldLabel>
-            <Input id="pbi-quantity" type="number" step="any" min={0} {...form.register("quantity", { valueAsNumber: true })} />
+            <Input
+              id="pbi-quantity"
+              type="number"
+              step="any"
+              min={0}
+              {...form.register("quantity", { valueAsNumber: true })}
+            />
           </Field>
           <Field>
-            <FieldLabel htmlFor="pbi-unit-cost">{t("unitCostLabel")}</FieldLabel>
-            <Input id="pbi-unit-cost" type="number" step="0.01" min={0} {...form.register("unit_cost", { valueAsNumber: true })} />
+            <FieldLabel htmlFor="pbi-unit-cost">
+              {t("unitCostLabel")}
+            </FieldLabel>
+            <Input
+              id="pbi-unit-cost"
+              type="number"
+              step="0.01"
+              min={0}
+              {...form.register("unit_cost", { valueAsNumber: true })}
+            />
           </Field>
           <Field>
-            <FieldLabel htmlFor="pbi-unit-price">{t("sellingPriceLabel")}</FieldLabel>
-            <Input id="pbi-unit-price" type="number" step="0.01" min={0} {...form.register("unit_price", { valueAsNumber: true })} />
-            <p className="text-xs text-muted-foreground">{t("sellingPriceHint")}</p>
+            <FieldLabel htmlFor="pbi-unit-price">
+              {t("sellingPriceLabel")}
+            </FieldLabel>
+            <Input
+              id="pbi-unit-price"
+              type="number"
+              step="0.01"
+              min={0}
+              {...form.register("unit_price", { valueAsNumber: true })}
+            />
+            <p className="text-xs text-muted-foreground">
+              {t("sellingPriceHint")}
+            </p>
           </Field>
           <Field>
             <FieldLabel htmlFor="pbi-tax-rate">{t("taxRateLabel")}</FieldLabel>
-            <Input id="pbi-tax-rate" type="number" step="0.01" min={0} max={100} {...form.register("tax_rate", { valueAsNumber: true })} />
+            <Input
+              id="pbi-tax-rate"
+              type="number"
+              step="0.01"
+              min={0}
+              max={100}
+              {...form.register("tax_rate", { valueAsNumber: true })}
+            />
           </Field>
         </div>
       </EntityFormDialog>

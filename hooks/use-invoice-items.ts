@@ -26,9 +26,12 @@ export function useInvoiceItems(invoiceId: string | undefined) {
 export function useCreateInvoiceItem() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (input: Partial<InvoiceItem> & { invoice_id: string }) => createInvoiceItem(input),
+    mutationFn: (input: Partial<InvoiceItem> & { invoice_id: string }) =>
+      createInvoiceItem(input),
     onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["invoice-items", variables.invoice_id] })
+      queryClient.invalidateQueries({
+        queryKey: ["invoice-items", variables.invoice_id],
+      })
       queryClient.invalidateQueries({ queryKey: ["invoices"] })
     },
   })

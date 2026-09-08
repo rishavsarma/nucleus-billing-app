@@ -2,7 +2,12 @@
 
 import type { ListParams } from "@/lib/database/list-params-types"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { fetchDebitNoteById, fetchDebitNotesPaginated, createDebitNote, updateDebitNote } from "@/lib/database/services/debit-notes"
+import {
+  fetchDebitNoteById,
+  fetchDebitNotesPaginated,
+  createDebitNote,
+  updateDebitNote,
+} from "@/lib/database/services/debit-notes"
 import type { DebitNote } from "@/lib/database/types"
 
 /** Paginated + searched list — use in list-view table pages. */
@@ -26,7 +31,8 @@ export function useCreateDebitNote() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (input: Partial<DebitNote>) => createDebitNote(input),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["debit-notes"] }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["debit-notes"] }),
   })
 }
 
@@ -35,7 +41,8 @@ export function useUpdateDebitNote() {
   return useMutation({
     mutationFn: ({ id, input }: { id: string; input: Partial<DebitNote> }) =>
       updateDebitNote(id, input),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["debit-notes"] }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["debit-notes"] }),
   })
 }
 

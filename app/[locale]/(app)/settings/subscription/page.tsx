@@ -18,7 +18,9 @@ export default function SubscriptionPage() {
   const { data: organization, isLoading } = useCurrentOrganization()
 
   const renewsAt = organization?.subscription_current_period_end
-    ? new Date(organization.subscription_current_period_end).toLocaleDateString()
+    ? new Date(
+        organization.subscription_current_period_end
+      ).toLocaleDateString()
     : null
 
   return (
@@ -35,7 +37,9 @@ export default function SubscriptionPage() {
           ) : (
             <div className="flex items-center justify-between">
               <div className="flex flex-col gap-1">
-                <span className="text-xs text-muted-foreground">{t("currentPlanLabel")}</span>
+                <span className="text-xs text-muted-foreground">
+                  {t("currentPlanLabel")}
+                </span>
                 {organization ? (
                   <StatusBadge status={organization.subscription_status}>
                     {t(STATUS_LABEL_KEY[organization.subscription_status])}
@@ -66,7 +70,9 @@ export default function SubscriptionPage() {
         </ul>
       </div>
 
-      <p className="text-xs text-muted-foreground">{t("noPaymentGatewayNote")}</p>
+      <p className="text-xs text-muted-foreground">
+        {t("noPaymentGatewayNote")}
+      </p>
     </div>
   )
 }

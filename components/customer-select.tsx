@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { useTranslations } from "next-intl"
 import { Check, ChevronsUpDown, Loader2, Plus, User } from "lucide-react"
 
 import { cn } from "@/lib/utils"
@@ -14,7 +15,11 @@ import {
   CommandList,
   CommandSeparator,
 } from "@/components/ui/command"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
 import { useCustomer, useCustomersList } from "@/hooks/use-customers"
 import { useDebouncedValue } from "@/hooks/use-debounced-value"
 
@@ -45,21 +50,32 @@ export function CustomerSelect({
   id,
   value,
   onValueChange,
-  placeholder = "Select a customer…",
-  searchPlaceholder = "Search customer…",
-  emptyMessage = "No customer found.",
+  placeholder,
+  searchPlaceholder,
+  emptyMessage,
   disabled = false,
   className,
   onAddNew,
-  addNewLabel = "Add new customer",
+  addNewLabel,
   container,
 }: CustomerSelectProps) {
+  const t = useTranslations("Pickers")
+  const resolvedPlaceholder = placeholder ?? t("customerPlaceholder")
+  const resolvedSearchPlaceholder =
+    searchPlaceholder ?? t("customerSearchPlaceholder")
+  const resolvedEmptyMessage = emptyMessage ?? t("customerEmpty")
+  const resolvedAddNewLabel = addNewLabel ?? t("customerAddNew")
+
   const [open, setOpen] = React.useState(false)
   const [search, setSearch] = React.useState("")
   const debouncedSearch = useDebouncedValue(search, 300)
 
   const { data: selectedCustomer } = useCustomer(value ?? undefined)
-  const { data: result, isLoading } = useCustomersList({ search: debouncedSearch, page: 1, pageSize: 20 })
+  const { data: result, isLoading } = useCustomersList({
+    search: debouncedSearch,
+    page: 1,
+    pageSize: 20,
+  })
   const customers = result?.data ?? []
 
   return (
@@ -79,7 +95,7 @@ export function CustomerSelect({
           aria-expanded={open}
           disabled={disabled}
           className={cn(
-            "w-full justify-between font-normal h-9 px-3 text-start",
+            "h-9 w-full justify-between px-3 text-start font-normal",
             !selectedCustomer && "text-muted-foreground",
             className
           )}
@@ -87,7 +103,7 @@ export function CustomerSelect({
           <span className="flex min-w-0 items-center gap-2 truncate">
             <User className="size-4 shrink-0 text-muted-foreground" />
             <span className="truncate">
-              {selectedCustomer ? selectedCustomer.name : placeholder}
+              {selectedCustomer ? selectedCustomer.name : resolvedPlaceholder}
             </span>
           </span>
           <ChevronsUpDown className="ms-2 size-4 shrink-0 opacity-50" />
@@ -99,14 +115,18 @@ export function CustomerSelect({
         container={container}
       >
         <Command shouldFilter={false}>
-          <CommandInput value={search} onValueChange={setSearch} placeholder={searchPlaceholder} />
+          <CommandInput
+            value={search}
+            onValueChange={setSearch}
+            placeholder={resolvedSearchPlaceholder}
+          />
           <CommandList className="max-h-60">
             {isLoading ? (
               <div className="flex items-center justify-center py-6 text-muted-foreground">
                 <Loader2 className="size-4 animate-spin" />
               </div>
             ) : customers.length === 0 ? (
-              <CommandEmpty>{emptyMessage}</CommandEmpty>
+              <CommandEmpty>{resolvedEmptyMessage}</CommandEmpty>
             ) : (
               <CommandGroup>
                 {customers.map((customer) => (
@@ -117,20 +137,26 @@ export function CustomerSelect({
                       onValueChange?.(currentValue)
                       setOpen(false)
                     }}
-                    className="flex items-center justify-between py-2 cursor-pointer"
+                    className="flex cursor-pointer items-center justify-between py-2"
                   >
-                    <div className="flex flex-col min-w-0">
-                      <span className="font-medium truncate">{customer.name}</span>
+                    <div className="flex min-w-0 flex-col">
+                      <span className="truncate font-medium">
+                        {customer.name}
+                      </span>
                       {(customer.email || customer.phone) && (
-                        <span className="text-xs text-muted-foreground truncate">
-                          {[customer.email, customer.phone].filter(Boolean).join(" • ")}
+                        <span className="truncate text-xs text-muted-foreground">
+                          {[customer.email, customer.phone]
+                            .filter(Boolean)
+                            .join(" • ")}
                         </span>
                       )}
                     </div>
                     <Check
                       className={cn(
                         "ms-2 size-4 shrink-0",
-                        value === customer.id ? "opacity-100 text-primary" : "opacity-0"
+                        value === customer.id
+                          ? "text-primary opacity-100"
+                          : "opacity-0"
                       )}
                     />
                   </CommandItem>
@@ -150,7 +176,7 @@ export function CustomerSelect({
                     className="cursor-pointer text-primary"
                   >
                     <Plus className="size-4" />
-                    <span>{addNewLabel}</span>
+                    <span>{resolvedAddNewLabel}</span>
                   </CommandItem>
                 </CommandGroup>
               </>

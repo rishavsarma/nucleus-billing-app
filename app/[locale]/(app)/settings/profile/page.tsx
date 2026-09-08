@@ -8,7 +8,12 @@ import { toast } from "sonner"
 import { z } from "zod"
 
 import { Button } from "@/components/ui/button"
-import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field"
+import {
+  Field,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
@@ -69,7 +74,7 @@ export default function ProfilePage() {
       {
         onSuccess: () => toast.success(tCommon("updatedSuccess")),
         onError: () => toast.error(tCommon("genericError")),
-      },
+      }
     )
   }
 
@@ -115,7 +120,9 @@ export default function ProfilePage() {
       >
         <div className="border-b px-4 py-3">
           <h2 className="text-sm font-semibold">{t("detailsTitle")}</h2>
-          <p className="text-xs text-muted-foreground">{t("detailsDescription")}</p>
+          <p className="text-xs text-muted-foreground">
+            {t("detailsDescription")}
+          </p>
         </div>
         <div className="p-4">
           <FieldGroup>
@@ -123,10 +130,14 @@ export default function ProfilePage() {
               <Field data-invalid={!!detailsForm.formState.errors.name}>
                 <FieldLabel htmlFor="profile-name">{t("nameLabel")}</FieldLabel>
                 <Input id="profile-name" {...detailsForm.register("name")} />
-                {detailsForm.formState.errors.name ? <FieldError>{tCommon("required")}</FieldError> : null}
+                {detailsForm.formState.errors.name ? (
+                  <FieldError>{tCommon("required")}</FieldError>
+                ) : null}
               </Field>
               <Field>
-                <FieldLabel htmlFor="profile-phone">{tFields("phone")}</FieldLabel>
+                <FieldLabel htmlFor="profile-phone">
+                  {tFields("phone")}
+                </FieldLabel>
                 <Input id="profile-phone" {...detailsForm.register("phone")} />
               </Field>
             </div>
@@ -134,7 +145,9 @@ export default function ProfilePage() {
         </div>
         <div className="flex justify-end border-t px-4 py-3">
           <Button type="submit" disabled={updateDetails.isPending}>
-            {updateDetails.isPending ? <Loader2Icon className="animate-spin" /> : null}
+            {updateDetails.isPending ? (
+              <Loader2Icon className="animate-spin" />
+            ) : null}
             {tCommon("save")}
           </Button>
         </div>
@@ -146,18 +159,32 @@ export default function ProfilePage() {
       >
         <div className="border-b px-4 py-3">
           <h2 className="text-sm font-semibold">{t("emailTitle")}</h2>
-          <p className="text-xs text-muted-foreground">{t("emailDescription")}</p>
+          <p className="text-xs text-muted-foreground">
+            {t("emailDescription")}
+          </p>
         </div>
         <div className="p-4">
           <Field data-invalid={!!emailForm.formState.errors.email}>
             <FieldLabel htmlFor="profile-email">{tFields("email")}</FieldLabel>
-            <Input id="profile-email" type="email" {...emailForm.register("email")} />
-            {emailForm.formState.errors.email ? <FieldError>{t("invalidEmail")}</FieldError> : null}
+            <Input
+              id="profile-email"
+              type="email"
+              {...emailForm.register("email")}
+            />
+            {emailForm.formState.errors.email ? (
+              <FieldError>{t("invalidEmail")}</FieldError>
+            ) : null}
           </Field>
         </div>
         <div className="flex justify-end border-t px-4 py-3">
-          <Button type="submit" variant="outline" disabled={updateEmail.isPending}>
-            {updateEmail.isPending ? <Loader2Icon className="animate-spin" /> : null}
+          <Button
+            type="submit"
+            variant="outline"
+            disabled={updateEmail.isPending}
+          >
+            {updateEmail.isPending ? (
+              <Loader2Icon className="animate-spin" />
+            ) : null}
             {t("changeEmail")}
           </Button>
         </div>
@@ -169,13 +196,17 @@ export default function ProfilePage() {
       >
         <div className="border-b px-4 py-3">
           <h2 className="text-sm font-semibold">{t("passwordTitle")}</h2>
-          <p className="text-xs text-muted-foreground">{t("passwordDescription")}</p>
+          <p className="text-xs text-muted-foreground">
+            {t("passwordDescription")}
+          </p>
         </div>
         <div className="p-4">
           <FieldGroup>
             <div className="grid grid-cols-2 gap-4">
               <Field data-invalid={!!passwordForm.formState.errors.password}>
-                <FieldLabel htmlFor="profile-new-password">{t("newPasswordLabel")}</FieldLabel>
+                <FieldLabel htmlFor="profile-new-password">
+                  {t("newPasswordLabel")}
+                </FieldLabel>
                 <Input
                   id="profile-new-password"
                   type="password"
@@ -186,8 +217,12 @@ export default function ProfilePage() {
                   <FieldError>{t("passwordTooShort")}</FieldError>
                 ) : null}
               </Field>
-              <Field data-invalid={!!passwordForm.formState.errors.confirmPassword}>
-                <FieldLabel htmlFor="profile-confirm-password">{t("confirmPasswordLabel")}</FieldLabel>
+              <Field
+                data-invalid={!!passwordForm.formState.errors.confirmPassword}
+              >
+                <FieldLabel htmlFor="profile-confirm-password">
+                  {t("confirmPasswordLabel")}
+                </FieldLabel>
                 <Input
                   id="profile-confirm-password"
                   type="password"
@@ -202,8 +237,14 @@ export default function ProfilePage() {
           </FieldGroup>
         </div>
         <div className="flex justify-end border-t px-4 py-3">
-          <Button type="submit" variant="outline" disabled={updatePassword.isPending}>
-            {updatePassword.isPending ? <Loader2Icon className="animate-spin" /> : null}
+          <Button
+            type="submit"
+            variant="outline"
+            disabled={updatePassword.isPending}
+          >
+            {updatePassword.isPending ? (
+              <Loader2Icon className="animate-spin" />
+            ) : null}
             {t("changePassword")}
           </Button>
         </div>

@@ -20,9 +20,12 @@ export function useInstallmentPlanByInvoice(invoiceId: string | undefined) {
 export function useCreateInstallmentPlan() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (input: Partial<InstallmentPlan> & { invoice_id: string }) => createInstallmentPlan(input),
+    mutationFn: (input: Partial<InstallmentPlan> & { invoice_id: string }) =>
+      createInstallmentPlan(input),
     onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["installment-plans", "by-invoice", variables.invoice_id] })
+      queryClient.invalidateQueries({
+        queryKey: ["installment-plans", "by-invoice", variables.invoice_id],
+      })
     },
   })
 }
@@ -30,9 +33,17 @@ export function useCreateInstallmentPlan() {
 export function useUpdateInstallmentPlan() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, input }: { id: string; input: Partial<InstallmentPlan> }) => updateInstallmentPlan(id, input),
+    mutationFn: ({
+      id,
+      input,
+    }: {
+      id: string
+      input: Partial<InstallmentPlan>
+    }) => updateInstallmentPlan(id, input),
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["installment-plans", "by-invoice", data.invoice_id] })
+      queryClient.invalidateQueries({
+        queryKey: ["installment-plans", "by-invoice", data.invoice_id],
+      })
     },
   })
 }

@@ -33,22 +33,47 @@ import { Field, FieldLabel } from "@/components/ui/field"
 import { OfferSelect } from "@/components/offer-select"
 import { Input } from "@/components/ui/input"
 import { QuickAddCustomerDialog } from "@/components/quick-add-customer-dialog"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
 import { calculateOfferDiscount } from "@/lib/calculate-offer"
 import { cn } from "@/lib/utils"
 import { useCreateCustomer } from "@/hooks/use-customers"
-import { fetchCustomerById, fetchCustomersPaginated } from "@/lib/database/services/customers"
-import { useCreateDelivery, useDeliveryByInvoice, useUpdateDelivery } from "@/hooks/use-deliveries"
+import {
+  fetchCustomerById,
+  fetchCustomersPaginated,
+} from "@/lib/database/services/customers"
+import {
+  useCreateDelivery,
+  useDeliveryByInvoice,
+  useUpdateDelivery,
+} from "@/hooks/use-deliveries"
 import { StaffSelect } from "@/components/staff-select"
 import { fetchInvoiceItems } from "@/lib/database/services/invoice-items"
 import { fetchInvoiceById } from "@/lib/database/services/invoices"
-import { fetchItemById, fetchItemsPaginated } from "@/lib/database/services/items"
+import {
+  fetchItemById,
+  fetchItemsPaginated,
+} from "@/lib/database/services/items"
 import { useCreateInstallment } from "@/hooks/use-installments"
 import { useCreateInstallmentPlan } from "@/hooks/use-installment-plans"
-import { useCreateInvoiceItem, useDeleteInvoiceItem, useInvoiceItems, useUpdateInvoiceItem } from "@/hooks/use-invoice-items"
-import { useCreateInvoice, useInvoice, useUpdateInvoice } from "@/hooks/use-invoices"
+import {
+  useCreateInvoiceItem,
+  useDeleteInvoiceItem,
+  useInvoiceItems,
+  useUpdateInvoiceItem,
+} from "@/hooks/use-invoice-items"
+import {
+  useCreateInvoice,
+  useInvoice,
+  useUpdateInvoice,
+} from "@/hooks/use-invoices"
 import { useDebouncedValue } from "@/hooks/use-debounced-value"
 import { useItemVariantsBulk } from "@/hooks/use-item-variants"
 import { useOffer } from "@/hooks/use-offers"
@@ -57,10 +82,18 @@ import { useActivePdfWatermarkText } from "@/hooks/use-pdf-watermarks"
 import { useCreatePayment } from "@/hooks/use-payments"
 import { useTaxRates } from "@/hooks/use-tax-rates"
 import { WarehouseSelect } from "@/components/warehouse-select"
-import { buildInvoicePdfElement, downloadInvoicePdf } from "@/lib/pdf/invoice-pdf"
+import {
+  buildInvoicePdfElement,
+  downloadInvoicePdf,
+} from "@/lib/pdf/invoice-pdf"
 import type { Item, ItemVariant, Payment } from "@/lib/database/types"
 
-const money = (n: number) => "₹" + n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+const money = (n: number) =>
+  "₹" +
+  n.toLocaleString("en-IN", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })
 // "Card" (the label shown) maps to the real "razorpay" method — the schema
 // has no literal "card" value; razorpay is the card/online-processor option.
 const PAYMENT_METHODS = ["cash", "razorpay", "upi", "bank_transfer"] as const
@@ -132,7 +165,12 @@ function newTab(): PosTab {
     paymentMethod: PAYMENT_METHODS[0],
     paymentAmount: null,
     lines: [],
-    delivery: { enabled: false, address: "", deliveryPersonId: null, paymentMode: null },
+    delivery: {
+      enabled: false,
+      address: "",
+      deliveryPersonId: null,
+      paymentMode: null,
+    },
     isEmi: false,
     emiMonths: 3,
     emiStartDate: new Date().toISOString().slice(0, 10),
@@ -141,12 +179,23 @@ function newTab(): PosTab {
 
 function lineTotals(lines: CartLine[]) {
   const subtotal = lines.reduce((sum, l) => sum + l.quantity * l.unitPrice, 0)
-  const tax = lines.reduce((sum, l) => sum + (l.quantity * l.unitPrice * l.taxRate) / 100, 0)
+  const tax = lines.reduce(
+    (sum, l) => sum + (l.quantity * l.unitPrice * l.taxRate) / 100,
+    0
+  )
   return { subtotal, tax, total: subtotal + tax }
 }
 
 /** Small bordered qty stepper used on every cart row — replaces plain +/- ghost buttons with a single connected control. */
-function QtyStepper({ value, onDecrement, onIncrement }: { value: number; onDecrement: () => void; onIncrement: () => void }) {
+function QtyStepper({
+  value,
+  onDecrement,
+  onIncrement,
+}: {
+  value: number
+  onDecrement: () => void
+  onIncrement: () => void
+}) {
   return (
     <div className="flex shrink-0 items-center overflow-hidden rounded-md border border-border">
       <button
@@ -156,7 +205,9 @@ function QtyStepper({ value, onDecrement, onIncrement }: { value: number; onDecr
       >
         <MinusIcon className="size-3" />
       </button>
-      <span className="w-6 text-center text-xs font-medium tabular-nums">{value}</span>
+      <span className="w-6 text-center text-xs font-medium tabular-nums">
+        {value}
+      </span>
       <button
         type="button"
         onClick={onIncrement}
@@ -196,14 +247,20 @@ function ItemTile({
           <Icon className="size-4" />
         </span>
         <span className="w-full min-w-0">
-          <span className="block truncate text-sm font-medium">{item.name}</span>
-          <span className="block text-xs text-muted-foreground">{money(item.unit_price)}</span>
+          <span className="block truncate text-sm font-medium">
+            {item.name}
+          </span>
+          <span className="block text-xs text-muted-foreground">
+            {money(item.unit_price)}
+          </span>
         </span>
       </button>
     )
   }
 
-  const availableVariants = (variants ?? []).filter((v) => v.quantity_remaining > 0)
+  const availableVariants = (variants ?? []).filter(
+    (v) => v.quantity_remaining > 0
+  )
 
   if (!availableVariants.length) {
     return (
@@ -212,8 +269,12 @@ function ItemTile({
           <Icon className="size-4" />
         </span>
         <span className="w-full min-w-0">
-          <span className="block truncate text-sm font-medium">{item.name}</span>
-          <span className="block text-xs text-muted-foreground">{t("noStock")}</span>
+          <span className="block truncate text-sm font-medium">
+            {item.name}
+          </span>
+          <span className="block text-xs text-muted-foreground">
+            {t("noStock")}
+          </span>
         </span>
       </div>
     )
@@ -231,8 +292,12 @@ function ItemTile({
           <Icon className="size-4" />
         </span>
         <span className="w-full min-w-0">
-          <span className="block truncate text-sm font-medium">{item.name}</span>
-          <span className="block text-xs text-muted-foreground">{money(variant.unit_price)}</span>
+          <span className="block truncate text-sm font-medium">
+            {item.name}
+          </span>
+          <span className="block text-xs text-muted-foreground">
+            {money(variant.unit_price)}
+          </span>
         </span>
       </button>
     )
@@ -243,7 +308,9 @@ function ItemTile({
       <span className="flex size-8 items-center justify-center rounded-lg bg-muted text-muted-foreground">
         <Icon className="size-4" />
       </span>
-      <span className="block w-full min-w-0 truncate text-sm font-medium">{item.name}</span>
+      <span className="block w-full min-w-0 truncate text-sm font-medium">
+        {item.name}
+      </span>
       <div className="flex flex-wrap gap-1">
         {availableVariants.map((variant) => (
           <button
@@ -252,7 +319,10 @@ function ItemTile({
             onClick={() => onAdd(item, variant)}
             className="rounded-full bg-muted px-2.5 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-primary hover:text-primary-foreground"
           >
-            {t("variantChip", { price: money(variant.unit_price), qty: variant.quantity_remaining })}
+            {t("variantChip", {
+              price: money(variant.unit_price),
+              qty: variant.quantity_remaining,
+            })}
           </button>
         ))}
       </div>
@@ -300,7 +370,8 @@ export default function BillingPosPage() {
   // (react.dev/learn/you-might-not-need-an-effect) rather than an effect,
   // since this needs to happen before the extra pages' queries below fire
   // for a search term they no longer match.
-  const [itemSearchForPage, setItemSearchForPage] = useState(debouncedItemSearch)
+  const [itemSearchForPage, setItemSearchForPage] =
+    useState(debouncedItemSearch)
   if (debouncedItemSearch !== itemSearchForPage) {
     setItemSearchForPage(debouncedItemSearch)
     setItemsPage(1)
@@ -313,12 +384,17 @@ export default function BillingPosPage() {
     queries: Array.from({ length: itemsPage }, (_, index) => {
       const page = index + 1
       const params = { search: debouncedItemSearch, page, pageSize: 60 }
-      return { queryKey: ["items", "list", params], queryFn: () => fetchItemsPaginated(params) }
+      return {
+        queryKey: ["items", "list", params],
+        queryFn: () => fetchItemsPaginated(params),
+      }
     }),
   })
   const loadedItems = itemPageQueries.flatMap((query) => query.data?.data ?? [])
   const lastLoadedItemsPage = itemPageQueries[itemPageQueries.length - 1]?.data
-  const hasMoreItems = lastLoadedItemsPage ? loadedItems.length < lastLoadedItemsPage.total : false
+  const hasMoreItems = lastLoadedItemsPage
+    ? loadedItems.length < lastLoadedItemsPage.total
+    : false
   const isFetchingItems = itemPageQueries.some((query) => query.isFetching)
   const loadMoreItemsRef = useRef<HTMLDivElement | null>(null)
   useEffect(() => {
@@ -330,7 +406,7 @@ export default function BillingPosPage() {
           setItemsPage((page) => page + 1)
         }
       },
-      { threshold: 0.1 },
+      { threshold: 0.1 }
     )
     observer.observe(el)
     return () => observer.disconnect()
@@ -355,14 +431,18 @@ export default function BillingPosPage() {
   // Mirrored into state via the callback ref below rather than read from
   // posContainerRef.current directly in JSX, since reading a ref's .current
   // during render is unsafe/disallowed by the rules of React.
-  const [posContainerEl, setPosContainerEl] = useState<HTMLDivElement | null>(null)
+  const [posContainerEl, setPosContainerEl] = useState<HTMLDivElement | null>(
+    null
+  )
   // A saved custom line's only persisted signal for "charge vs discount" is
   // the sign of its unit_price — but it starts at 0 (ambiguous) until the
   // cashier types an amount, and by then the description may have been
   // renamed away from the "Additional Charge"/"Discount" default. This map
   // bridges that gap: recorded once at creation, read only while the price
   // is still exactly 0.
-  const [customLineKinds, setCustomLineKinds] = useState<Record<string, "charge" | "discount">>({})
+  const [customLineKinds, setCustomLineKinds] = useState<
+    Record<string, "charge" | "discount">
+  >({})
 
   // Native Fullscreen exits on Escape automatically; a CSS overlay doesn't,
   // so this replicates that one bit of expected behavior.
@@ -390,7 +470,11 @@ export default function BillingPosPage() {
   // of single-row lookups scoped to whatever's actually open right now,
   // not the whole customer table (queryKey matches useCustomer's own, so
   // this shares cache with it rather than double-fetching).
-  const tabCustomerIds = [...new Set(tabs.map((tab) => tab.customerId).filter((id): id is string => !!id))]
+  const tabCustomerIds = [
+    ...new Set(
+      tabs.map((tab) => tab.customerId).filter((id): id is string => !!id)
+    ),
+  ]
   const tabCustomerQueries = useQueries({
     queries: tabCustomerIds.map((customerId) => ({
       queryKey: ["customers", "detail", customerId],
@@ -398,18 +482,29 @@ export default function BillingPosPage() {
     })),
   })
   const tabCustomerNameById = new Map(
-    tabCustomerIds.map((customerId, index) => [customerId, tabCustomerQueries[index]?.data?.name]),
+    tabCustomerIds.map((customerId, index) => [
+      customerId,
+      tabCustomerQueries[index]?.data?.name,
+    ])
   )
 
-  const { data: savedCartItems } = useInvoiceItems(activeTab.invoiceId ?? undefined)
-  const { data: existingDelivery } = useDeliveryByInvoice(activeTab.invoiceId ?? undefined)
+  const { data: savedCartItems } = useInvoiceItems(
+    activeTab.invoiceId ?? undefined
+  )
+  const { data: existingDelivery } = useDeliveryByInvoice(
+    activeTab.invoiceId ?? undefined
+  )
   const isDraftSaved = !!activeTab.invoiceId
 
-  const selectedOfferId = isDraftSaved ? (activeInvoice?.offer_id ?? null) : activeTab.offerId
+  const selectedOfferId = isDraftSaved
+    ? (activeInvoice?.offer_id ?? null)
+    : activeTab.offerId
   const { data: selectedOffer } = useOffer(selectedOfferId ?? undefined)
 
   const localTotals = lineTotals(activeTab.lines)
-  const blendedSubtotal = isDraftSaved ? (activeInvoice?.subtotal ?? 0) : localTotals.subtotal
+  const blendedSubtotal = isDraftSaved
+    ? (activeInvoice?.subtotal ?? 0)
+    : localTotals.subtotal
   const tax = isDraftSaved ? (activeInvoice?.tax_total ?? 0) : localTotals.tax
   const discount = isDraftSaved
     ? (activeInvoice?.discount_total ?? 0)
@@ -425,22 +520,31 @@ export default function BillingPosPage() {
   // (which still folds charges/discounts in — that's what makes `total`
   // above correct without touching its formula).
   const savedItemLines = (savedCartItems ?? []).filter((l) => l.item_id)
-  const savedChargeDiscountLines = (savedCartItems ?? []).filter((l) => !l.item_id)
+  const savedChargeDiscountLines = (savedCartItems ?? []).filter(
+    (l) => !l.item_id
+  )
   const localItemLines = activeTab.lines.filter((l) => l.kind === "item")
-  const localChargeDiscountLines = activeTab.lines.filter((l) => l.kind !== "item")
+  const localChargeDiscountLines = activeTab.lines.filter(
+    (l) => l.kind !== "item"
+  )
   const subtotal = isDraftSaved
     ? savedItemLines.reduce((sum, l) => sum + l.quantity * l.unit_price, 0)
     : localItemLines.reduce((sum, l) => sum + l.quantity * l.unitPrice, 0)
   const cartCount = isDraftSaved ? savedItemLines.length : localItemLines.length
 
   function updateTab(key: string, patch: Partial<PosTab>) {
-    setTabs((prev) => prev.map((tab) => (tab.key === key ? { ...tab, ...patch } : tab)))
+    setTabs((prev) =>
+      prev.map((tab) => (tab.key === key ? { ...tab, ...patch } : tab))
+    )
   }
 
   function handleOfferChange(offerId: string | null) {
     updateTab(activeTab.key, { offerId })
     if (isDraftSaved && activeTab.invoiceId) {
-      updateInvoice.mutate({ id: activeTab.invoiceId, input: { offer_id: offerId } })
+      updateInvoice.mutate({
+        id: activeTab.invoiceId,
+        input: { offer_id: offerId },
+      })
     }
   }
 
@@ -465,7 +569,9 @@ export default function BillingPosPage() {
       nextActiveKey = next[0].key
       return next
     })
-    setActiveKey((prevActiveKey) => (prevActiveKey === key ? nextActiveKey : prevActiveKey))
+    setActiveKey((prevActiveKey) =>
+      prevActiveKey === key ? nextActiveKey : prevActiveKey
+    )
   }
 
   function addItemToCart(item: Item, variant?: ItemVariant) {
@@ -477,12 +583,16 @@ export default function BillingPosPage() {
       setTabs((prev) =>
         prev.map((tab) => {
           if (tab.key !== activeTab.key) return tab
-          const existing = tab.lines.find((l) => l.itemId === item.id && l.itemVariantId === variantId)
+          const existing = tab.lines.find(
+            (l) => l.itemId === item.id && l.itemVariantId === variantId
+          )
           if (existing) {
             return {
               ...tab,
               lines: tab.lines.map((l) =>
-                l.itemId === item.id && l.itemVariantId === variantId ? { ...l, quantity: l.quantity + 1 } : l,
+                l.itemId === item.id && l.itemVariantId === variantId
+                  ? { ...l, quantity: l.quantity + 1 }
+                  : l
               ),
             }
           }
@@ -502,7 +612,7 @@ export default function BillingPosPage() {
               },
             ],
           }
-        }),
+        })
       )
       return
     }
@@ -510,10 +620,13 @@ export default function BillingPosPage() {
     // Already saved as a real draft invoice — edit it live, same as the
     // invoice detail page would.
     const existingLine = savedCartItems?.find(
-      (line) => line.item_id === item.id && line.item_variant_id === variantId,
+      (line) => line.item_id === item.id && line.item_variant_id === variantId
     )
     if (existingLine) {
-      updateInvoiceItem.mutate({ id: existingLine.id, input: { quantity: existingLine.quantity + 1 } })
+      updateInvoiceItem.mutate({
+        id: existingLine.id,
+        input: { quantity: existingLine.quantity + 1 },
+      })
     } else {
       createInvoiceItem.mutate({
         invoice_id: activeTab.invoiceId!,
@@ -533,8 +646,13 @@ export default function BillingPosPage() {
    * a negative unit_price, which recalc_invoice() already sums correctly.
    * `description` lets a caller pre-fill the label (e.g. "Delivery Fee")
    * instead of the generic per-kind default. */
-  function addCustomLine(kind: "charge" | "discount", descriptionOverride?: string) {
-    const description = descriptionOverride ?? (kind === "discount" ? t("discountLineDefault") : t("chargeLineDefault"))
+  function addCustomLine(
+    kind: "charge" | "discount",
+    descriptionOverride?: string
+  ) {
+    const description =
+      descriptionOverride ??
+      (kind === "discount" ? t("discountLineDefault") : t("chargeLineDefault"))
 
     if (!isDraftSaved) {
       setTabs((prev) =>
@@ -556,8 +674,8 @@ export default function BillingPosPage() {
                     taxRate: 0,
                   },
                 ],
-              },
-        ),
+              }
+        )
       )
       return
     }
@@ -572,7 +690,10 @@ export default function BillingPosPage() {
         unit_price: 0,
         tax_rate: 0,
       },
-      { onSuccess: (data) => setCustomLineKinds((prev) => ({ ...prev, [data.id]: kind })) },
+      {
+        onSuccess: (data) =>
+          setCustomLineKinds((prev) => ({ ...prev, [data.id]: kind })),
+      }
     )
   }
 
@@ -585,9 +706,16 @@ export default function BillingPosPage() {
   function deliveryFeeValue(): number {
     const label = t("deliveryFeeLineDefault")
     if (!isDraftSaved) {
-      return activeTab.lines.find((l) => l.kind === "charge" && l.description === label)?.unitPrice ?? 0
+      return (
+        activeTab.lines.find(
+          (l) => l.kind === "charge" && l.description === label
+        )?.unitPrice ?? 0
+      )
     }
-    return savedCartItems?.find((l) => !l.item_id && l.description === label)?.unit_price ?? 0
+    return (
+      savedCartItems?.find((l) => !l.item_id && l.description === label)
+        ?.unit_price ?? 0
+    )
   }
 
   function setDeliveryFee(rawValue: number) {
@@ -595,7 +723,9 @@ export default function BillingPosPage() {
     const amount = Number.isNaN(rawValue) ? 0 : Math.max(0, rawValue)
 
     if (!isDraftSaved) {
-      const existing = activeTab.lines.find((l) => l.kind === "charge" && l.description === label)
+      const existing = activeTab.lines.find(
+        (l) => l.kind === "charge" && l.description === label
+      )
       if (amount <= 0) {
         if (existing) changeLocalQuantity(existing.tempId, 0)
         return
@@ -622,20 +752,25 @@ export default function BillingPosPage() {
                       taxRate: 0,
                     },
                   ],
-                },
-          ),
+                }
+          )
         )
       }
       return
     }
 
-    const existing = savedCartItems?.find((l) => !l.item_id && l.description === label)
+    const existing = savedCartItems?.find(
+      (l) => !l.item_id && l.description === label
+    )
     if (amount <= 0) {
       if (existing) deleteInvoiceItem.mutate(existing.id)
       return
     }
     if (existing) {
-      updateInvoiceItem.mutate({ id: existing.id, input: { unit_price: amount } })
+      updateInvoiceItem.mutate({
+        id: existing.id,
+        input: { unit_price: amount },
+      })
     } else {
       createInvoiceItem.mutate(
         {
@@ -647,7 +782,10 @@ export default function BillingPosPage() {
           unit_price: amount,
           tax_rate: 0,
         },
-        { onSuccess: (data) => setCustomLineKinds((prev) => ({ ...prev, [data.id]: "charge" })) },
+        {
+          onSuccess: (data) =>
+            setCustomLineKinds((prev) => ({ ...prev, [data.id]: "charge" })),
+        }
       )
     }
   }
@@ -659,8 +797,13 @@ export default function BillingPosPage() {
         if (quantity <= 0) {
           return { ...tab, lines: tab.lines.filter((l) => l.tempId !== tempId) }
         }
-        return { ...tab, lines: tab.lines.map((l) => (l.tempId === tempId ? { ...l, quantity } : l)) }
-      }),
+        return {
+          ...tab,
+          lines: tab.lines.map((l) =>
+            l.tempId === tempId ? { ...l, quantity } : l
+          ),
+        }
+      })
     )
   }
 
@@ -676,12 +819,21 @@ export default function BillingPosPage() {
     setTabs((prev) =>
       prev.map((tab) => {
         if (tab.key !== activeTab.key) return tab
-        return { ...tab, lines: tab.lines.map((l) => (l.tempId === tempId ? { ...l, unitPrice } : l)) }
-      }),
+        return {
+          ...tab,
+          lines: tab.lines.map((l) =>
+            l.tempId === tempId ? { ...l, unitPrice } : l
+          ),
+        }
+      })
     )
   }
 
-  function commitSavedPrice(lineId: string, unitPrice: number, previous: number) {
+  function commitSavedPrice(
+    lineId: string,
+    unitPrice: number,
+    previous: number
+  ) {
     // Negative is valid here — a discount custom line stores a negative
     // unit_price on purpose. The displayed magnitude is still clamped to
     // >= 0 by each price input's own min attribute.
@@ -693,12 +845,22 @@ export default function BillingPosPage() {
     setTabs((prev) =>
       prev.map((tab) => {
         if (tab.key !== activeTab.key) return tab
-        return { ...tab, lines: tab.lines.map((l) => (l.tempId === tempId ? { ...l, description } : l)) }
-      }),
+        return {
+          ...tab,
+          lines: tab.lines.map((l) =>
+            l.tempId === tempId ? { ...l, description } : l
+          ),
+        }
+      })
     )
   }
 
-  function commitSavedDescription(lineId: string, description: string, previous: string, fallback: string) {
+  function commitSavedDescription(
+    lineId: string,
+    description: string,
+    previous: string,
+    fallback: string
+  ) {
     const value = description.trim() || fallback
     if (value === previous) return
     updateInvoiceItem.mutate({ id: lineId, input: { description: value } })
@@ -706,7 +868,10 @@ export default function BillingPosPage() {
 
   function commitSavedNotes(value: string) {
     if (!activeTab.invoiceId || value === (activeInvoice?.notes ?? "")) return
-    updateInvoice.mutate({ id: activeTab.invoiceId, input: { notes: value || null } })
+    updateInvoice.mutate({
+      id: activeTab.invoiceId,
+      input: { notes: value || null },
+    })
   }
 
   async function clearCart() {
@@ -714,7 +879,9 @@ export default function BillingPosPage() {
       if (!savedCartItems?.length) return
       setIsClearing(true)
       try {
-        await Promise.all(savedCartItems.map((line) => deleteInvoiceItem.mutateAsync(line.id)))
+        await Promise.all(
+          savedCartItems.map((line) => deleteInvoiceItem.mutateAsync(line.id))
+        )
       } finally {
         setIsClearing(false)
       }
@@ -728,10 +895,15 @@ export default function BillingPosPage() {
     // Search-scoped instead of pulling every customer to find this one by
     // exact name — the search itself is a substring match, so still
     // confirm an exact match among the (small) results before reusing it.
-    const { data: matches } = await fetchCustomersPaginated({ search: GUEST_CUSTOMER_NAME, pageSize: 10 })
+    const { data: matches } = await fetchCustomersPaginated({
+      search: GUEST_CUSTOMER_NAME,
+      pageSize: 10,
+    })
     const existingGuest = matches.find((c) => c.name === GUEST_CUSTOMER_NAME)
     if (existingGuest) return existingGuest.id
-    const guest = await createCustomer.mutateAsync({ name: GUEST_CUSTOMER_NAME })
+    const guest = await createCustomer.mutateAsync({
+      name: GUEST_CUSTOMER_NAME,
+    })
     return guest.id
   }
 
@@ -760,7 +932,12 @@ export default function BillingPosPage() {
         tax_rate: line.taxRate,
       })
     }
-    updateTab(activeTab.key, { invoiceId: invoice.id, customerId, offerId: activeTab.offerId, lines: [] })
+    updateTab(activeTab.key, {
+      invoiceId: invoice.id,
+      customerId,
+      offerId: activeTab.offerId,
+      lines: [],
+    })
     return invoice.id
   }
 
@@ -770,12 +947,17 @@ export default function BillingPosPage() {
   async function persistDelivery(invoiceId: string) {
     if (!activeTab.delivery.enabled) return
     const payload = {
-      delivery_address: activeTab.delivery.address ? { full_address: activeTab.delivery.address } : null,
+      delivery_address: activeTab.delivery.address
+        ? { full_address: activeTab.delivery.address }
+        : null,
       delivery_person_id: activeTab.delivery.deliveryPersonId,
       payment_mode: activeTab.delivery.paymentMode,
     }
     if (existingDelivery) {
-      await updateDelivery.mutateAsync({ id: existingDelivery.id, input: payload })
+      await updateDelivery.mutateAsync({
+        id: existingDelivery.id,
+        input: payload,
+      })
     } else {
       await createDelivery.mutateAsync({ invoice_id: invoiceId, ...payload })
     }
@@ -812,7 +994,13 @@ export default function BillingPosPage() {
       ])
       // Only the specific items this sale's lines reference — not the
       // whole catalog — resolved for the PDF's item name/details.
-      const referencedItemIds = [...new Set(lineItems.map((line) => line.item_id).filter((id): id is string => !!id))]
+      const referencedItemIds = [
+        ...new Set(
+          lineItems
+            .map((line) => line.item_id)
+            .filter((id): id is string => !!id)
+        ),
+      ]
       const [customer, referencedItems] = await Promise.all([
         fetchCustomerById(invoiceData.customer_id),
         Promise.all(referencedItemIds.map((itemId) => fetchItemById(itemId))),
@@ -826,7 +1014,10 @@ export default function BillingPosPage() {
         tPrint,
         watermarkText,
       })
-      await downloadInvoicePdf(element, `${invoiceData.invoice_number ?? "invoice"}.pdf`)
+      await downloadInvoicePdf(
+        element,
+        `${invoiceData.invoice_number ?? "invoice"}.pdf`
+      )
     } catch {
       // Downloading is a bonus step after a sale that already succeeded —
       // don't surface an error toast for it.
@@ -837,7 +1028,12 @@ export default function BillingPosPage() {
    * for a just-confirmed EMI sale — same math as the invoice detail page's
    * "Set up EMI" dialog (components/setup-emi-dialog.tsx), just invoked
    * directly from the POS instead of via a separate follow-up step. */
-  async function setupEmiPlan(invoiceId: string, invoiceTotal: number, months: number, startDate: string) {
+  async function setupEmiPlan(
+    invoiceId: string,
+    invoiceTotal: number,
+    months: number,
+    startDate: string
+  ) {
     const plan = await createInstallmentPlan.mutateAsync({
       invoice_id: invoiceId,
       total_amount: invoiceTotal,
@@ -849,7 +1045,9 @@ export default function BillingPosPage() {
     const start = new Date(startDate)
     for (let i = 0; i < months; i++) {
       const isLast = i === months - 1
-      const amount = isLast ? Math.round((invoiceTotal - allocated) * 100) / 100 : base
+      const amount = isLast
+        ? Math.round((invoiceTotal - allocated) * 100) / 100
+        : base
       allocated += amount
       const dueDate = new Date(start)
       dueDate.setMonth(dueDate.getMonth() + i)
@@ -889,7 +1087,14 @@ export default function BillingPosPage() {
       const paymentAmount = activeTab.paymentAmount ?? total
       const paymentMethod = activeTab.paymentMethod
       updateInvoice.mutate(
-        { id: invoiceId, input: { status: "sent", warehouse_id: activeTab.warehouseId, offer_id: activeTab.offerId || null } },
+        {
+          id: invoiceId,
+          input: {
+            status: "sent",
+            warehouse_id: activeTab.warehouseId,
+            offer_id: activeTab.offerId || null,
+          },
+        },
         {
           onSuccess: () => {
             if (isEmi) {
@@ -897,7 +1102,10 @@ export default function BillingPosPage() {
                 .then(() => {
                   toast.success(t("saleCompletedEmi"), {
                     duration: 8000,
-                    action: { label: t("downloadInvoiceAction"), onClick: () => printCompletedInvoice(invoiceId) },
+                    action: {
+                      label: t("downloadInvoiceAction"),
+                      onClick: () => printCompletedInvoice(invoiceId),
+                    },
                   })
                   closeTab(activeTab.key)
                   router.push(routes.sales.invoices.detail(invoiceId))
@@ -918,19 +1126,24 @@ export default function BillingPosPage() {
                 onSuccess: () => {
                   toast.success(t("saleCompleted"), {
                     duration: 8000,
-                    action: { label: t("downloadInvoiceAction"), onClick: () => printCompletedInvoice(invoiceId) },
+                    action: {
+                      label: t("downloadInvoiceAction"),
+                      onClick: () => printCompletedInvoice(invoiceId),
+                    },
                   })
                   closeTab(activeTab.key)
                 },
                 onError: () => toast.error(tCommon("genericError")),
-              },
+              }
             )
           },
           onError: (error) => {
-            const message = isAxiosError<{ error?: string }>(error) ? error.response?.data?.error : undefined
+            const message = isAxiosError<{ error?: string }>(error)
+              ? error.response?.data?.error
+              : undefined
             toast.error(message ?? tCommon("genericError"))
           },
-        },
+        }
       )
     } catch {
       toast.error(tCommon("genericError"))
@@ -950,8 +1163,13 @@ export default function BillingPosPage() {
   // currently-loaded page(s), instead of one request per visible tile (and
   // instead of every tracked item in the whole catalog, now that the grid
   // itself is paginated).
-  const trackedItemIds = loadedItems.filter((item) => item.track_inventory).map((item) => item.id)
-  const { data: allVariants } = useItemVariantsBulk(trackedItemIds, activeTab.warehouseId ?? undefined)
+  const trackedItemIds = loadedItems
+    .filter((item) => item.track_inventory)
+    .map((item) => item.id)
+  const { data: allVariants } = useItemVariantsBulk(
+    trackedItemIds,
+    activeTab.warehouseId ?? undefined
+  )
   const variantsByItemId = new Map<string, ItemVariant[]>()
   allVariants?.forEach((variant) => {
     const existing = variantsByItemId.get(variant.item_id)
@@ -978,13 +1196,15 @@ export default function BillingPosPage() {
           // actually cover it — z-40 quietly rendered underneath it.
           isFocusMode
             ? "fixed inset-0 z-[110] rounded-none"
-            : "rounded-xl ring-1 ring-foreground/10",
+            : "rounded-xl ring-1 ring-foreground/10"
         )}
       >
         {/* Browser-style bill tabs */}
         <div className="flex items-end gap-1 overflow-x-auto border-b bg-muted/40 px-2 pt-2">
           {tabs.map((tab, index) => {
-            const label = (tab.customerId && tabCustomerNameById.get(tab.customerId)) || `${t("newTab")} ${index + 1}`
+            const label =
+              (tab.customerId && tabCustomerNameById.get(tab.customerId)) ||
+              `${t("newTab")} ${index + 1}`
             const active = tab.key === activeKey
             return (
               <div
@@ -992,10 +1212,14 @@ export default function BillingPosPage() {
                 onClick={() => setActiveKey(tab.key)}
                 className={cn(
                   "group flex h-9 max-w-45 shrink-0 cursor-pointer items-center gap-2 rounded-t-lg px-3 text-sm",
-                  active ? "bg-card font-medium text-foreground shadow-[0_-1px_0_0_var(--border)_inset]" : "text-muted-foreground hover:bg-muted/70",
+                  active
+                    ? "bg-card font-medium text-foreground shadow-[0_-1px_0_0_var(--border)_inset]"
+                    : "text-muted-foreground hover:bg-muted/70"
                 )}
               >
-                {tab.invoiceId ? <span className="size-1.5 shrink-0 rounded-full bg-emerald-500" /> : null}
+                {tab.invoiceId ? (
+                  <span className="size-1.5 shrink-0 rounded-full bg-emerald-500" />
+                ) : null}
                 <span className="truncate">{label}</span>
                 <button
                   type="button"
@@ -1004,14 +1228,19 @@ export default function BillingPosPage() {
                     event.stopPropagation()
                     closeTab(tab.key)
                   }}
-                  className="shrink-0 rounded p-0.5 opacity-0 hover:!opacity-100 group-hover:opacity-70 hover:bg-foreground/10"
+                  className="shrink-0 rounded p-0.5 opacity-0 group-hover:opacity-70 hover:bg-foreground/10 hover:!opacity-100"
                 >
                   <XIcon className="size-3" />
                 </button>
               </div>
             )
           })}
-          <Button variant="ghost" size="icon-sm" onClick={addTab} className="mb-1 shrink-0">
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={addTab}
+            className="mb-1 shrink-0"
+          >
             <PlusIcon />
           </Button>
           <Button
@@ -1030,7 +1259,9 @@ export default function BillingPosPage() {
           <div className="flex min-h-0 min-w-0 flex-col p-4">
             <WarehouseSelect
               value={activeTab.warehouseId}
-              onValueChange={(value) => updateTab(activeTab.key, { warehouseId: value })}
+              onValueChange={(value) =>
+                updateTab(activeTab.key, { warehouseId: value })
+              }
               disabled={isDraftSaved || activeTab.lines.length > 0}
               placeholder={t("warehousePlaceholder")}
               className="mb-3"
@@ -1039,7 +1270,7 @@ export default function BillingPosPage() {
             {warehouseChosen ? (
               <>
                 <div className="relative mb-3">
-                  <SearchIcon className="pointer-events-none absolute top-1/2 start-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
+                  <SearchIcon className="pointer-events-none absolute start-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
                   <Input
                     value={search}
                     onChange={(event) => setSearch(event.target.value)}
@@ -1051,10 +1282,18 @@ export default function BillingPosPage() {
                   {filteredItems.length ? (
                     <>
                       {filteredItems.map((item) => (
-                        <ItemTile key={item.id} item={item} variants={variantsByItemId.get(item.id)} onAdd={addItemToCart} />
+                        <ItemTile
+                          key={item.id}
+                          item={item}
+                          variants={variantsByItemId.get(item.id)}
+                          onAdd={addItemToCart}
+                        />
                       ))}
                       {hasMoreItems ? (
-                        <div ref={loadMoreItemsRef} className="col-span-2 flex justify-center py-3">
+                        <div
+                          ref={loadMoreItemsRef}
+                          className="col-span-2 flex justify-center py-3"
+                        >
                           <Loader2Icon className="size-4 animate-spin text-muted-foreground" />
                         </div>
                       ) : null}
@@ -1064,13 +1303,17 @@ export default function BillingPosPage() {
                       <Loader2Icon className="size-4 animate-spin text-muted-foreground" />
                     </div>
                   ) : (
-                    <p className="col-span-2 py-8 text-center text-sm text-muted-foreground">{t("noItems")}</p>
+                    <p className="col-span-2 py-8 text-center text-sm text-muted-foreground">
+                      {t("noItems")}
+                    </p>
                   )}
                 </div>
               </>
             ) : (
               <div className="flex flex-1 flex-col items-center justify-center gap-3 rounded-xl bg-muted/30 p-8 text-center">
-                <p className="text-sm text-muted-foreground">{t("selectWarehouseFirst")}</p>
+                <p className="text-sm text-muted-foreground">
+                  {t("selectWarehouseFirst")}
+                </p>
               </div>
             )}
           </div>
@@ -1079,9 +1322,17 @@ export default function BillingPosPage() {
           <div className="flex min-h-0 min-w-0 flex-col p-4">
             <div className="mb-2.5 flex items-center justify-between">
               <h2 className="text-sm font-semibold">
-                {t("cartTitle")} <span className="font-normal text-muted-foreground">{t("cartCount", { count: cartCount })}</span>
+                {t("cartTitle")}{" "}
+                <span className="font-normal text-muted-foreground">
+                  {t("cartCount", { count: cartCount })}
+                </span>
               </h2>
-              <Button variant="ghost" size="sm" onClick={clearCart} disabled={!cartCount || isClearing}>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={clearCart}
+                disabled={!cartCount || isClearing}
+              >
                 {t("clearCart")}
               </Button>
             </div>
@@ -1093,9 +1344,14 @@ export default function BillingPosPage() {
                     {savedItemLines.map((line) => {
                       const lineTotal = line.quantity * line.unit_price
                       return (
-                        <div key={line.id} className="flex items-center gap-2 border-b border-border/70 py-2.5 last:border-0">
+                        <div
+                          key={line.id}
+                          className="flex items-center gap-2 border-b border-border/70 py-2.5 last:border-0"
+                        >
                           <div className="min-w-0 flex-1">
-                            <p className="truncate text-sm font-medium">{line.description}</p>
+                            <p className="truncate text-sm font-medium">
+                              {line.description}
+                            </p>
                             <div className="flex items-center gap-1 text-xs text-muted-foreground">
                               <span>₹</span>
                               <input
@@ -1103,7 +1359,13 @@ export default function BillingPosPage() {
                                 step="any"
                                 min={0}
                                 defaultValue={line.unit_price}
-                                onBlur={(event) => commitSavedPrice(line.id, event.target.valueAsNumber, line.unit_price)}
+                                onBlur={(event) =>
+                                  commitSavedPrice(
+                                    line.id,
+                                    event.target.valueAsNumber,
+                                    line.unit_price
+                                  )
+                                }
                                 className="w-14 border-0 bg-transparent p-0 text-xs text-muted-foreground focus:text-foreground focus:outline-none"
                               />
                               <span>× {line.quantity}</span>
@@ -1111,10 +1373,16 @@ export default function BillingPosPage() {
                           </div>
                           <QtyStepper
                             value={line.quantity}
-                            onDecrement={() => changeSavedQuantity(line.id, line.quantity - 1)}
-                            onIncrement={() => changeSavedQuantity(line.id, line.quantity + 1)}
+                            onDecrement={() =>
+                              changeSavedQuantity(line.id, line.quantity - 1)
+                            }
+                            onIncrement={() =>
+                              changeSavedQuantity(line.id, line.quantity + 1)
+                            }
                           />
-                          <span className="w-20 shrink-0 text-right text-sm font-semibold tabular-nums">{money(lineTotal)}</span>
+                          <span className="w-20 shrink-0 text-right text-sm font-semibold tabular-nums">
+                            {money(lineTotal)}
+                          </span>
                           <Button
                             variant="ghost"
                             size="icon-xs"
@@ -1128,16 +1396,23 @@ export default function BillingPosPage() {
                     })}
                   </div>
                 ) : (
-                  <p className="py-8 text-center text-sm text-muted-foreground">{t("emptyCart")}</p>
+                  <p className="py-8 text-center text-sm text-muted-foreground">
+                    {t("emptyCart")}
+                  </p>
                 )
               ) : localItemLines.length ? (
                 <div className="flex flex-col">
                   {localItemLines.map((line) => {
                     const lineTotal = line.quantity * line.unitPrice
                     return (
-                      <div key={line.tempId} className="flex items-center gap-2 border-b border-border/70 py-2.5 last:border-0">
+                      <div
+                        key={line.tempId}
+                        className="flex items-center gap-2 border-b border-border/70 py-2.5 last:border-0"
+                      >
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-medium">{line.description}</p>
+                          <p className="truncate text-sm font-medium">
+                            {line.description}
+                          </p>
                           <div className="flex items-center gap-1 text-xs text-muted-foreground">
                             <span>₹</span>
                             <input
@@ -1147,7 +1422,10 @@ export default function BillingPosPage() {
                               value={line.unitPrice}
                               onChange={(event) => {
                                 const value = event.target.valueAsNumber
-                                changeLocalPrice(line.tempId, Number.isNaN(value) ? 0 : value)
+                                changeLocalPrice(
+                                  line.tempId,
+                                  Number.isNaN(value) ? 0 : value
+                                )
                               }}
                               className="w-14 border-0 bg-transparent p-0 text-xs text-muted-foreground focus:text-foreground focus:outline-none"
                             />
@@ -1156,10 +1434,16 @@ export default function BillingPosPage() {
                         </div>
                         <QtyStepper
                           value={line.quantity}
-                          onDecrement={() => changeLocalQuantity(line.tempId, line.quantity - 1)}
-                          onIncrement={() => changeLocalQuantity(line.tempId, line.quantity + 1)}
+                          onDecrement={() =>
+                            changeLocalQuantity(line.tempId, line.quantity - 1)
+                          }
+                          onIncrement={() =>
+                            changeLocalQuantity(line.tempId, line.quantity + 1)
+                          }
                         />
-                        <span className="w-20 shrink-0 text-right text-sm font-semibold tabular-nums">{money(lineTotal)}</span>
+                        <span className="w-20 shrink-0 text-right text-sm font-semibold tabular-nums">
+                          {money(lineTotal)}
+                        </span>
                         <Button
                           variant="ghost"
                           size="icon-xs"
@@ -1173,7 +1457,9 @@ export default function BillingPosPage() {
                   })}
                 </div>
               ) : (
-                <p className="py-8 text-center text-sm text-muted-foreground">{t("emptyCart")}</p>
+                <p className="py-8 text-center text-sm text-muted-foreground">
+                  {t("emptyCart")}
+                </p>
               )}
             </div>
 
@@ -1188,9 +1474,20 @@ export default function BillingPosPage() {
                 placeholder={t("notePlaceholder")}
                 className="min-h-13 resize-none text-sm"
                 value={isDraftSaved ? undefined : activeTab.notes}
-                defaultValue={isDraftSaved ? (activeInvoice?.notes ?? "") : undefined}
-                onChange={isDraftSaved ? undefined : (event) => updateTab(activeTab.key, { notes: event.target.value })}
-                onBlur={isDraftSaved ? (event) => commitSavedNotes(event.target.value) : undefined}
+                defaultValue={
+                  isDraftSaved ? (activeInvoice?.notes ?? "") : undefined
+                }
+                onChange={
+                  isDraftSaved
+                    ? undefined
+                    : (event) =>
+                        updateTab(activeTab.key, { notes: event.target.value })
+                }
+                onBlur={
+                  isDraftSaved
+                    ? (event) => commitSavedNotes(event.target.value)
+                    : undefined
+                }
               />
             </div>
           </div>
@@ -1199,11 +1496,15 @@ export default function BillingPosPage() {
           <div className="flex min-h-0 min-w-0 flex-col gap-3 overflow-y-auto p-4">
             <CustomerSelect
               value={activeTab.customerId}
-              onValueChange={(value) => updateTab(activeTab.key, { customerId: value })}
+              onValueChange={(value) =>
+                updateTab(activeTab.key, { customerId: value })
+              }
               disabled={isDraftSaved}
               placeholder={t("customerPlaceholder")}
               className="w-full"
-              onAddNew={isDraftSaved ? undefined : () => setShowAddCustomer(true)}
+              onAddNew={
+                isDraftSaved ? undefined : () => setShowAddCustomer(true)
+              }
               addNewLabel={t("addCustomer")}
               container={posContainerEl}
             />
@@ -1217,7 +1518,9 @@ export default function BillingPosPage() {
                 <Switch
                   checked={activeTab.delivery.enabled}
                   onCheckedChange={(checked) =>
-                    updateTab(activeTab.key, { delivery: { ...activeTab.delivery, enabled: checked } })
+                    updateTab(activeTab.key, {
+                      delivery: { ...activeTab.delivery, enabled: checked },
+                    })
                   }
                 />
               </div>
@@ -1228,14 +1531,24 @@ export default function BillingPosPage() {
                     className="min-h-10 resize-none text-sm"
                     value={activeTab.delivery.address}
                     onChange={(event) =>
-                      updateTab(activeTab.key, { delivery: { ...activeTab.delivery, address: event.target.value } })
+                      updateTab(activeTab.key, {
+                        delivery: {
+                          ...activeTab.delivery,
+                          address: event.target.value,
+                        },
+                      })
                     }
                   />
                   <StaffSelect
                     role="delivery_person"
                     value={activeTab.delivery.deliveryPersonId}
                     onValueChange={(value) =>
-                      updateTab(activeTab.key, { delivery: { ...activeTab.delivery, deliveryPersonId: value } })
+                      updateTab(activeTab.key, {
+                        delivery: {
+                          ...activeTab.delivery,
+                          deliveryPersonId: value,
+                        },
+                      })
                     }
                     placeholder={t("deliveryPersonPlaceholder")}
                     container={posContainerEl}
@@ -1248,26 +1561,39 @@ export default function BillingPosPage() {
                     placeholder={t("deliveryFeeLineDefault")}
                     defaultValue={deliveryFeeValue() || ""}
                     onChange={
-                      isDraftSaved ? undefined : (event) => setDeliveryFee(event.target.valueAsNumber)
+                      isDraftSaved
+                        ? undefined
+                        : (event) => setDeliveryFee(event.target.valueAsNumber)
                     }
                     onBlur={
-                      isDraftSaved ? (event) => setDeliveryFee(event.target.valueAsNumber) : undefined
+                      isDraftSaved
+                        ? (event) => setDeliveryFee(event.target.valueAsNumber)
+                        : undefined
                     }
                   />
                   <Select
                     value={activeTab.delivery.paymentMode ?? undefined}
                     onValueChange={(value) =>
                       updateTab(activeTab.key, {
-                        delivery: { ...activeTab.delivery, paymentMode: value as "cod" | "prepaid" },
+                        delivery: {
+                          ...activeTab.delivery,
+                          paymentMode: value as "cod" | "prepaid",
+                        },
                       })
                     }
                   >
                     <SelectTrigger className="w-full">
-                      <SelectValue placeholder={t("deliveryPaymentModeLabel")} />
+                      <SelectValue
+                        placeholder={t("deliveryPaymentModeLabel")}
+                      />
                     </SelectTrigger>
                     <SelectContent container={posContainerEl}>
-                      <SelectItem value="cod">{tDeliveryPaymentMode("cod")}</SelectItem>
-                      <SelectItem value="prepaid">{tDeliveryPaymentMode("prepaid")}</SelectItem>
+                      <SelectItem value="cod">
+                        {tDeliveryPaymentMode("cod")}
+                      </SelectItem>
+                      <SelectItem value="prepaid">
+                        {tDeliveryPaymentMode("prepaid")}
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -1276,7 +1602,9 @@ export default function BillingPosPage() {
 
             <div className="flex flex-col gap-1.5 border-t pt-3 text-sm">
               <div className="flex justify-between">
-                <span className="text-muted-foreground">{t("subtotalLabel")}</span>
+                <span className="text-muted-foreground">
+                  {t("subtotalLabel")}
+                </span>
                 <span className="tabular-nums">{money(subtotal)}</span>
               </div>
 
@@ -1284,15 +1612,29 @@ export default function BillingPosPage() {
               {isDraftSaved
                 ? savedChargeDiscountLines.map((line) => {
                     const kind: "charge" | "discount" =
-                      line.unit_price < 0 ? "discount" : line.unit_price > 0 ? "charge" : (customLineKinds[line.id] ?? "charge")
-                    const fallbackName = kind === "discount" ? t("discountLineDefault") : t("chargeLineDefault")
+                      line.unit_price < 0
+                        ? "discount"
+                        : line.unit_price > 0
+                          ? "charge"
+                          : (customLineKinds[line.id] ?? "charge")
+                    const fallbackName =
+                      kind === "discount"
+                        ? t("discountLineDefault")
+                        : t("chargeLineDefault")
                     const displayPrice = Math.abs(line.unit_price)
                     return (
                       <div key={line.id} className="flex items-center gap-1.5">
                         <input
                           type="text"
                           defaultValue={line.description}
-                          onBlur={(event) => commitSavedDescription(line.id, event.target.value, line.description, fallbackName)}
+                          onBlur={(event) =>
+                            commitSavedDescription(
+                              line.id,
+                              event.target.value,
+                              line.description,
+                              fallbackName
+                            )
+                          }
                           className="min-w-0 flex-1 truncate border-0 bg-transparent p-0 text-muted-foreground focus:text-foreground focus:outline-none"
                         />
                         <span>₹</span>
@@ -1303,11 +1645,18 @@ export default function BillingPosPage() {
                           defaultValue={displayPrice}
                           onBlur={(event) => {
                             const magnitude = event.target.valueAsNumber
-                            commitSavedPrice(line.id, kind === "discount" ? -Math.abs(magnitude) : magnitude, line.unit_price)
+                            commitSavedPrice(
+                              line.id,
+                              kind === "discount"
+                                ? -Math.abs(magnitude)
+                                : magnitude,
+                              line.unit_price
+                            )
                           }}
                           className={cn(
                             "w-16 shrink-0 border-0 bg-transparent p-0 text-right tabular-nums focus:outline-none",
-                            kind === "discount" && "text-emerald-600 dark:text-emerald-400",
+                            kind === "discount" &&
+                              "text-emerald-600 dark:text-emerald-400"
                           )}
                         />
                         <Button
@@ -1322,16 +1671,28 @@ export default function BillingPosPage() {
                     )
                   })
                 : localChargeDiscountLines.map((line) => {
-                    const fallbackName = line.kind === "discount" ? t("discountLineDefault") : t("chargeLineDefault")
+                    const fallbackName =
+                      line.kind === "discount"
+                        ? t("discountLineDefault")
+                        : t("chargeLineDefault")
                     const displayPrice = Math.abs(line.unitPrice)
                     return (
-                      <div key={line.tempId} className="flex items-center gap-1.5">
+                      <div
+                        key={line.tempId}
+                        className="flex items-center gap-1.5"
+                      >
                         <input
                           type="text"
                           value={line.description}
-                          onChange={(event) => changeLocalDescription(line.tempId, event.target.value)}
+                          onChange={(event) =>
+                            changeLocalDescription(
+                              line.tempId,
+                              event.target.value
+                            )
+                          }
                           onBlur={(event) => {
-                            if (!event.target.value.trim()) changeLocalDescription(line.tempId, fallbackName)
+                            if (!event.target.value.trim())
+                              changeLocalDescription(line.tempId, fallbackName)
                           }}
                           className="min-w-0 flex-1 truncate border-0 bg-transparent p-0 text-muted-foreground focus:text-foreground focus:outline-none"
                         />
@@ -1343,12 +1704,20 @@ export default function BillingPosPage() {
                           value={displayPrice}
                           onChange={(event) => {
                             const magnitude = event.target.valueAsNumber
-                            const value = Number.isNaN(magnitude) ? 0 : magnitude
-                            changeLocalPrice(line.tempId, line.kind === "discount" ? -Math.abs(value) : value)
+                            const value = Number.isNaN(magnitude)
+                              ? 0
+                              : magnitude
+                            changeLocalPrice(
+                              line.tempId,
+                              line.kind === "discount"
+                                ? -Math.abs(value)
+                                : value
+                            )
                           }}
                           className={cn(
                             "w-16 shrink-0 border-0 bg-transparent p-0 text-right tabular-nums focus:outline-none",
-                            line.kind === "discount" && "text-emerald-600 dark:text-emerald-400",
+                            line.kind === "discount" &&
+                              "text-emerald-600 dark:text-emerald-400"
                           )}
                         />
                         <Button
@@ -1363,10 +1732,20 @@ export default function BillingPosPage() {
                     )
                   })}
               <div className="flex items-center gap-1">
-                <Button variant="ghost" size="sm" className="h-6 px-1.5 text-xs" onClick={() => addCustomLine("charge")}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 px-1.5 text-xs"
+                  onClick={() => addCustomLine("charge")}
+                >
                   {t("addChargeLine")}
                 </Button>
-                <Button variant="ghost" size="sm" className="h-6 px-1.5 text-xs" onClick={() => addCustomLine("discount")}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 px-1.5 text-xs"
+                  onClick={() => addCustomLine("discount")}
+                >
                   {t("addDiscountLine")}
                 </Button>
               </div>
@@ -1376,7 +1755,7 @@ export default function BillingPosPage() {
                   <span className="flex items-center gap-1.5">
                     <span>{t("discountLabel")}</span>
                     {selectedOffer && (
-                      <span className="rounded bg-emerald-100 px-1 py-0.2 text-[10px] dark:bg-emerald-950/60">
+                      <span className="py-0.2 rounded bg-emerald-100 px-1 text-[10px] dark:bg-emerald-950/60">
                         {selectedOffer.name}
                       </span>
                     )}
@@ -1401,18 +1780,27 @@ export default function BillingPosPage() {
                     <CalendarClockIcon className="size-3.5 text-muted-foreground" />
                     {t("emiSectionTitle")}
                   </span>
-                  {activeTab.isEmi ? <span className="text-[11px] text-muted-foreground">{t("emiSectionHint")}</span> : null}
+                  {activeTab.isEmi ? (
+                    <span className="text-[11px] text-muted-foreground">
+                      {t("emiSectionHint")}
+                    </span>
+                  ) : null}
                 </div>
                 <Switch
                   checked={activeTab.isEmi}
-                  onCheckedChange={(checked) => updateTab(activeTab.key, { isEmi: checked })}
+                  onCheckedChange={(checked) =>
+                    updateTab(activeTab.key, { isEmi: checked })
+                  }
                 />
               </div>
               {activeTab.isEmi ? (
                 <div className="flex flex-col gap-2">
                   <div className="grid grid-cols-2 gap-2">
                     <Field className="gap-1">
-                      <FieldLabel htmlFor="pos-emi-months" className="text-[11px] text-muted-foreground">
+                      <FieldLabel
+                        htmlFor="pos-emi-months"
+                        className="text-[11px] text-muted-foreground"
+                      >
                         {tEmi("monthsLabel")}
                       </FieldLabel>
                       <Input
@@ -1424,19 +1812,28 @@ export default function BillingPosPage() {
                         value={activeTab.emiMonths}
                         onChange={(event) => {
                           const value = event.target.valueAsNumber
-                          updateTab(activeTab.key, { emiMonths: Number.isNaN(value) ? 2 : Math.min(60, Math.max(2, value)) })
+                          updateTab(activeTab.key, {
+                            emiMonths: Number.isNaN(value)
+                              ? 2
+                              : Math.min(60, Math.max(2, value)),
+                          })
                         }}
                         className="h-8 text-xs"
                       />
                     </Field>
                     <Field className="gap-1">
-                      <FieldLabel htmlFor="pos-emi-start" className="text-[11px] text-muted-foreground">
+                      <FieldLabel
+                        htmlFor="pos-emi-start"
+                        className="text-[11px] text-muted-foreground"
+                      >
                         {tEmi("startDateLabel")}
                       </FieldLabel>
                       <DatePicker
                         id="pos-emi-start"
                         value={activeTab.emiStartDate}
-                        onChange={(value) => updateTab(activeTab.key, { emiStartDate: value })}
+                        onChange={(value) =>
+                          updateTab(activeTab.key, { emiStartDate: value })
+                        }
                         className="h-8 text-xs"
                         container={posContainerEl}
                       />
@@ -1445,7 +1842,11 @@ export default function BillingPosPage() {
                   <p className="text-[11px] text-muted-foreground">
                     {tEmi("previewNote", {
                       months: activeTab.emiMonths,
-                      amount: money(activeTab.emiMonths > 0 ? total / activeTab.emiMonths : 0),
+                      amount: money(
+                        activeTab.emiMonths > 0
+                          ? total / activeTab.emiMonths
+                          : 0
+                      ),
                     })}
                   </p>
                 </div>
@@ -1455,7 +1856,9 @@ export default function BillingPosPage() {
             {!activeTab.isEmi ? (
               <>
                 <div className="flex flex-col gap-2">
-                  <span className="text-xs font-medium text-muted-foreground">{tPay("methodLabel")}</span>
+                  <span className="text-xs font-medium text-muted-foreground">
+                    {tPay("methodLabel")}
+                  </span>
                   <div className="grid grid-cols-2 gap-2">
                     {PAYMENT_METHODS.map((method) => {
                       const Icon = PAYMENT_METHOD_ICONS[method]
@@ -1464,16 +1867,22 @@ export default function BillingPosPage() {
                         <button
                           key={method}
                           type="button"
-                          onClick={() => updateTab(activeTab.key, { paymentMethod: method })}
+                          onClick={() =>
+                            updateTab(activeTab.key, { paymentMethod: method })
+                          }
                           className={cn(
                             "flex h-10 items-center justify-center gap-2 rounded-lg border text-xs font-medium transition-colors",
                             selected
                               ? "border-foreground bg-primary text-primary-foreground"
-                              : "border-border text-muted-foreground hover:bg-muted",
+                              : "border-border text-muted-foreground hover:bg-muted"
                           )}
                         >
                           <Icon className="size-3.5" />
-                          <span>{method === "razorpay" ? t("paymentCard") : tMethods(method)}</span>
+                          <span>
+                            {method === "razorpay"
+                              ? t("paymentCard")
+                              : tMethods(method)}
+                          </span>
                         </button>
                       )
                     })}
@@ -1481,7 +1890,9 @@ export default function BillingPosPage() {
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-medium text-muted-foreground">{tPay("amountLabel")}</label>
+                  <label className="text-xs font-medium text-muted-foreground">
+                    {tPay("amountLabel")}
+                  </label>
                   <Input
                     type="number"
                     step="0.01"
@@ -1489,7 +1900,9 @@ export default function BillingPosPage() {
                     value={activeTab.paymentAmount ?? total}
                     onChange={(event) => {
                       const value = event.target.valueAsNumber
-                      updateTab(activeTab.key, { paymentAmount: Number.isNaN(value) ? 0 : value })
+                      updateTab(activeTab.key, {
+                        paymentAmount: Number.isNaN(value) ? 0 : value,
+                      })
                     }}
                     className="font-semibold"
                   />
@@ -1508,7 +1921,11 @@ export default function BillingPosPage() {
               </Button>
               <Button
                 size="lg"
-                disabled={(!isDraftSaved && !activeTab.lines.length) || (isDraftSaved && !savedCartItems?.length) || isSaving}
+                disabled={
+                  (!isDraftSaved && !activeTab.lines.length) ||
+                  (isDraftSaved && !savedCartItems?.length) ||
+                  isSaving
+                }
                 onClick={completeSale}
               >
                 {t("completeSale")}

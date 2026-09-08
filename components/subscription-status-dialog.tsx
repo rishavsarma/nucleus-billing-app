@@ -38,16 +38,24 @@ export function SubscriptionStatusDialog() {
   if (!orgStatus || dismissed) return null
 
   const isExpired =
-    !orgStatus.isActive || orgStatus.subscriptionStatus === "past_due" || orgStatus.subscriptionStatus === "cancelled"
+    !orgStatus.isActive ||
+    orgStatus.subscriptionStatus === "past_due" ||
+    orgStatus.subscriptionStatus === "cancelled"
 
   // eslint-disable-next-line react-hooks/purity -- "days until expiry" inherently needs the current time; a render evaluated a moment apart is not a correctness issue for a 7-day window.
   const now = Date.now()
   const daysUntilPeriodEnd = orgStatus.subscriptionCurrentPeriodEnd
-    ? Math.ceil((new Date(orgStatus.subscriptionCurrentPeriodEnd).getTime() - now) / (1000 * 60 * 60 * 24))
+    ? Math.ceil(
+        (new Date(orgStatus.subscriptionCurrentPeriodEnd).getTime() - now) /
+          (1000 * 60 * 60 * 24)
+      )
     : null
 
   const isExpiringSoon =
-    !isExpired && daysUntilPeriodEnd !== null && daysUntilPeriodEnd >= 0 && daysUntilPeriodEnd <= EXPIRING_SOON_DAYS
+    !isExpired &&
+    daysUntilPeriodEnd !== null &&
+    daysUntilPeriodEnd >= 0 &&
+    daysUntilPeriodEnd <= EXPIRING_SOON_DAYS
 
   if (!isExpired && !isExpiringSoon) return null
 
@@ -61,13 +69,17 @@ export function SubscriptionStatusDialog() {
     <Dialog open onOpenChange={(open) => !open && setDismissed(true)}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{isExpired ? t("expiredTitle") : t("expiringTitle")}</DialogTitle>
+          <DialogTitle>
+            {isExpired ? t("expiredTitle") : t("expiringTitle")}
+          </DialogTitle>
           <DialogDescription>
             {isExpired
               ? t(expiredDescriptionKey)
               : t("expiringDescription", {
                   date: orgStatus.subscriptionCurrentPeriodEnd
-                    ? new Date(orgStatus.subscriptionCurrentPeriodEnd).toLocaleDateString()
+                    ? new Date(
+                        orgStatus.subscriptionCurrentPeriodEnd
+                      ).toLocaleDateString()
                     : "",
                 })}
           </DialogDescription>

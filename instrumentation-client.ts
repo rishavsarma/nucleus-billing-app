@@ -10,8 +10,11 @@ Sentry.init({
   // Add optional integrations for additional features
   integrations: [Sentry.replayIntegration()],
 
-  // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
-  tracesSampleRate: 1,
+  // Define how likely traces are sampled. 100% (1) traces every single
+  // request end-to-end, which is fine for the low volume this app has seen
+  // so far but gets expensive (and noisy) fast once real traffic lands —
+  // 10% is Sentry's own recommended production default.
+  tracesSampleRate: 0.1,
   // Enable logs to be sent to Sentry
   enableLogs: true,
 

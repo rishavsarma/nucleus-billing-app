@@ -16,7 +16,13 @@ import { EntityTable, entityColumnHelper } from "@/components/entity-table"
 import { useServerTableParams } from "@/components/server-table"
 import { Field, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import {
   useCreateStaff,
@@ -97,7 +103,7 @@ export default function StaffPage() {
             setEditing(null)
           },
           onError: () => toast.error(tCommon("genericError")),
-        },
+        }
       )
     } else {
       createStaff.mutate(input, {
@@ -117,11 +123,15 @@ export default function StaffPage() {
     }),
     columnHelper.accessor("role", {
       header: t("columnRole"),
-      cell: ({ row }) => <Badge variant="outline">{roleLabel(row.original)}</Badge>,
+      cell: ({ row }) => (
+        <Badge variant="outline">{roleLabel(row.original)}</Badge>
+      ),
     }),
     columnHelper.accessor("phone", {
       header: t("columnPhone"),
-      cell: ({ getValue }) => <span className="text-muted-foreground">{getValue() || "—"}</span>,
+      cell: ({ getValue }) => (
+        <span className="text-muted-foreground">{getValue() || "—"}</span>
+      ),
     }),
     columnHelper.accessor("is_active", {
       header: t("columnStatus"),
@@ -136,10 +146,18 @@ export default function StaffPage() {
       header: () => null,
       cell: ({ row }) => (
         <div className="flex justify-end gap-1">
-          <Button variant="ghost" size="icon-sm" onClick={() => setEditing(row.original)}>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={() => setEditing(row.original)}
+          >
             <PencilIcon />
           </Button>
-          <Button variant="ghost" size="icon-sm" onClick={() => setToDelete(row.original)}>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={() => setToDelete(row.original)}
+          >
             <TrashIcon />
           </Button>
         </div>
@@ -174,7 +192,9 @@ export default function StaffPage() {
         open={!!editing}
         onOpenChange={(open) => !open && setEditing(null)}
         title={editing !== "new" ? t("editStaff") : t("newStaff")}
-        description={editing !== "new" ? t("editDescription") : t("newDescription")}
+        description={
+          editing !== "new" ? t("editDescription") : t("newDescription")
+        }
         onSubmit={form.handleSubmit(onSubmit)}
         isSubmitting={isSaving}
         submitLabel={editing !== "new" ? tCommon("save") : tCommon("create")}
@@ -185,7 +205,12 @@ export default function StaffPage() {
         </Field>
         <Field>
           <FieldLabel htmlFor="staff-role">{t("roleLabel")}</FieldLabel>
-          <Select value={selectedRole} onValueChange={(value) => form.setValue("role", value as StaffFormValues["role"])}>
+          <Select
+            value={selectedRole}
+            onValueChange={(value) =>
+              form.setValue("role", value as StaffFormValues["role"])
+            }
+          >
             <SelectTrigger id="staff-role" className="w-full">
               <SelectValue />
             </SelectTrigger>
@@ -200,7 +225,9 @@ export default function StaffPage() {
         </Field>
         {selectedRole === "other" ? (
           <Field>
-            <FieldLabel htmlFor="staff-role-label">{t("roleLabelFieldLabel")}</FieldLabel>
+            <FieldLabel htmlFor="staff-role-label">
+              {t("roleLabelFieldLabel")}
+            </FieldLabel>
             <Input
               id="staff-role-label"
               placeholder={t("roleLabelPlaceholder")}

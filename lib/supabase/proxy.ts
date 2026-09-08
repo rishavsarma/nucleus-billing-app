@@ -7,7 +7,10 @@ import { NextResponse, type NextRequest } from "next/server"
  * own) so it can be composed with next-intl's middleware response in
  * middleware.ts instead of each producing a separate, conflicting one.
  */
-export async function updateSession(request: NextRequest, response: NextResponse) {
+export async function updateSession(
+  request: NextRequest,
+  response: NextResponse
+) {
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -22,7 +25,7 @@ export async function updateSession(request: NextRequest, response: NextResponse
           }
         },
       },
-    },
+    }
   )
 
   // Refreshes the auth token if expired. Do not run any logic between

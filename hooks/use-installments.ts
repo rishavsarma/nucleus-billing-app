@@ -2,7 +2,11 @@
 
 import type { ListParams } from "@/lib/database/list-params-types"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { fetchInstallmentsByPlanId, fetchInstallmentsPaginated, createInstallment } from "@/lib/database/services/installments"
+import {
+  fetchInstallmentsByPlanId,
+  fetchInstallmentsPaginated,
+  createInstallment,
+} from "@/lib/database/services/installments"
 import type { Installment } from "@/lib/database/types"
 
 /** A plan's full schedule — for the invoice detail page. */
@@ -25,9 +29,13 @@ export function useInstallmentsList(params: ListParams) {
 export function useCreateInstallment() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (input: Partial<Installment> & { plan_id: string; invoice_id: string }) => createInstallment(input),
+    mutationFn: (
+      input: Partial<Installment> & { plan_id: string; invoice_id: string }
+    ) => createInstallment(input),
     onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["installments", "by-plan", variables.plan_id] })
+      queryClient.invalidateQueries({
+        queryKey: ["installments", "by-plan", variables.plan_id],
+      })
       queryClient.invalidateQueries({ queryKey: ["installments", "list"] })
     },
   })

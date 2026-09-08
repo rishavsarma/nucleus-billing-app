@@ -2,7 +2,12 @@
 
 import type { ListParams } from "@/lib/database/list-params-types"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { fetchCreditNoteById, fetchCreditNotesPaginated, createCreditNote, updateCreditNote } from "@/lib/database/services/credit-notes"
+import {
+  fetchCreditNoteById,
+  fetchCreditNotesPaginated,
+  createCreditNote,
+  updateCreditNote,
+} from "@/lib/database/services/credit-notes"
 import type { CreditNote } from "@/lib/database/types"
 
 /** Paginated + searched list — use in list-view table pages. */
@@ -26,7 +31,8 @@ export function useCreateCreditNote() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (input: Partial<CreditNote>) => createCreditNote(input),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["credit-notes"] }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["credit-notes"] }),
   })
 }
 
@@ -35,7 +41,8 @@ export function useUpdateCreditNote() {
   return useMutation({
     mutationFn: ({ id, input }: { id: string; input: Partial<CreditNote> }) =>
       updateCreditNote(id, input),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["credit-notes"] }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["credit-notes"] }),
   })
 }
 

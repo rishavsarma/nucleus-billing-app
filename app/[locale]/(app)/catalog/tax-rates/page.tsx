@@ -17,7 +17,12 @@ import { useServerTableParams } from "@/components/server-table"
 import { Field, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
-import { useCreateTaxRate, useDeleteTaxRate, useTaxRatesList, useUpdateTaxRate } from "@/hooks/use-tax-rates"
+import {
+  useCreateTaxRate,
+  useDeleteTaxRate,
+  useTaxRatesList,
+  useUpdateTaxRate,
+} from "@/hooks/use-tax-rates"
 import type { TaxRate } from "@/lib/database/types"
 
 const columnHelper = entityColumnHelper<TaxRate>()
@@ -45,7 +50,11 @@ export default function TaxRatesPage() {
     resolver: zodResolver(taxRateSchema),
     values:
       editing && editing !== "new"
-        ? { name: editing.name, rate: editing.rate, is_default: editing.is_default }
+        ? {
+            name: editing.name,
+            rate: editing.rate,
+            is_default: editing.is_default,
+          }
         : { name: "", rate: 0, is_default: false },
   })
   const isDefault = useWatch({ control: form.control, name: "is_default" })
@@ -62,7 +71,7 @@ export default function TaxRatesPage() {
             setEditing(null)
           },
           onError: () => toast.error(tCommon("genericError")),
-        },
+        }
       )
     } else {
       createTaxRate.mutate(values, {
@@ -86,17 +95,28 @@ export default function TaxRatesPage() {
     }),
     columnHelper.accessor("is_default", {
       header: t("columnDefault"),
-      cell: ({ getValue }) => (getValue() ? <Badge variant="outline">{t("columnDefault")}</Badge> : null),
+      cell: ({ getValue }) =>
+        getValue() ? (
+          <Badge variant="outline">{t("columnDefault")}</Badge>
+        ) : null,
     }),
     columnHelper.display({
       id: "actions",
       header: () => null,
       cell: ({ row }) => (
         <div className="flex justify-end gap-1">
-          <Button variant="ghost" size="icon-sm" onClick={() => setEditing(row.original)}>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={() => setEditing(row.original)}
+          >
             <PencilIcon />
           </Button>
-          <Button variant="ghost" size="icon-sm" onClick={() => setToDelete(row.original)}>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={() => setToDelete(row.original)}
+          >
             <TrashIcon />
           </Button>
         </div>
@@ -131,7 +151,9 @@ export default function TaxRatesPage() {
         open={!!editing}
         onOpenChange={(open) => !open && setEditing(null)}
         title={editing !== "new" ? t("editTaxRate") : t("newTaxRate")}
-        description={editing !== "new" ? t("editDescription") : t("newDescription")}
+        description={
+          editing !== "new" ? t("editDescription") : t("newDescription")
+        }
         onSubmit={form.handleSubmit(onSubmit)}
         isSubmitting={isSaving}
         submitLabel={editing !== "new" ? tCommon("save") : tCommon("create")}

@@ -2,7 +2,9 @@
 
 import type { ListParams } from "@/lib/database/list-params-types"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { fetchPurchaseReturnById, fetchPurchaseReturnsPaginated,
+import {
+  fetchPurchaseReturnById,
+  fetchPurchaseReturnsPaginated,
   createPurchaseReturn,
   updatePurchaseReturn,
 } from "@/lib/database/services/purchase-returns"
@@ -29,16 +31,23 @@ export function useCreatePurchaseReturn() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (input: Partial<PurchaseReturn>) => createPurchaseReturn(input),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["purchase-returns"] }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["purchase-returns"] }),
   })
 }
 
 export function useUpdatePurchaseReturn() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, input }: { id: string; input: Partial<PurchaseReturn> }) =>
-      updatePurchaseReturn(id, input),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["purchase-returns"] }),
+    mutationFn: ({
+      id,
+      input,
+    }: {
+      id: string
+      input: Partial<PurchaseReturn>
+    }) => updatePurchaseReturn(id, input),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["purchase-returns"] }),
   })
 }
 

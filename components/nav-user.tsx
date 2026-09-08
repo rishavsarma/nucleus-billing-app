@@ -2,7 +2,13 @@
 
 import { useTranslations } from "next-intl"
 import { toast } from "sonner"
-import { CircleUserRoundIcon, CreditCardIcon, EllipsisVerticalIcon, LogOutIcon, SettingsIcon } from "lucide-react"
+import {
+  CircleUserRoundIcon,
+  CreditCardIcon,
+  EllipsisVerticalIcon,
+  LogOutIcon,
+  SettingsIcon,
+} from "lucide-react"
 
 import { Link, useRouter } from "@/i18n/navigation"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
@@ -27,7 +33,9 @@ import type { Me } from "@/lib/services/me"
 function initials(name: string | null, email: string | null): string {
   if (name) {
     const parts = name.trim().split(/\s+/)
-    return parts.length > 1 ? (parts[0][0] + parts[1][0]).toUpperCase() : parts[0].slice(0, 2).toUpperCase()
+    return parts.length > 1
+      ? (parts[0][0] + parts[1][0]).toUpperCase()
+      : parts[0].slice(0, 2).toUpperCase()
   }
   if (email) return email.split("@")[0].slice(0, 2).toUpperCase()
   return "?"
@@ -41,7 +49,11 @@ export function NavUser({ me }: { me: Me }) {
   const router = useRouter()
   const logout = useLogout()
 
-  const roleLabel = me.isSuperadmin ? tRoles("superadmin") : me.role ? tRoles(me.role) : null
+  const roleLabel = me.isSuperadmin
+    ? tRoles("superadmin")
+    : me.role
+      ? tRoles(me.role)
+      : null
   const primaryLabel = me.name || me.email || "—"
   const initialsLabel = initials(me.name, me.email)
 
@@ -55,12 +67,16 @@ export function NavUser({ me }: { me: Me }) {
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
               <Avatar className="h-8 w-8 rounded-lg">
-                <AvatarFallback className="rounded-lg">{initialsLabel}</AvatarFallback>
+                <AvatarFallback className="rounded-lg">
+                  {initialsLabel}
+                </AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-start text-sm leading-tight">
                 <span className="truncate font-medium">{primaryLabel}</span>
                 {roleLabel ? (
-                  <span className="truncate text-xs text-muted-foreground">{roleLabel}</span>
+                  <span className="truncate text-xs text-muted-foreground">
+                    {roleLabel}
+                  </span>
                 ) : null}
               </div>
               <EllipsisVerticalIcon className="ms-auto size-4" />
@@ -72,15 +88,19 @@ export function NavUser({ me }: { me: Me }) {
             align="end"
             sideOffset={4}
           >
-            <DropdownMenuLabel className="p-0 font-normal ">
+            <DropdownMenuLabel className="p-0 font-normal">
               <div className="flex items-center gap-2 px-1 py-1.5 text-start text-sm">
                 <Avatar className="h-8 w-8 rounded-lg">
-                  <AvatarFallback className="rounded-lg">{initialsLabel}</AvatarFallback>
+                  <AvatarFallback className="rounded-lg">
+                    {initialsLabel}
+                  </AvatarFallback>
                 </Avatar>
                 <div className="grid flex-1 text-start text-sm leading-tight">
                   <span className="truncate font-medium">{primaryLabel}</span>
                   {me.name && me.email ? (
-                    <span className="truncate text-xs text-muted-foreground">{me.email}</span>
+                    <span className="truncate text-xs text-muted-foreground">
+                      {me.email}
+                    </span>
                   ) : null}
                   {/* {roleLabel ? (
                     <Badge variant="secondary" className="mt-0.5 w-fit text-xs">

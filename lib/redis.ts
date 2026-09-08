@@ -1,6 +1,6 @@
-import Redis from "ioredis";
+import Redis from "ioredis"
 
-const globalForRedis = globalThis as unknown as { redis?: Redis };
+const globalForRedis = globalThis as unknown as { redis?: Redis }
 
 export const redis =
   globalForRedis.redis ??
@@ -16,6 +16,6 @@ export const redis =
     // one command waits before giving up.
     maxRetriesPerRequest: 1,
     connectTimeout: 3000,
-  });
+  })
 
-if (process.env.NODE_ENV !== "production") globalForRedis.redis = redis;
+if (process.env.NODE_ENV !== "production") globalForRedis.redis = redis

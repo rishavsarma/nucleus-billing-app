@@ -27,16 +27,16 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { data: me } = useMe()
   const { data: organization } = useCurrentOrganization()
 
-  const navGroups = NAV_DATA.filter((group) => group.labelKey !== "admin" || me?.isSuperadmin).map(
-    (group) => ({
-      label: t(`groups.${group.labelKey}`),
-      items: group.items.map((item) => ({
-        title: t(`items.${item.titleKey}`),
-        url: item.url,
-        icon: item.icon,
-      })),
-    }),
-  )
+  const navGroups = NAV_DATA.filter(
+    (group) => group.labelKey !== "admin" || me?.isSuperadmin
+  ).map((group) => ({
+    label: t(`groups.${group.labelKey}`),
+    items: group.items.map((item) => ({
+      title: t(`items.${item.titleKey}`),
+      url: item.url,
+      icon: item.icon,
+    })),
+  }))
 
   return (
     <Sidebar collapsible="icon" {...props} className="z-1">
@@ -44,7 +44,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton asChild>
-              <Link href="/">
+              <Link href="/dashboard/overview">
                 {organization?.pdf_logo_url ? (
                   // eslint-disable-next-line @next/next/no-img-element -- store logo is an arbitrary external URL, not a local/optimizable asset
                   <img
@@ -55,7 +55,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 ) : (
                   <LayoutDashboard />
                 )}
-                <span className="truncate font-medium">{organization?.name ?? t("brand")}</span>
+                <span className="truncate font-medium">
+                  {organization?.name ?? t("brand")}
+                </span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -69,7 +71,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               <SidebarMenu>
                 {group.items.map((item) => (
                   <SidebarMenuItem key={item.url}>
-                    <SidebarMenuButton className="my-0.5" asChild isActive={pathname === item.url}>
+                    <SidebarMenuButton
+                      className="my-0.5"
+                      asChild
+                      isActive={pathname === item.url}
+                    >
                       <Link href={item.url}>
                         <item.icon />
                         <span>{item.title}</span>

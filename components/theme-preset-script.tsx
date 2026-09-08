@@ -2,7 +2,11 @@
 
 import { useEffect, useState } from "react"
 import Script from "next/script"
-import { THEME_PRESET_CSS, THEME_PRESET_FONTS, DEFAULT_THEME_PRESET } from "@/lib/theme-presets"
+import {
+  THEME_PRESET_CSS,
+  THEME_PRESET_FONTS,
+  DEFAULT_THEME_PRESET,
+} from "@/lib/theme-presets"
 import { THEME_PRESET_STORAGE_KEY } from "@/store/theme-preset-store"
 
 // Runs in <head> before hydration (strategy="beforeInteractive"), so the
@@ -64,6 +68,12 @@ export function ThemePresetScript() {
     })();
   `
 
-  // eslint-disable-next-line @next/next/no-before-interactive-script-outside-document -- root layout is the documented App Router equivalent of _document.js for this rule; https://nextjs.org/docs/app/api-reference/components/script#beforeinteractive
-  return <Script id="theme-preset-init" strategy="beforeInteractive">{script}</Script>
+  return (
+    // root layout is the documented App Router equivalent of _document.js for
+    // this rule; https://nextjs.org/docs/app/api-reference/components/script#beforeinteractive
+    // eslint-disable-next-line @next/next/no-before-interactive-script-outside-document
+    <Script id="theme-preset-init" strategy="beforeInteractive">
+      {script}
+    </Script>
+  )
 }

@@ -13,7 +13,7 @@ export async function GET() {
   if (auth.error) {
     return NextResponse.json(
       { error: auth.error },
-      { status: auth.error === "unauthorized" ? 401 : 403 },
+      { status: auth.error === "unauthorized" ? 401 : 403 }
     )
   }
 
@@ -30,14 +30,18 @@ export async function GET() {
       supabase
         .schema("billing")
         .from("invoices")
-        .select("id, invoice_number, subtotal, tax_total, total, amount_paid, status, issue_date, due_date")
+        .select(
+          "id, invoice_number, subtotal, tax_total, total, amount_paid, status, issue_date, due_date"
+        )
         .eq("org_id", orgId)
         .neq("status", "void"),
 
       supabase
         .schema("billing")
         .from("purchase_bills")
-        .select("id, bill_number, subtotal, tax_total, total, amount_paid, status, bill_date, due_date")
+        .select(
+          "id, bill_number, subtotal, tax_total, total, amount_paid, status, bill_date, due_date"
+        )
         .eq("org_id", orgId)
         .neq("status", "void"),
     ])
@@ -93,7 +97,9 @@ export async function GET() {
 
       const due = new Date(inv.due_date)
       due.setHours(0, 0, 0, 0)
-      const diffDays = Math.floor((today.getTime() - due.getTime()) / (1000 * 60 * 60 * 24))
+      const diffDays = Math.floor(
+        (today.getTime() - due.getTime()) / (1000 * 60 * 60 * 24)
+      )
 
       if (diffDays <= 0) {
         aging.notDue += balance
@@ -134,11 +140,18 @@ export async function GET() {
       },
     }
 
-    await cacheSet(reportsCacheKey(orgId), JSON.stringify(payload), REPORTS_CACHE_TTL_SECONDS)
+    await cacheSet(
+      reportsCacheKey(orgId),
+      JSON.stringify(payload),
+      REPORTS_CACHE_TTL_SECONDS
+    )
 
     return NextResponse.json(payload)
   } catch (err) {
     console.error("Failed to load reports:", err)
-    return NextResponse.json({ error: "Failed to load reports" }, { status: 500 })
+    return NextResponse.json(
+      { error: "Failed to load reports" },
+      { status: 500 }
+    )
   }
 }

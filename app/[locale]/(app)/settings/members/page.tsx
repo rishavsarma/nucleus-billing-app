@@ -17,14 +17,27 @@ import {
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog"
 import { EntityTable, entityColumnHelper } from "@/components/entity-table"
 import { useServerTableParams } from "@/components/server-table"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { useDeleteMembership, useUpdateMembership } from "@/hooks/use-memberships"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
+  useDeleteMembership,
+  useUpdateMembership,
+} from "@/hooks/use-memberships"
 import { useOrgMembers } from "@/hooks/use-org-members"
 import type { OrgMember } from "@/lib/services/org-members"
 
 const columnHelper = entityColumnHelper<OrgMember>()
 
-const ROLE_LABEL_KEY = { owner: "owner", admin: "admin", member: "member" } as const
+const ROLE_LABEL_KEY = {
+  owner: "owner",
+  admin: "admin",
+  member: "member",
+} as const
 const MEMBERSHIP_LIMIT = 3
 
 export default function MembersPage() {
@@ -50,7 +63,9 @@ export default function MembersPage() {
           <div className="flex size-7 items-center justify-center rounded-full bg-muted">
             <UserIcon className="size-3.5 text-muted-foreground" />
           </div>
-          <span className="font-medium">{row.original.email ?? row.original.user_id}</span>
+          <span className="font-medium">
+            {row.original.email ?? row.original.user_id}
+          </span>
         </div>
       ),
     }),
@@ -61,11 +76,14 @@ export default function MembersPage() {
           value={row.original.role}
           onValueChange={(value) =>
             updateMembership.mutate(
-              { id: row.original.id, input: { role: value as OrgMember["role"] } },
+              {
+                id: row.original.id,
+                input: { role: value as OrgMember["role"] },
+              },
               {
                 onSuccess: () => toast.success(tCommon("updatedSuccess")),
                 onError: () => toast.error(tCommon("genericError")),
-              },
+              }
             )
           }
         >
@@ -85,7 +103,9 @@ export default function MembersPage() {
     columnHelper.accessor("created_at", {
       header: t("columnJoined"),
       cell: ({ getValue }) => (
-        <span className="text-muted-foreground">{new Date(getValue()).toLocaleDateString()}</span>
+        <span className="text-muted-foreground">
+          {new Date(getValue()).toLocaleDateString()}
+        </span>
       ),
     }),
     columnHelper.display({
@@ -93,7 +113,11 @@ export default function MembersPage() {
       header: () => null,
       cell: ({ row }) => (
         <div className="flex justify-end">
-          <Button variant="ghost" size="icon-sm" onClick={() => setToRemove(row.original)}>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={() => setToRemove(row.original)}
+          >
             <TrashIcon />
           </Button>
         </div>
@@ -111,7 +135,15 @@ export default function MembersPage() {
             {t("seatsUsed", { count: seatsUsed, limit: MEMBERSHIP_LIMIT })}
           </p>
         </div>
-        <Button onClick={() => setInviteOpen(true)} disabled={atLimit} title={atLimit ? t("seatsLimitReached", { limit: MEMBERSHIP_LIMIT }) : undefined}>
+        <Button
+          onClick={() => setInviteOpen(true)}
+          disabled={atLimit}
+          title={
+            atLimit
+              ? t("seatsLimitReached", { limit: MEMBERSHIP_LIMIT })
+              : undefined
+          }
+        >
           <PlusIcon />
           {t("inviteMember")}
         </Button>

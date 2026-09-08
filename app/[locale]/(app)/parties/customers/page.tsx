@@ -28,7 +28,10 @@ export default function CustomersPage() {
     columnHelper.accessor("name", {
       header: t("columnName"),
       cell: ({ getValue, row }) => (
-        <Link href={routes.parties.customers.detail(row.original.id)} className="font-medium hover:underline">
+        <Link
+          href={routes.parties.customers.detail(row.original.id)}
+          className="font-medium hover:underline"
+        >
           {getValue()}
         </Link>
       ),
@@ -39,7 +42,9 @@ export default function CustomersPage() {
       cell: ({ row }) => (
         <div className="flex flex-col">
           <span>{row.original.email ?? "—"}</span>
-          <span className="text-xs text-muted-foreground">{row.original.phone ?? ""}</span>
+          <span className="text-xs text-muted-foreground">
+            {row.original.phone ?? ""}
+          </span>
         </div>
       ),
     }),
@@ -47,13 +52,22 @@ export default function CustomersPage() {
       id: "location",
       header: t("columnLocation"),
       cell: ({ row }) => {
-        const address = (row.original.billing_address ?? {}) as { city?: string; state?: string }
-        return <span>{[address.city, address.state].filter(Boolean).join(", ") || "—"}</span>
+        const address = (row.original.billing_address ?? {}) as {
+          city?: string
+          state?: string
+        }
+        return (
+          <span>
+            {[address.city, address.state].filter(Boolean).join(", ") || "—"}
+          </span>
+        )
       },
     }),
     columnHelper.accessor("tax_id", {
       header: t("columnGstin"),
-      cell: ({ getValue }) => <span className="text-muted-foreground">{getValue() ?? "—"}</span>,
+      cell: ({ getValue }) => (
+        <span className="text-muted-foreground">{getValue() ?? "—"}</span>
+      ),
     }),
     columnHelper.display({
       id: "actions",
@@ -61,7 +75,10 @@ export default function CustomersPage() {
       cell: ({ row }) => (
         <div className="flex justify-end gap-1">
           <Button variant="ghost" size="icon-sm" asChild>
-            <Link href={routes.parties.customers.detail(row.original.id)} onClick={(event) => event.stopPropagation()}>
+            <Link
+              href={routes.parties.customers.detail(row.original.id)}
+              onClick={(event) => event.stopPropagation()}
+            >
               <PencilIcon />
             </Link>
           </Button>

@@ -2,7 +2,9 @@
 
 import type { ListParams } from "@/lib/database/list-params-types"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { fetchPdfWatermarksAll, fetchPdfWatermarksPaginated,
+import {
+  fetchPdfWatermarksAll,
+  fetchPdfWatermarksPaginated,
   createPdfWatermark,
   updatePdfWatermark,
   deletePdfWatermark,
@@ -29,7 +31,8 @@ export function useCreatePdfWatermark() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (input: Partial<PdfWatermark>) => createPdfWatermark(input),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["pdf-watermarks"] }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["pdf-watermarks"] }),
   })
 }
 
@@ -38,7 +41,8 @@ export function useUpdatePdfWatermark() {
   return useMutation({
     mutationFn: ({ id, input }: { id: string; input: Partial<PdfWatermark> }) =>
       updatePdfWatermark(id, input),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["pdf-watermarks"] }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["pdf-watermarks"] }),
   })
 }
 
@@ -46,7 +50,8 @@ export function useDeletePdfWatermark() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (id: string) => deletePdfWatermark(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["pdf-watermarks"] }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["pdf-watermarks"] }),
   })
 }
 

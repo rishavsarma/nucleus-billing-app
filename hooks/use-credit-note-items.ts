@@ -27,7 +27,9 @@ export function useCreateCreditNoteItem() {
     mutationFn: (input: Partial<CreditNoteItem> & { credit_note_id: string }) =>
       createCreditNoteItem(input),
     onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["credit-note-items", variables.credit_note_id] })
+      queryClient.invalidateQueries({
+        queryKey: ["credit-note-items", variables.credit_note_id],
+      })
       queryClient.invalidateQueries({ queryKey: ["credit-notes"] })
     },
   })
@@ -36,10 +38,17 @@ export function useCreateCreditNoteItem() {
 export function useUpdateCreditNoteItem(creditNoteId: string | undefined) {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, input }: { id: string; input: Partial<CreditNoteItem> }) =>
-      updateCreditNoteItem(id, input),
+    mutationFn: ({
+      id,
+      input,
+    }: {
+      id: string
+      input: Partial<CreditNoteItem>
+    }) => updateCreditNoteItem(id, input),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["credit-note-items", creditNoteId] })
+      queryClient.invalidateQueries({
+        queryKey: ["credit-note-items", creditNoteId],
+      })
       queryClient.invalidateQueries({ queryKey: ["credit-notes"] })
     },
   })
@@ -50,7 +59,9 @@ export function useDeleteCreditNoteItem(creditNoteId: string | undefined) {
   return useMutation({
     mutationFn: (id: string) => deleteCreditNoteItem(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["credit-note-items", creditNoteId] })
+      queryClient.invalidateQueries({
+        queryKey: ["credit-note-items", creditNoteId],
+      })
       queryClient.invalidateQueries({ queryKey: ["credit-notes"] })
     },
   })

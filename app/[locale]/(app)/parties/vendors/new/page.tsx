@@ -5,7 +5,11 @@ import { toast } from "sonner"
 import { ArrowLeftIcon } from "lucide-react"
 
 import { Link, useRouter } from "@/i18n/navigation"
-import { PartyForm, formValuesToPartyInput, type PartyFormValues } from "@/components/party-form"
+import {
+  PartyForm,
+  formValuesToPartyInput,
+  type PartyFormValues,
+} from "@/components/party-form"
 import { useCreateVendor } from "@/hooks/use-vendors"
 import { routes } from "@/lib/routes"
 
@@ -28,7 +32,10 @@ export default function NewVendorPage() {
 
   return (
     <div className="flex flex-col gap-1">
-      <Link href={routes.parties.vendors.list} className="mb-2 flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+      <Link
+        href={routes.parties.vendors.list}
+        className="mb-2 flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+      >
         <ArrowLeftIcon className="size-3.5" />
         {t("backToList")}
       </Link>

@@ -13,7 +13,14 @@ import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog"
 import { EntityFormDialog } from "@/components/entity-form-dialog"
 import { Field, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
 import {
   useCreateCreditNoteItem,
   useCreditNoteItems,
@@ -22,7 +29,12 @@ import {
 } from "@/hooks/use-credit-note-items"
 import type { CreditNoteItem } from "@/lib/database/types"
 
-const money = (n: number) => "₹" + n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+const money = (n: number) =>
+  "₹" +
+  n.toLocaleString("en-IN", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })
 
 const lineItemSchema = z.object({
   description: z.string().min(1),
@@ -31,7 +43,13 @@ const lineItemSchema = z.object({
 })
 type LineItemFormValues = z.infer<typeof lineItemSchema>
 
-export function CreditNoteItemsSection({ creditNoteId, editable }: { creditNoteId: string; editable: boolean }) {
+export function CreditNoteItemsSection({
+  creditNoteId,
+  editable,
+}: {
+  creditNoteId: string
+  editable: boolean
+}) {
   const t = useTranslations("CreditNotes")
   const tCommon = useTranslations("Common")
 
@@ -47,7 +65,11 @@ export function CreditNoteItemsSection({ creditNoteId, editable }: { creditNoteI
     resolver: zodResolver(lineItemSchema),
     values:
       editing && editing !== "new"
-        ? { description: editing.description, amount: editing.amount, tax_rate: editing.tax_rate }
+        ? {
+            description: editing.description,
+            amount: editing.amount,
+            tax_rate: editing.tax_rate,
+          }
         : { description: "", amount: 0, tax_rate: 0 },
   })
 
@@ -61,7 +83,7 @@ export function CreditNoteItemsSection({ creditNoteId, editable }: { creditNoteI
             setEditing(null)
           },
           onError: () => toast.error(tCommon("genericError")),
-        },
+        }
       )
     } else {
       createLineItem.mutate(
@@ -72,7 +94,7 @@ export function CreditNoteItemsSection({ creditNoteId, editable }: { creditNoteI
             setEditing(null)
           },
           onError: () => toast.error(tCommon("genericError")),
-        },
+        }
       )
     }
   }
@@ -90,32 +112,50 @@ export function CreditNoteItemsSection({ creditNoteId, editable }: { creditNoteI
           </Button>
         ) : null}
       </div>
-      <div className="p-3 sm:p-4 overflow-x-auto">
+      <div className="overflow-x-auto p-3 sm:p-4">
         {lineItems?.length ? (
-          <Table className="whitespace-nowrap text-xs sm:text-sm">
+          <Table className="text-xs whitespace-nowrap sm:text-sm">
             <TableHeader>
               <TableRow>
                 <TableHead>{t("descriptionLabel")}</TableHead>
                 <TableHead className="text-right">{t("amountLabel")}</TableHead>
-                <TableHead className="text-right">{t("taxRateLabel")}</TableHead>
-                <TableHead className="text-right">{t("lineTotalLabel")}</TableHead>
+                <TableHead className="text-right">
+                  {t("taxRateLabel")}
+                </TableHead>
+                <TableHead className="text-right">
+                  {t("lineTotalLabel")}
+                </TableHead>
                 {editable ? <TableHead /> : null}
               </TableRow>
             </TableHeader>
             <TableBody>
               {lineItems.map((line) => (
                 <TableRow key={line.id}>
-                  <TableCell className="font-medium max-w-[200px] truncate">{line.description}</TableCell>
-                  <TableCell className="text-right">{money(line.amount)}</TableCell>
+                  <TableCell className="max-w-[200px] truncate font-medium">
+                    {line.description}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    {money(line.amount)}
+                  </TableCell>
                   <TableCell className="text-right">{line.tax_rate}%</TableCell>
-                  <TableCell className="text-right font-semibold">{money(line.line_total)}</TableCell>
+                  <TableCell className="text-right font-semibold">
+                    {money(line.line_total)}
+                  </TableCell>
                   {editable ? (
                     <TableCell>
                       <div className="flex justify-end gap-1">
-                        <Button variant="ghost" size="icon-sm" onClick={() => setEditing(line)}>
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          onClick={() => setEditing(line)}
+                        >
                           <PencilIcon />
                         </Button>
-                        <Button variant="ghost" size="icon-sm" onClick={() => setToDelete(line)}>
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          onClick={() => setToDelete(line)}
+                        >
                           <TrashIcon />
                         </Button>
                       </div>
@@ -126,7 +166,9 @@ export function CreditNoteItemsSection({ creditNoteId, editable }: { creditNoteI
             </TableBody>
           </Table>
         ) : (
-          <p className="py-4 text-center text-sm text-muted-foreground">{t("noLineItems")}</p>
+          <p className="py-4 text-center text-sm text-muted-foreground">
+            {t("noLineItems")}
+          </p>
         )}
       </div>
 
@@ -139,17 +181,31 @@ export function CreditNoteItemsSection({ creditNoteId, editable }: { creditNoteI
         submitLabel={editing !== "new" ? tCommon("save") : tCommon("create")}
       >
         <Field>
-          <FieldLabel htmlFor="cni-description">{t("descriptionLabel")}</FieldLabel>
+          <FieldLabel htmlFor="cni-description">
+            {t("descriptionLabel")}
+          </FieldLabel>
           <Input id="cni-description" {...form.register("description")} />
         </Field>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
           <Field>
             <FieldLabel htmlFor="cni-amount">{t("amountLabel")}</FieldLabel>
-            <Input id="cni-amount" type="number" step="0.01" {...form.register("amount", { valueAsNumber: true })} />
+            <Input
+              id="cni-amount"
+              type="number"
+              step="0.01"
+              {...form.register("amount", { valueAsNumber: true })}
+            />
           </Field>
           <Field>
             <FieldLabel htmlFor="cni-tax-rate">{t("taxRateLabel")}</FieldLabel>
-            <Input id="cni-tax-rate" type="number" step="0.01" min={0} max={100} {...form.register("tax_rate", { valueAsNumber: true })} />
+            <Input
+              id="cni-tax-rate"
+              type="number"
+              step="0.01"
+              min={0}
+              max={100}
+              {...form.register("tax_rate", { valueAsNumber: true })}
+            />
           </Field>
         </div>
       </EntityFormDialog>

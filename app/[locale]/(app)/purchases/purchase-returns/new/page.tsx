@@ -10,7 +10,10 @@ import { z } from "zod"
 
 import { useState } from "react"
 import { Link, useRouter } from "@/i18n/navigation"
-import { DocumentStepper, type StepperStep } from "@/components/document-stepper"
+import {
+  DocumentStepper,
+  type StepperStep,
+} from "@/components/document-stepper"
 import { SearchableSelect } from "@/components/searchable-select"
 import { Button } from "@/components/ui/button"
 import { DatePicker } from "@/components/ui/date-picker"
@@ -18,7 +21,10 @@ import { Field, FieldError, FieldLabel } from "@/components/ui/field"
 import { Textarea } from "@/components/ui/textarea"
 import { useDebouncedValue } from "@/hooks/use-debounced-value"
 import { useCreatePurchaseReturn } from "@/hooks/use-purchase-returns"
-import { usePurchaseBill, usePurchaseBillsList } from "@/hooks/use-purchase-bills"
+import {
+  usePurchaseBill,
+  usePurchaseBillsList,
+} from "@/hooks/use-purchase-bills"
 import { fetchPurchaseBillById } from "@/lib/database/services/purchase-bills"
 import { routes } from "@/lib/routes"
 
@@ -48,12 +54,15 @@ export default function NewPurchaseReturnPage() {
   // endpoint already embeds the vendor name via a join.
   const [billSearch, setBillSearch] = useState("")
   const debouncedBillSearch = useDebouncedValue(billSearch, 300)
-  const { data: billsResult, isFetching: isFetchingBills } = usePurchaseBillsList({
-    search: debouncedBillSearch,
-    page: 1,
-    pageSize: 20,
-  })
-  const returnableBills = (billsResult?.data ?? []).filter((b) => b.status !== "draft" && b.status !== "void")
+  const { data: billsResult, isFetching: isFetchingBills } =
+    usePurchaseBillsList({
+      search: debouncedBillSearch,
+      page: 1,
+      pageSize: 20,
+    })
+  const returnableBills = (billsResult?.data ?? []).filter(
+    (b) => b.status !== "draft" && b.status !== "void"
+  )
   const { data: selectedBill } = usePurchaseBill(selectedBillId || undefined)
   const billOptions = [
     ...(selectedBill && !returnableBills.some((b) => b.id === selectedBill.id)
@@ -73,7 +82,10 @@ export default function NewPurchaseReturnPage() {
   ]
 
   async function onSubmit(values: NewPurchaseReturnValues) {
-    const bill = selectedBill?.id === values.purchase_bill_id ? selectedBill : await fetchPurchaseBillById(values.purchase_bill_id)
+    const bill =
+      selectedBill?.id === values.purchase_bill_id
+        ? selectedBill
+        : await fetchPurchaseBillById(values.purchase_bill_id)
     if (!bill) return
 
     createPurchaseReturn.mutate(
@@ -87,16 +99,21 @@ export default function NewPurchaseReturnPage() {
       {
         onSuccess: (purchaseReturn) => {
           toast.success(tCommon("createdSuccess"))
-          router.push(routes.purchases.purchaseReturns.detail(purchaseReturn.id))
+          router.push(
+            routes.purchases.purchaseReturns.detail(purchaseReturn.id)
+          )
         },
         onError: () => toast.error(tCommon("genericError")),
-      },
+      }
     )
   }
 
   return (
     <div className="flex flex-col gap-1">
-      <Link href={routes.purchases.purchaseReturns.list} className="mb-2 flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+      <Link
+        href={routes.purchases.purchaseReturns.list}
+        className="mb-2 flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+      >
         <ArrowLeftIcon className="size-3.5" />
         {t("backToList")}
       </Link>
@@ -106,36 +123,51 @@ export default function NewPurchaseReturnPage() {
         <DocumentStepper steps={steps} />
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4 rounded-xl bg-card p-4 ring-1 ring-foreground/10">
+      <form
+        onSubmit={handleSubmit(onSubmit)}
+        className="flex flex-col gap-4 rounded-xl bg-card p-4 ring-1 ring-foreground/10"
+      >
         <Field data-invalid={!!formState.errors.purchase_bill_id}>
           <FieldLabel htmlFor="pr-bill">{t("billLabel")}</FieldLabel>
           <SearchableSelect
             id="pr-bill"
             value={selectedBillId}
-            onValueChange={(value) => setValue("purchase_bill_id", value, { shouldValidate: true })}
+            onValueChange={(value) =>
+              setValue("purchase_bill_id", value, { shouldValidate: true })
+            }
             placeholder={t("billPlaceholder")}
             options={billOptions}
             search={billSearch}
             onSearchChange={setBillSearch}
             isLoading={isFetchingBills}
           />
-          {formState.errors.purchase_bill_id ? <FieldError>{tCommon("required")}</FieldError> : null}
+          {formState.errors.purchase_bill_id ? (
+            <FieldError>{tCommon("required")}</FieldError>
+          ) : null}
         </Field>
         <Field>
           <FieldLabel htmlFor="pr-issue-date">{t("issueDateLabel")}</FieldLabel>
           <DatePicker
             id="pr-issue-date"
             value={issueDate}
-            onChange={(value) => setValue("issue_date", value, { shouldValidate: true })}
+            onChange={(value) =>
+              setValue("issue_date", value, { shouldValidate: true })
+            }
           />
         </Field>
         <Field>
           <FieldLabel htmlFor="pr-reason">{t("reasonLabel")}</FieldLabel>
-          <Textarea id="pr-reason" placeholder={t("reasonPlaceholder")} {...register("reason")} />
+          <Textarea
+            id="pr-reason"
+            placeholder={t("reasonPlaceholder")}
+            {...register("reason")}
+          />
         </Field>
         <div className="flex justify-end">
           <Button type="submit" disabled={createPurchaseReturn.isPending}>
-            {createPurchaseReturn.isPending ? <Loader2Icon className="animate-spin" /> : null}
+            {createPurchaseReturn.isPending ? (
+              <Loader2Icon className="animate-spin" />
+            ) : null}
             {t("continueToItems")}
           </Button>
         </div>

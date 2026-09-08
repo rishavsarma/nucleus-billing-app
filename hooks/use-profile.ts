@@ -1,7 +1,12 @@
 "use client"
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { fetchProfile, updateProfileDetails, updateEmail, updatePassword } from "@/lib/services/profile"
+import {
+  fetchProfile,
+  updateProfileDetails,
+  updateEmail,
+  updatePassword,
+} from "@/lib/services/profile"
 
 export function useProfile() {
   return useQuery({

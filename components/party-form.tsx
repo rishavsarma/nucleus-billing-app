@@ -7,7 +7,12 @@ import { useTranslations } from "next-intl"
 import { z } from "zod"
 
 import { Button } from "@/components/ui/button"
-import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field"
+import {
+  Field,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import type { Customer, Vendor } from "@/lib/database/types"
@@ -36,7 +41,9 @@ type BillingAddress = {
 }
 
 /** Flattens the party's jsonb `billing_address` into the form's field shape. */
-export function partyToFormValues(party?: Customer | Vendor): Partial<PartyFormValues> {
+export function partyToFormValues(
+  party?: Customer | Vendor
+): Partial<PartyFormValues> {
   const address = (party?.billing_address ?? {}) as BillingAddress
   return {
     name: party?.name ?? "",
@@ -97,7 +104,19 @@ export function PartyForm({
   const tCommon = useTranslations("Common")
   const form = useForm<PartyFormValues>({
     resolver: zodResolver(partyFormSchema),
-    defaultValues: { name: "", email: "", phone: "", tax_id: "", address_line: "", city: "", state: "", postal_code: "", country: "", notes: "", ...defaultValues },
+    defaultValues: {
+      name: "",
+      email: "",
+      phone: "",
+      tax_id: "",
+      address_line: "",
+      city: "",
+      state: "",
+      postal_code: "",
+      country: "",
+      notes: "",
+      ...defaultValues,
+    },
   })
 
   const { register, handleSubmit, formState } = form
@@ -107,22 +126,30 @@ export function PartyForm({
       <div className="rounded-xl bg-card ring-1 ring-foreground/10">
         <div className="border-b px-4 py-3">
           <h2 className="text-sm font-semibold">{basicDetailsTitle}</h2>
-          <p className="text-xs text-muted-foreground">{basicDetailsDescription}</p>
+          <p className="text-xs text-muted-foreground">
+            {basicDetailsDescription}
+          </p>
         </div>
         <div className="p-4">
           <FieldGroup>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Field data-invalid={!!formState.errors.name}>
                 <FieldLabel htmlFor="name">{nameLabel}</FieldLabel>
-                <Input id="name" {...register("name")} aria-invalid={!!formState.errors.name} />
-                {formState.errors.name ? <FieldError>{tCommon("required")}</FieldError> : null}
+                <Input
+                  id="name"
+                  {...register("name")}
+                  aria-invalid={!!formState.errors.name}
+                />
+                {formState.errors.name ? (
+                  <FieldError>{tCommon("required")}</FieldError>
+                ) : null}
               </Field>
               <Field>
                 <FieldLabel htmlFor="email">{t("email")}</FieldLabel>
                 <Input id="email" type="email" {...register("email")} />
               </Field>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Field>
                 <FieldLabel htmlFor="phone">{t("phone")}</FieldLabel>
                 <Input id="phone" {...register("phone")} />
@@ -143,9 +170,11 @@ export function PartyForm({
         </div>
         <div className="p-4">
           <FieldGroup>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Field>
-                <FieldLabel htmlFor="address_line">{t("addressLine")}</FieldLabel>
+                <FieldLabel htmlFor="address_line">
+                  {t("addressLine")}
+                </FieldLabel>
                 <Input id="address_line" {...register("address_line")} />
               </Field>
               <Field>
@@ -153,7 +182,7 @@ export function PartyForm({
                 <Input id="city" {...register("city")} />
               </Field>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <Field>
                 <FieldLabel htmlFor="state">{t("state")}</FieldLabel>
                 <Input id="state" {...register("state")} />
@@ -177,7 +206,10 @@ export function PartyForm({
         </div>
         <div className="p-4">
           <Field>
-            <Textarea {...register("notes")} placeholder={t("notesPlaceholder")} />
+            <Textarea
+              {...register("notes")}
+              placeholder={t("notesPlaceholder")}
+            />
           </Field>
         </div>
       </div>

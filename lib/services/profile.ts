@@ -21,7 +21,10 @@ export async function fetchProfile(): Promise<ProfileDetails> {
   }
 }
 
-export async function updateProfileDetails(input: { name: string; phone: string | null }): Promise<void> {
+export async function updateProfileDetails(input: {
+  name: string
+  phone: string | null
+}): Promise<void> {
   const supabase = createClient()
   const { error } = await supabase.auth.updateUser({
     data: { full_name: input.name, phone: input.phone },

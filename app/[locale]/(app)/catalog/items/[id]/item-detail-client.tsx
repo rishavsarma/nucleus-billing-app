@@ -8,7 +8,12 @@ import { ArrowLeftIcon, TrashIcon } from "lucide-react"
 import { Link, useRouter } from "@/i18n/navigation"
 import { Button } from "@/components/ui/button"
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog"
-import { ItemForm, formValuesToItemInput, itemToFormValues, type ItemFormValues } from "@/components/item-form"
+import {
+  ItemForm,
+  formValuesToItemInput,
+  itemToFormValues,
+  type ItemFormValues,
+} from "@/components/item-form"
 import { useDeleteItem, useItem, useUpdateItem } from "@/hooks/use-items"
 import { routes } from "@/lib/routes"
 
@@ -28,18 +33,23 @@ export function ItemDetailClient({ id }: { id: string }) {
       {
         onSuccess: () => toast.success(tCommon("updatedSuccess")),
         onError: () => toast.error(tCommon("genericError")),
-      },
+      }
     )
   }
 
   if (isLoading) {
-    return <div className="text-sm text-muted-foreground">{tCommon("loading")}</div>
+    return (
+      <div className="text-sm text-muted-foreground">{tCommon("loading")}</div>
+    )
   }
 
   if (!item) {
     return (
       <div className="flex flex-col gap-2">
-        <Link href={routes.catalog.items.list} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+        <Link
+          href={routes.catalog.items.list}
+          className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+        >
           <ArrowLeftIcon className="size-3.5" />
           {t("backToList")}
         </Link>
@@ -51,11 +61,18 @@ export function ItemDetailClient({ id }: { id: string }) {
   return (
     <div className="flex flex-col gap-1">
       <div className="mb-2 flex items-center justify-between">
-        <Link href={routes.catalog.items.list} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+        <Link
+          href={routes.catalog.items.list}
+          className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+        >
           <ArrowLeftIcon className="size-3.5" />
           {t("backToList")}
         </Link>
-        <Button variant="destructive" size="sm" onClick={() => setConfirmDelete(true)}>
+        <Button
+          variant="destructive"
+          size="sm"
+          onClick={() => setConfirmDelete(true)}
+        >
           <TrashIcon />
           {tCommon("delete")}
         </Button>

@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { useTranslations } from "next-intl"
 import { Check, ChevronsUpDown, Loader2, UserRoundIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
@@ -13,7 +14,11 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
 import { useStaffList, useStaffMember } from "@/hooks/use-staff"
 import { useDebouncedValue } from "@/hooks/use-debounced-value"
 
@@ -42,19 +47,30 @@ export function StaffSelect({
   value,
   onValueChange,
   role,
-  placeholder = "Select a staff member…",
-  searchPlaceholder = "Search staff…",
-  emptyMessage = "No staff found.",
+  placeholder,
+  searchPlaceholder,
+  emptyMessage,
   disabled = false,
   className,
   container,
 }: StaffSelectProps) {
+  const t = useTranslations("Pickers")
+  const resolvedPlaceholder = placeholder ?? t("staffPlaceholder")
+  const resolvedSearchPlaceholder =
+    searchPlaceholder ?? t("staffSearchPlaceholder")
+  const resolvedEmptyMessage = emptyMessage ?? t("staffEmpty")
+
   const [open, setOpen] = React.useState(false)
   const [search, setSearch] = React.useState("")
   const debouncedSearch = useDebouncedValue(search, 300)
 
   const { data: selectedStaff } = useStaffMember(value ?? undefined)
-  const { data: result, isLoading } = useStaffList({ search: debouncedSearch, page: 1, pageSize: 20, role })
+  const { data: result, isLoading } = useStaffList({
+    search: debouncedSearch,
+    page: 1,
+    pageSize: 20,
+    role,
+  })
   const staff = (result?.data ?? []).filter((person) => person.is_active)
 
   return (
@@ -74,7 +90,7 @@ export function StaffSelect({
           aria-expanded={open}
           disabled={disabled}
           className={cn(
-            "w-full justify-between font-normal h-9 px-3 text-start",
+            "h-9 w-full justify-between px-3 text-start font-normal",
             !selectedStaff && "text-muted-foreground",
             className
           )}
@@ -82,7 +98,7 @@ export function StaffSelect({
           <span className="flex min-w-0 items-center gap-2 truncate">
             <UserRoundIcon className="size-4 shrink-0 text-muted-foreground" />
             <span className="truncate">
-              {selectedStaff ? selectedStaff.name : placeholder}
+              {selectedStaff ? selectedStaff.name : resolvedPlaceholder}
             </span>
           </span>
           <ChevronsUpDown className="ms-2 size-4 shrink-0 opacity-50" />
@@ -94,14 +110,18 @@ export function StaffSelect({
         container={container}
       >
         <Command shouldFilter={false}>
-          <CommandInput value={search} onValueChange={setSearch} placeholder={searchPlaceholder} />
+          <CommandInput
+            value={search}
+            onValueChange={setSearch}
+            placeholder={resolvedSearchPlaceholder}
+          />
           <CommandList className="max-h-60">
             {isLoading ? (
               <div className="flex items-center justify-center py-6 text-muted-foreground">
                 <Loader2 className="size-4 animate-spin" />
               </div>
             ) : staff.length === 0 ? (
-              <CommandEmpty>{emptyMessage}</CommandEmpty>
+              <CommandEmpty>{resolvedEmptyMessage}</CommandEmpty>
             ) : (
               <CommandGroup>
                 {staff.map((person) => (
@@ -112,13 +132,15 @@ export function StaffSelect({
                       onValueChange?.(currentValue)
                       setOpen(false)
                     }}
-                    className="flex items-center justify-between py-2 cursor-pointer"
+                    className="flex cursor-pointer items-center justify-between py-2"
                   >
                     <span className="truncate font-medium">{person.name}</span>
                     <Check
                       className={cn(
                         "ms-2 size-4 shrink-0",
-                        value === person.id ? "opacity-100 text-primary" : "opacity-0"
+                        value === person.id
+                          ? "text-primary opacity-100"
+                          : "opacity-0"
                       )}
                     />
                   </CommandItem>

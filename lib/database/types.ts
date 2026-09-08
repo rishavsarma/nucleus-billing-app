@@ -23,6 +23,11 @@ export interface Organization {
   pdf_watermark_text: string | null
   pdf_logo_url: string | null
   pdf_footer_notes: string | null
+  /** Base64 PNG data URL of a saved default signature, printed on
+   * invoices/purchase bills — see components/signature-pad.tsx. Stored
+   * inline rather than as an uploaded-file reference since this
+   * deployment has no Supabase Storage bucket. */
+  signature_image: string | null
   financial_year_start_month: number
   low_stock_alerts_enabled: boolean
   is_active: boolean
@@ -184,6 +189,14 @@ export interface Invoice {
   discount_total: number
   total: number
   amount_paid: number
+  bank_account_id: string | null
+  /** GST state of supply — drives CGST+SGST (matches org's own state) vs
+   * IGST (differs) in the PDF; purely a render-time decision, not stored
+   * as a separate tax breakdown. */
+  place_of_supply: string | null
+  round_off_enabled: boolean
+  /** Trigger-derived, like `total` itself — never write this directly. */
+  round_off_amount: number
   created_by: string | null
   created_at: string
   updated_at: string
@@ -270,7 +283,28 @@ export interface PurchaseBill {
   tax_total: number
   total: number
   amount_paid: number
+  bank_account_id: string | null
+  place_of_supply: string | null
+  round_off_enabled: boolean
+  /** Trigger-derived, like `total` itself — never write this directly. */
+  round_off_amount: number
   created_by: string | null
+  created_at: string
+  updated_at: string
+}
+
+/** billing.organization_bank_accounts — an org can have several, one
+ * flagged default; selected per invoice/purchase bill to print on the
+ * document. Full CRUD, matches other org-scoped settings entities. */
+export interface OrganizationBankAccount {
+  id: string
+  org_id: string
+  account_holder_name: string
+  account_number: string
+  ifsc_code: string
+  bank_name: string
+  branch_name: string | null
+  is_default: boolean
   created_at: string
   updated_at: string
 }
@@ -439,7 +473,10 @@ export interface Payment {
 // Embedded via a real join over invoice_id, nested one level further to the
 // invoice's own customer_id — see fetchPaymentsPaginated().
 export interface PaymentWithRelations extends Payment {
-  invoice: { invoice_number: string | null; customer: { name: string } | null } | null
+  invoice: {
+    invoice_number: string | null
+    customer: { name: string } | null
+  } | null
 }
 
 export interface PurchasePayment {
@@ -544,7 +581,13 @@ export interface StockMovementVariant {
 
 export interface OrgDocumentCounter {
   org_id: string
-  doc_type: "invoice" | "purchase_bill" | "credit_note" | "debit_note" | "sales_return" | "purchase_return"
+  doc_type:
+    | "invoice"
+    | "purchase_bill"
+    | "credit_note"
+    | "debit_note"
+    | "sales_return"
+    | "purchase_return"
   next_value: number
 }
 

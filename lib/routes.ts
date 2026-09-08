@@ -96,6 +96,7 @@ export const routes = {
     addons: "/settings/addons",
     appSettings: "/settings/app-settings",
     pdfWatermarks: "/settings/pdf-watermarks",
+    bankAccounts: "/settings/bank-accounts",
     profile: "/settings/profile",
   },
 

@@ -13,7 +13,12 @@ import { routes } from "@/lib/routes"
 import type { InvoiceWithCustomer } from "@/lib/database/types"
 
 const columnHelper = entityColumnHelper<InvoiceWithCustomer>()
-const money = (n: number) => "₹" + n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+const money = (n: number) =>
+  "₹" +
+  n.toLocaleString("en-IN", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })
 
 export default function InvoicesPage() {
   const t = useTranslations("Invoices")
@@ -26,7 +31,10 @@ export default function InvoicesPage() {
     columnHelper.accessor("invoice_number", {
       header: t("columnNumber"),
       cell: ({ getValue, row }) => (
-        <Link href={routes.sales.invoices.detail(row.original.id)} className="font-medium hover:underline">
+        <Link
+          href={routes.sales.invoices.detail(row.original.id)}
+          className="font-medium hover:underline"
+        >
           {getValue() ?? "—"}
         </Link>
       ),
@@ -43,11 +51,15 @@ export default function InvoicesPage() {
     }),
     columnHelper.accessor("status", {
       header: t("columnStatus"),
-      cell: ({ getValue }) => <StatusBadge status={getValue()}>{tStatus(getValue())}</StatusBadge>,
+      cell: ({ getValue }) => (
+        <StatusBadge status={getValue()}>{tStatus(getValue())}</StatusBadge>
+      ),
     }),
     columnHelper.accessor("total", {
       header: t("columnTotal"),
-      cell: ({ getValue }) => <span className="font-medium">{money(getValue())}</span>,
+      cell: ({ getValue }) => (
+        <span className="font-medium">{money(getValue())}</span>
+      ),
     }),
     columnHelper.display({
       id: "actions",

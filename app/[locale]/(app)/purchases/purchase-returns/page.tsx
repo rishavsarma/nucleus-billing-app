@@ -13,7 +13,12 @@ import { routes } from "@/lib/routes"
 import type { PurchaseReturnWithRelations } from "@/lib/database/types"
 
 const columnHelper = entityColumnHelper<PurchaseReturnWithRelations>()
-const money = (n: number) => "₹" + n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+const money = (n: number) =>
+  "₹" +
+  n.toLocaleString("en-IN", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })
 
 export default function PurchaseReturnsPage() {
   const t = useTranslations("PurchaseReturns")
@@ -26,7 +31,10 @@ export default function PurchaseReturnsPage() {
     columnHelper.accessor("purchase_return_number", {
       header: t("columnNumber"),
       cell: ({ getValue, row }) => (
-        <Link href={routes.purchases.purchaseReturns.detail(row.original.id)} className="font-medium hover:underline">
+        <Link
+          href={routes.purchases.purchaseReturns.detail(row.original.id)}
+          className="font-medium hover:underline"
+        >
           {getValue() ?? "—"}
         </Link>
       ),
@@ -44,11 +52,15 @@ export default function PurchaseReturnsPage() {
     columnHelper.accessor("issue_date", { header: t("columnIssueDate") }),
     columnHelper.accessor("status", {
       header: t("columnStatus"),
-      cell: ({ getValue }) => <StatusBadge status={getValue()}>{tStatus(getValue())}</StatusBadge>,
+      cell: ({ getValue }) => (
+        <StatusBadge status={getValue()}>{tStatus(getValue())}</StatusBadge>
+      ),
     }),
     columnHelper.accessor("total", {
       header: t("columnTotal"),
-      cell: ({ getValue }) => <span className="font-medium">{money(getValue())}</span>,
+      cell: ({ getValue }) => (
+        <span className="font-medium">{money(getValue())}</span>
+      ),
     }),
     columnHelper.display({
       id: "actions",

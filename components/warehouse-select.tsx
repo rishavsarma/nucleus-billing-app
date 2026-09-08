@@ -1,7 +1,14 @@
 "use client"
 
 import * as React from "react"
-import { Check, ChevronsUpDown, Loader2, Warehouse as WarehouseIcon, XIcon } from "lucide-react"
+import { useTranslations } from "next-intl"
+import {
+  Check,
+  ChevronsUpDown,
+  Loader2,
+  Warehouse as WarehouseIcon,
+  XIcon,
+} from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -13,7 +20,11 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
 import { useWarehouse, useWarehousesList } from "@/hooks/use-warehouses"
 import { useDebouncedValue } from "@/hooks/use-debounced-value"
 
@@ -44,21 +55,31 @@ export function WarehouseSelect({
   id,
   value,
   onValueChange,
-  placeholder = "Select a warehouse…",
-  searchPlaceholder = "Search warehouse…",
-  emptyMessage = "No warehouse found.",
+  placeholder,
+  searchPlaceholder,
+  emptyMessage,
   disabled = false,
   className,
   container,
   clearable = false,
   onClear,
 }: WarehouseSelectProps) {
+  const t = useTranslations("Pickers")
+  const resolvedPlaceholder = placeholder ?? t("warehousePlaceholder")
+  const resolvedSearchPlaceholder =
+    searchPlaceholder ?? t("warehouseSearchPlaceholder")
+  const resolvedEmptyMessage = emptyMessage ?? t("warehouseEmpty")
+
   const [open, setOpen] = React.useState(false)
   const [search, setSearch] = React.useState("")
   const debouncedSearch = useDebouncedValue(search, 300)
 
   const { data: selectedWarehouse } = useWarehouse(value ?? undefined)
-  const { data: result, isLoading } = useWarehousesList({ search: debouncedSearch, page: 1, pageSize: 20 })
+  const { data: result, isLoading } = useWarehousesList({
+    search: debouncedSearch,
+    page: 1,
+    pageSize: 20,
+  })
   const warehouses = result?.data ?? []
 
   return (
@@ -78,7 +99,7 @@ export function WarehouseSelect({
           aria-expanded={open}
           disabled={disabled}
           className={cn(
-            "w-full justify-between font-normal h-9 px-3 text-start",
+            "h-9 w-full justify-between px-3 text-start font-normal",
             !selectedWarehouse && "text-muted-foreground",
             className
           )}
@@ -86,7 +107,7 @@ export function WarehouseSelect({
           <span className="flex min-w-0 items-center gap-2 truncate">
             <WarehouseIcon className="size-4 shrink-0 text-muted-foreground" />
             <span className="truncate">
-              {selectedWarehouse ? selectedWarehouse.name : placeholder}
+              {selectedWarehouse ? selectedWarehouse.name : resolvedPlaceholder}
             </span>
           </span>
           {clearable && selectedWarehouse && !disabled ? (
@@ -112,14 +133,18 @@ export function WarehouseSelect({
         container={container}
       >
         <Command shouldFilter={false}>
-          <CommandInput value={search} onValueChange={setSearch} placeholder={searchPlaceholder} />
+          <CommandInput
+            value={search}
+            onValueChange={setSearch}
+            placeholder={resolvedSearchPlaceholder}
+          />
           <CommandList className="max-h-60">
             {isLoading ? (
               <div className="flex items-center justify-center py-6 text-muted-foreground">
                 <Loader2 className="size-4 animate-spin" />
               </div>
             ) : warehouses.length === 0 ? (
-              <CommandEmpty>{emptyMessage}</CommandEmpty>
+              <CommandEmpty>{resolvedEmptyMessage}</CommandEmpty>
             ) : (
               <CommandGroup>
                 {warehouses.map((warehouse) => (
@@ -130,13 +155,17 @@ export function WarehouseSelect({
                       onValueChange?.(currentValue)
                       setOpen(false)
                     }}
-                    className="flex items-center justify-between py-2 cursor-pointer"
+                    className="flex cursor-pointer items-center justify-between py-2"
                   >
-                    <span className="truncate font-medium">{warehouse.name}</span>
+                    <span className="truncate font-medium">
+                      {warehouse.name}
+                    </span>
                     <Check
                       className={cn(
                         "ms-2 size-4 shrink-0",
-                        value === warehouse.id ? "opacity-100 text-primary" : "opacity-0"
+                        value === warehouse.id
+                          ? "text-primary opacity-100"
+                          : "opacity-0"
                       )}
                     />
                   </CommandItem>

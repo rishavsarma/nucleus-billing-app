@@ -1,30 +1,26 @@
 import { NextResponse } from "next/server"
+import { pickAllowed } from "@/lib/database/allowed-fields"
+import {
+  authError,
+  badRequest,
+  dbError,
+  notFound,
+  readJson,
+} from "@/lib/api-response"
 import { applyListParams, isRangeError } from "@/lib/database/list-params"
 import { requireOrgId, verifyBelongsToOrg } from "@/lib/database/require-org"
-import { cacheDel, cacheGet, cacheSet } from "@/lib/cache"
-import { redis } from "@/lib/redis"
+import {
+  cacheBumpListVersion,
+  cacheDel,
+  cacheGet,
+  cacheGetListVersion,
+  cacheSet,
+} from "@/lib/cache"
 
 const BILL_CACHE_TTL_SECONDS = 60
 
 function billCacheKey(orgId: string, id: string) {
   return `purchase-bill:${orgId}:${id}`
-}
-
-async function getListVersion(orgId: string): Promise<number> {
-  try {
-    const v = await redis.get(`purchase-bill-list-version:${orgId}`)
-    return v ? parseInt(v, 10) : 0
-  } catch {
-    return 0
-  }
-}
-
-async function bumpListVersion(orgId: string): Promise<void> {
-  try {
-    await redis.incr(`purchase-bill-list-version:${orgId}`)
-  } catch {
-    // swallow
-  }
 }
 
 function billListCacheKey(
@@ -33,7 +29,7 @@ function billListCacheKey(
   vendorId: string,
   search: string,
   page: number,
-  pageSize: number,
+  pageSize: number
 ) {
   return `purchase-bill-list:${orgId}:v${version}:${vendorId}:${search}:${page}:${pageSize}`
 }
@@ -41,10 +37,7 @@ function billListCacheKey(
 export async function GET(request: Request) {
   const auth = await requireOrgId()
   if (auth.error) {
-    return NextResponse.json(
-      { error: auth.error },
-      { status: auth.error === "unauthorized" ? 401 : 403 },
-    )
+    return authError(auth.error)
   }
 
   const { searchParams } = new URL(request.url)
@@ -57,14 +50,22 @@ export async function GET(request: Request) {
       if (cached) return NextResponse.json(JSON.parse(cached))
     }
 
-    let recordQuery = supabase.schema("billing").from("purchase_bills").select("*").eq("id", id)
+    let recordQuery = supabase
+      .schema("billing")
+      .from("purchase_bills")
+      .select("*")
+      .eq("id", id)
     if (!auth.isSuperadmin) recordQuery = recordQuery.eq("org_id", auth.orgId)
     const { data, error } = await recordQuery.maybeSingle()
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-    if (!data) return NextResponse.json({ error: "Not found" }, { status: 404 })
+    if (error) return dbError(error, "purchase_bills:GET")
+    if (!data) return notFound()
 
     if (!auth.isSuperadmin) {
-      await cacheSet(billCacheKey(auth.orgId!, id), JSON.stringify(data), BILL_CACHE_TTL_SECONDS)
+      await cacheSet(
+        billCacheKey(auth.orgId!, id),
+        JSON.stringify(data),
+        BILL_CACHE_TTL_SECONDS
+      )
     }
     return NextResponse.json(data)
   }
@@ -75,38 +76,64 @@ export async function GET(request: Request) {
   const vendorId = searchParams.get("vendor_id") ?? ""
 
   if (!auth.isSuperadmin) {
-    const version = await getListVersion(auth.orgId!)
-    const listKey = billListCacheKey(auth.orgId!, version, vendorId, search, page, pageSize)
+    const version = await cacheGetListVersion("purchase-bill", auth.orgId!)
+    const listKey = billListCacheKey(
+      auth.orgId!,
+      version,
+      vendorId,
+      search,
+      page,
+      pageSize
+    )
     const cached = await cacheGet(listKey)
     if (cached) return NextResponse.json(JSON.parse(cached))
 
-    let query = supabase.schema("billing").from("purchase_bills").select("*, vendor:vendors(name)", { count: "exact" })
+    let query = supabase
+      .schema("billing")
+      .from("purchase_bills")
+      .select("*, vendor:vendors(name)", { count: "exact" })
     query = query.eq("org_id", auth.orgId)
     if (vendorId) query = query.eq("vendor_id", vendorId)
-    query = applyListParams(query, ["bill_number", "vendor_invoice_number"], { search: search || undefined, page, pageSize })
+    query = applyListParams(query, ["bill_number", "vendor_invoice_number"], {
+      search: search || undefined,
+      page,
+      pageSize,
+    })
     const { data, error, count } = await query
 
     if (error) {
       if (isRangeError(error)) {
         const emptyPayload = { data: [], total: count ?? 0 }
-        await cacheSet(listKey, JSON.stringify(emptyPayload), BILL_CACHE_TTL_SECONDS)
+        await cacheSet(
+          listKey,
+          JSON.stringify(emptyPayload),
+          BILL_CACHE_TTL_SECONDS
+        )
         return NextResponse.json(emptyPayload)
       }
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      return dbError(error, "purchase_bills:GET")
     }
     const payload = { data: data ?? [], total: count ?? 0 }
     await cacheSet(listKey, JSON.stringify(payload), BILL_CACHE_TTL_SECONDS)
     return NextResponse.json(payload)
   }
 
-  let query = supabase.schema("billing").from("purchase_bills").select("*, vendor:vendors(name)", { count: "exact" })
+  let query = supabase
+    .schema("billing")
+    .from("purchase_bills")
+    .select("*, vendor:vendors(name)", { count: "exact" })
   if (vendorId) query = query.eq("vendor_id", vendorId)
-  query = applyListParams(query, ["bill_number", "vendor_invoice_number"], { search: search || undefined, page, pageSize })
+  query = applyListParams(query, ["bill_number", "vendor_invoice_number"], {
+    search: search || undefined,
+    page,
+    pageSize,
+  })
   const { data, error, count } = await query
 
   if (error) {
-    if (isRangeError(error)) return NextResponse.json({ data: [], total: count ?? 0 })
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    if (isRangeError(error))
+      return NextResponse.json({ data: [], total: count ?? 0 })
+    return dbError(error, "purchase_bills:GET")
   }
   return NextResponse.json({ data: data ?? [], total: count ?? 0 })
 }
@@ -114,66 +141,162 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   const auth = await requireOrgId()
   if (auth.error) {
-    return NextResponse.json(
-      { error: auth.error },
-      { status: auth.error === "unauthorized" ? 401 : 403 },
-    )
+    return authError(auth.error)
   }
 
-  const body = await request.json()
+  const body = await readJson(request)
+  if (!body)
+    return badRequest("invalid_json", "Request body must be valid JSON.")
   const orgId = auth.isSuperadmin ? body.org_id : auth.orgId
   if (!orgId) {
     return NextResponse.json({ error: '"org_id" is required' }, { status: 400 })
   }
   if (!body.vendor_id) {
-    return NextResponse.json({ error: '"vendor_id" is required' }, { status: 400 })
+    return NextResponse.json(
+      { error: '"vendor_id" is required' },
+      { status: 400 }
+    )
   }
 
   const supabase = auth.supabase
-  const [vendOk, whOk] = await Promise.all([
-    verifyBelongsToOrg(supabase, "vendors", body.vendor_id, orgId, auth.isSuperadmin),
-    body.warehouse_id ? verifyBelongsToOrg(supabase, "warehouses", body.warehouse_id, orgId, auth.isSuperadmin) : Promise.resolve(true),
+  const [vendOk, whOk, bankOk] = await Promise.all([
+    verifyBelongsToOrg(
+      supabase,
+      "vendors",
+      body.vendor_id,
+      orgId,
+      auth.isSuperadmin
+    ),
+    body.warehouse_id
+      ? verifyBelongsToOrg(
+          supabase,
+          "warehouses",
+          body.warehouse_id,
+          orgId,
+          auth.isSuperadmin
+        )
+      : Promise.resolve(true),
+    body.bank_account_id
+      ? verifyBelongsToOrg(
+          supabase,
+          "organization_bank_accounts",
+          body.bank_account_id,
+          orgId,
+          auth.isSuperadmin
+        )
+      : Promise.resolve(true),
   ])
 
-  if (!vendOk) return NextResponse.json({ error: "vendor_id does not belong to this org" }, { status: 400 })
-  if (!whOk) return NextResponse.json({ error: "warehouse_id does not belong to this org" }, { status: 400 })
+  if (!vendOk)
+    return NextResponse.json(
+      { error: "vendor_id does not belong to this org" },
+      { status: 400 }
+    )
+  if (!whOk)
+    return NextResponse.json(
+      { error: "warehouse_id does not belong to this org" },
+      { status: 400 }
+    )
+  if (!bankOk)
+    return NextResponse.json(
+      { error: "bank_account_id does not belong to this org" },
+      { status: 400 }
+    )
 
   const { data, error } = await supabase
     .schema("billing")
     .from("purchase_bills")
-    .insert({ ...body, org_id: orgId, created_by: auth.userId })
+    .insert({
+      ...pickAllowed("purchase_bills", body),
+      org_id: orgId,
+      created_by: auth.userId,
+    })
     .select()
     .single()
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  void bumpListVersion(orgId)
+  if (error) return dbError(error, "purchase_bills:POST")
+  void cacheBumpListVersion("purchase-bill", orgId)
   return NextResponse.json(data, { status: 201 })
 }
 
 export async function PUT(request: Request) {
   const id = new URL(request.url).searchParams.get("id")
   if (!id) {
-    return NextResponse.json({ error: 'Query param "id" is required' }, { status: 400 })
+    return NextResponse.json(
+      { error: 'Query param "id" is required' },
+      { status: 400 }
+    )
   }
 
   const auth = await requireOrgId()
   if (auth.error) {
-    return NextResponse.json(
-      { error: auth.error },
-      { status: auth.error === "unauthorized" ? 401 : 403 },
-    )
+    return authError(auth.error)
   }
 
-  const body = await request.json()
+  const body = await readJson(request)
+  if (!body)
+    return badRequest("invalid_json", "Request body must be valid JSON.")
   const supabase = auth.supabase
-  let query = supabase.schema("billing").from("purchase_bills").update(body).eq("id", id)
+
+  // Re-verify any FK present in the update body — see invoices/route.ts PUT
+  // for why this needs the same checks as POST, not just the parent org.
+  const [vendOk, whOk, bankOk] = await Promise.all([
+    body.vendor_id
+      ? verifyBelongsToOrg(
+          supabase,
+          "vendors",
+          body.vendor_id,
+          auth.orgId,
+          auth.isSuperadmin
+        )
+      : Promise.resolve(true),
+    body.warehouse_id
+      ? verifyBelongsToOrg(
+          supabase,
+          "warehouses",
+          body.warehouse_id,
+          auth.orgId,
+          auth.isSuperadmin
+        )
+      : Promise.resolve(true),
+    body.bank_account_id
+      ? verifyBelongsToOrg(
+          supabase,
+          "organization_bank_accounts",
+          body.bank_account_id,
+          auth.orgId,
+          auth.isSuperadmin
+        )
+      : Promise.resolve(true),
+  ])
+  if (!vendOk)
+    return NextResponse.json(
+      { error: "vendor_id does not belong to this org" },
+      { status: 400 }
+    )
+  if (!whOk)
+    return NextResponse.json(
+      { error: "warehouse_id does not belong to this org" },
+      { status: 400 }
+    )
+  if (!bankOk)
+    return NextResponse.json(
+      { error: "bank_account_id does not belong to this org" },
+      { status: 400 }
+    )
+
+  let query = supabase
+    .schema("billing")
+    .from("purchase_bills")
+    .update(pickAllowed("purchase_bills", body))
+    .eq("id", id)
   if (!auth.isSuperadmin) query = query.eq("org_id", auth.orgId)
   const { data, error } = await query.select().maybeSingle()
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  if (!data) return NextResponse.json({ error: "Not found" }, { status: 404 })
+  if (error) return dbError(error, "purchase_bills:PUT")
+  if (!data) return notFound()
 
   await cacheDel(billCacheKey(data.org_id, id))
-  void bumpListVersion(data.org_id)
+  void cacheBumpListVersion("purchase-bill", data.org_id)
   return NextResponse.json(data)
 }

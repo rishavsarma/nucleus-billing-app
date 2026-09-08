@@ -13,7 +13,7 @@ export async function GET() {
   if (auth.error) {
     return NextResponse.json(
       { error: auth.error },
-      { status: auth.error === "unauthorized" ? 401 : 403 },
+      { status: auth.error === "unauthorized" ? 401 : 403 }
     )
   }
 
@@ -63,7 +63,8 @@ export async function GET() {
       supabase
         .schema("billing")
         .from("invoices")
-        .select(`
+        .select(
+          `
           id,
           invoice_number,
           status,
@@ -72,7 +73,8 @@ export async function GET() {
           issue_date,
           created_at,
           customer:customers(id, name)
-        `)
+        `
+        )
         .eq("org_id", orgId)
         .order("created_at", { ascending: false })
         .limit(6),
@@ -114,7 +116,7 @@ export async function GET() {
 
     // Build day-by-day aggregate timeline for charts
     const dateMap: Record<string, { revenue: number; collected: number }> = {}
-    
+
     // Initialize past 90 days
     for (let i = 89; i >= 0; i--) {
       const d = new Date()
@@ -155,11 +157,18 @@ export async function GET() {
     }
 
     // Cache in Redis for fast subsequent loads
-    await cacheSet(dashboardCacheKey(orgId), JSON.stringify(payload), DASHBOARD_CACHE_TTL_SECONDS)
+    await cacheSet(
+      dashboardCacheKey(orgId),
+      JSON.stringify(payload),
+      DASHBOARD_CACHE_TTL_SECONDS
+    )
 
     return NextResponse.json(payload)
   } catch (err) {
     console.error("Failed to load dashboard stats:", err)
-    return NextResponse.json({ error: "Failed to load dashboard stats" }, { status: 500 })
+    return NextResponse.json(
+      { error: "Failed to load dashboard stats" },
+      { status: 500 }
+    )
   }
 }

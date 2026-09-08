@@ -27,7 +27,9 @@ export function useCreateDebitNoteItem() {
     mutationFn: (input: Partial<DebitNoteItem> & { debit_note_id: string }) =>
       createDebitNoteItem(input),
     onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["debit-note-items", variables.debit_note_id] })
+      queryClient.invalidateQueries({
+        queryKey: ["debit-note-items", variables.debit_note_id],
+      })
       queryClient.invalidateQueries({ queryKey: ["debit-notes"] })
     },
   })
@@ -36,10 +38,17 @@ export function useCreateDebitNoteItem() {
 export function useUpdateDebitNoteItem(debitNoteId: string | undefined) {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, input }: { id: string; input: Partial<DebitNoteItem> }) =>
-      updateDebitNoteItem(id, input),
+    mutationFn: ({
+      id,
+      input,
+    }: {
+      id: string
+      input: Partial<DebitNoteItem>
+    }) => updateDebitNoteItem(id, input),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["debit-note-items", debitNoteId] })
+      queryClient.invalidateQueries({
+        queryKey: ["debit-note-items", debitNoteId],
+      })
       queryClient.invalidateQueries({ queryKey: ["debit-notes"] })
     },
   })
@@ -50,7 +59,9 @@ export function useDeleteDebitNoteItem(debitNoteId: string | undefined) {
   return useMutation({
     mutationFn: (id: string) => deleteDebitNoteItem(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["debit-note-items", debitNoteId] })
+      queryClient.invalidateQueries({
+        queryKey: ["debit-note-items", debitNoteId],
+      })
       queryClient.invalidateQueries({ queryKey: ["debit-notes"] })
     },
   })

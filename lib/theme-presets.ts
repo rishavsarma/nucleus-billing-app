@@ -16,9 +16,11 @@ export type ThemePresetId = keyof typeof THEME_PRESET_DATA
 
 export const DEFAULT_THEME_PRESET: ThemePresetId = "zen"
 
-export const THEME_PRESETS: { id: ThemePresetId; label: string; swatch: string }[] = Object.entries(
-  THEME_PRESET_DATA,
-).map(([id, preset]) => ({
+export const THEME_PRESETS: {
+  id: ThemePresetId
+  label: string
+  swatch: string
+}[] = Object.entries(THEME_PRESET_DATA).map(([id, preset]) => ({
   id: id as ThemePresetId,
   label: preset.label,
   swatch: preset.light.primary,
@@ -38,11 +40,13 @@ export function getPresetCss(id: ThemePresetId): string {
 }
 
 /** Precomputed for every preset — embedded into the pre-hydration script. */
-export const THEME_PRESET_CSS: Record<ThemePresetId, string> = Object.fromEntries(
-  THEME_PRESETS.map((p) => [p.id, getPresetCss(p.id)]),
-) as Record<ThemePresetId, string>
+export const THEME_PRESET_CSS: Record<ThemePresetId, string> =
+  Object.fromEntries(
+    THEME_PRESETS.map((p) => [p.id, getPresetCss(p.id)])
+  ) as Record<ThemePresetId, string>
 
 /** Google Font families each preset needs loaded. */
-export const THEME_PRESET_FONTS: Record<ThemePresetId, string[]> = Object.fromEntries(
-  THEME_PRESETS.map((p) => [p.id, THEME_PRESET_DATA[p.id].fonts]),
-) as Record<ThemePresetId, string[]>
+export const THEME_PRESET_FONTS: Record<ThemePresetId, string[]> =
+  Object.fromEntries(
+    THEME_PRESETS.map((p) => [p.id, THEME_PRESET_DATA[p.id].fonts])
+  ) as Record<ThemePresetId, string[]>

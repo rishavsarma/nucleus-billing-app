@@ -2,7 +2,13 @@
 
 import type { ListParams } from "@/lib/database/list-params-types"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { fetchOfferById, fetchOffersPaginated, createOffer, updateOffer, deleteOffer } from "@/lib/database/services/offers"
+import {
+  fetchOfferById,
+  fetchOffersPaginated,
+  createOffer,
+  updateOffer,
+  deleteOffer,
+} from "@/lib/database/services/offers"
 import type { Offer } from "@/lib/database/types"
 
 /** Paginated + searched list — use in list-view table pages. */
@@ -33,7 +39,8 @@ export function useCreateOffer() {
 export function useUpdateOffer() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, input }: { id: string; input: Partial<Offer> }) => updateOffer(id, input),
+    mutationFn: ({ id, input }: { id: string; input: Partial<Offer> }) =>
+      updateOffer(id, input),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["offers"] }),
   })
 }

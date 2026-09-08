@@ -16,9 +16,16 @@ import { routes } from "@/lib/routes"
 import type { Offer } from "@/lib/database/types"
 
 const columnHelper = entityColumnHelper<Offer>()
-const money = (n: number) => "₹" + n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+const money = (n: number) =>
+  "₹" +
+  n.toLocaleString("en-IN", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })
 
-function offerStatus(offer: Offer): "active" | "expired" | "upcoming" | "inactive" {
+function offerStatus(
+  offer: Offer
+): "active" | "expired" | "upcoming" | "inactive" {
   if (!offer.is_active) return "inactive"
   const today = new Date().toISOString().slice(0, 10)
   if (offer.ends_at && offer.ends_at < today) return "expired"
@@ -45,7 +52,10 @@ export default function OffersPage() {
     columnHelper.accessor("name", {
       header: t("columnName"),
       cell: ({ getValue, row }) => (
-        <Link href={routes.catalog.offers.detail(row.original.id)} className="font-medium hover:underline">
+        <Link
+          href={routes.catalog.offers.detail(row.original.id)}
+          className="font-medium hover:underline"
+        >
           {getValue()}
         </Link>
       ),
@@ -54,18 +64,25 @@ export default function OffersPage() {
       id: "discount",
       header: t("columnDiscount"),
       cell: ({ row }) =>
-        row.original.discount_type === "percentage" ? `${row.original.value}%` : money(row.original.value),
+        row.original.discount_type === "percentage"
+          ? `${row.original.value}%`
+          : money(row.original.value),
     }),
     columnHelper.accessor("applies_to_all_items", {
       header: t("columnAppliesTo"),
-      cell: ({ getValue }) => <span className="text-muted-foreground">{getValue() ? t("appliesToAllItems") : t("appliesToSelected")}</span>,
+      cell: ({ getValue }) => (
+        <span className="text-muted-foreground">
+          {getValue() ? t("appliesToAllItems") : t("appliesToSelected")}
+        </span>
+      ),
     }),
     columnHelper.display({
       id: "window",
       header: t("columnWindow"),
       cell: ({ row }) => (
         <span className="text-muted-foreground">
-          {row.original.starts_at ?? "—"} – {row.original.ends_at ?? t("noWindow")}
+          {row.original.starts_at ?? "—"} –{" "}
+          {row.original.ends_at ?? t("noWindow")}
         </span>
       ),
     }),
@@ -83,7 +100,10 @@ export default function OffersPage() {
       cell: ({ row }) => (
         <div className="flex justify-end gap-1">
           <Button variant="ghost" size="icon-sm" asChild>
-            <Link href={routes.catalog.offers.detail(row.original.id)} onClick={(event) => event.stopPropagation()}>
+            <Link
+              href={routes.catalog.offers.detail(row.original.id)}
+              onClick={(event) => event.stopPropagation()}
+            >
               <PencilIcon />
             </Link>
           </Button>

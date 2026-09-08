@@ -31,7 +31,10 @@ export default function AdminOrganizationsPage() {
     columnHelper.accessor("name", {
       header: t("columnName"),
       cell: ({ getValue, row }) => (
-        <Link href={routes.admin.organizations.detail(row.original.id)} className="font-medium hover:underline">
+        <Link
+          href={routes.admin.organizations.detail(row.original.id)}
+          className="font-medium hover:underline"
+        >
           {getValue()}
         </Link>
       ),
@@ -47,13 +50,17 @@ export default function AdminOrganizationsPage() {
     columnHelper.accessor("subscription_status", {
       header: t("columnSubscription"),
       cell: ({ getValue }) => (
-        <StatusBadge status={getValue()}>{t(SUBSCRIPTION_STATUS_LABEL_KEY[getValue()])}</StatusBadge>
+        <StatusBadge status={getValue()}>
+          {t(SUBSCRIPTION_STATUS_LABEL_KEY[getValue()])}
+        </StatusBadge>
       ),
     }),
     columnHelper.accessor("created_at", {
       header: t("columnCreated"),
       cell: ({ getValue }) => (
-        <span className="text-muted-foreground">{new Date(getValue()).toLocaleDateString()}</span>
+        <span className="text-muted-foreground">
+          {new Date(getValue()).toLocaleDateString()}
+        </span>
       ),
     }),
   ]

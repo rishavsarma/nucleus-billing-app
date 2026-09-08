@@ -1,7 +1,10 @@
 "use client"
 
 import { useQuery } from "@tanstack/react-query"
-import { fetchItemStock, fetchItemStockPaginated } from "@/lib/database/services/item-stock"
+import {
+  fetchItemStock,
+  fetchItemStockPaginated,
+} from "@/lib/database/services/item-stock"
 import type { ListParams } from "@/lib/database/list-params-types"
 
 export function useItemStock(itemId: string | undefined) {

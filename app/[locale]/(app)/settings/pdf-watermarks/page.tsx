@@ -86,7 +86,7 @@ export default function PdfWatermarksPage() {
             setEditing(null)
           },
           onError: () => toast.error(tCommon("genericError")),
-        },
+        }
       )
     } else {
       createWatermark.mutate(values, {
@@ -108,7 +108,9 @@ export default function PdfWatermarksPage() {
     }),
     columnHelper.accessor("text", {
       header: t("columnText"),
-      cell: ({ getValue }) => <span className="text-muted-foreground">{getValue()}</span>,
+      cell: ({ getValue }) => (
+        <span className="text-muted-foreground">{getValue()}</span>
+      ),
     }),
     columnHelper.display({
       id: "window",
@@ -124,9 +126,11 @@ export default function PdfWatermarksPage() {
       header: t("columnStatus"),
       cell: ({ row }) => {
         const w = row.original
-        const isCurrentlyActive = w.is_active && w.starts_on <= today && w.ends_on >= today
+        const isCurrentlyActive =
+          w.is_active && w.starts_on <= today && w.ends_on >= today
         if (isCurrentlyActive) return <Badge>{t("statusLive")}</Badge>
-        if (!w.is_active) return <Badge variant="secondary">{t("statusDisabled")}</Badge>
+        if (!w.is_active)
+          return <Badge variant="secondary">{t("statusDisabled")}</Badge>
         return <Badge variant="outline">{t("statusScheduled")}</Badge>
       },
     }),
@@ -135,10 +139,18 @@ export default function PdfWatermarksPage() {
       header: () => null,
       cell: ({ row }) => (
         <div className="flex justify-end gap-1">
-          <Button variant="ghost" size="icon-sm" onClick={() => setEditing(row.original)}>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={() => setEditing(row.original)}
+          >
             <PencilIcon />
           </Button>
-          <Button variant="ghost" size="icon-sm" onClick={() => setToDelete(row.original)}>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={() => setToDelete(row.original)}
+          >
             <TrashIcon />
           </Button>
         </div>
@@ -173,18 +185,28 @@ export default function PdfWatermarksPage() {
         open={!!editing}
         onOpenChange={(open) => !open && setEditing(null)}
         title={editing !== "new" ? t("editWatermark") : t("newWatermark")}
-        description={editing !== "new" ? t("editDescription") : t("newDescription")}
+        description={
+          editing !== "new" ? t("editDescription") : t("newDescription")
+        }
         onSubmit={handleSubmit(onSubmit)}
         isSubmitting={isSaving}
         submitLabel={editing !== "new" ? tCommon("save") : tCommon("create")}
       >
         <Field data-invalid={!!formState.errors.name}>
           <FieldLabel htmlFor="wm-name">{t("nameLabel")}</FieldLabel>
-          <Input id="wm-name" placeholder={t("namePlaceholder")} {...register("name")} />
+          <Input
+            id="wm-name"
+            placeholder={t("namePlaceholder")}
+            {...register("name")}
+          />
         </Field>
         <Field data-invalid={!!formState.errors.text}>
           <FieldLabel htmlFor="wm-text">{t("textLabel")}</FieldLabel>
-          <Input id="wm-text" placeholder={t("textPlaceholder")} {...register("text")} />
+          <Input
+            id="wm-text"
+            placeholder={t("textPlaceholder")}
+            {...register("text")}
+          />
         </Field>
         <div className="grid grid-cols-2 gap-4">
           <Field>
@@ -192,7 +214,9 @@ export default function PdfWatermarksPage() {
             <DatePicker
               id="wm-start"
               value={startsOn}
-              onChange={(value) => setValue("starts_on", value, { shouldValidate: true })}
+              onChange={(value) =>
+                setValue("starts_on", value, { shouldValidate: true })
+              }
             />
           </Field>
           <Field data-invalid={!!formState.errors.ends_on}>
@@ -200,7 +224,9 @@ export default function PdfWatermarksPage() {
             <DatePicker
               id="wm-end"
               value={endsOn}
-              onChange={(value) => setValue("ends_on", value, { shouldValidate: true })}
+              onChange={(value) =>
+                setValue("ends_on", value, { shouldValidate: true })
+              }
             />
           </Field>
         </div>

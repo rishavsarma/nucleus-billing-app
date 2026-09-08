@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { useTranslations } from "next-intl"
 import { Check, ChevronsUpDown, Loader2, Tag, X } from "lucide-react"
 
 import { cn } from "@/lib/utils"
@@ -13,7 +14,11 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
 import { useOffer, useOffersList } from "@/hooks/use-offers"
 import { useDebouncedValue } from "@/hooks/use-debounced-value"
 import type { Offer } from "@/lib/database/types"
@@ -41,19 +46,29 @@ export function OfferSelect({
   id,
   value,
   onValueChange,
-  placeholder = "Apply offer / discount…",
-  searchPlaceholder = "Search active offers…",
-  emptyMessage = "No active offers found.",
+  placeholder,
+  searchPlaceholder,
+  emptyMessage,
   disabled = false,
   className,
   container,
 }: OfferSelectProps) {
+  const t = useTranslations("Pickers")
+  const resolvedPlaceholder = placeholder ?? t("offerPlaceholder")
+  const resolvedSearchPlaceholder =
+    searchPlaceholder ?? t("offerSearchPlaceholder")
+  const resolvedEmptyMessage = emptyMessage ?? t("offerEmpty")
+
   const [open, setOpen] = React.useState(false)
   const [search, setSearch] = React.useState("")
   const debouncedSearch = useDebouncedValue(search, 300)
 
   const { data: selectedOffer } = useOffer(value ?? undefined)
-  const { data: result, isLoading } = useOffersList({ search: debouncedSearch, page: 1, pageSize: 20 })
+  const { data: result, isLoading } = useOffersList({
+    search: debouncedSearch,
+    page: 1,
+    pageSize: 20,
+  })
 
   const today = new Date().toISOString().slice(0, 10)
   const validOffers = React.useMemo(() => {
@@ -67,14 +82,15 @@ export function OfferSelect({
   }, [result, value, today])
 
   const formatOfferBadge = (offer: Offer) => {
+    const suffix = t("offerOffSuffix")
     if (offer.discount_type === "percentage") {
-      return `${offer.value}% OFF`
+      return `${offer.value}% ${suffix}`
     }
-    return `₹${offer.value} OFF`
+    return `₹${offer.value} ${suffix}`
   }
 
   return (
-    <div className="flex items-center gap-1.5 w-full">
+    <div className="flex w-full items-center gap-1.5">
       <Popover
         open={open}
         onOpenChange={(next) => {
@@ -91,7 +107,7 @@ export function OfferSelect({
             aria-expanded={open}
             disabled={disabled}
             className={cn(
-              "w-full justify-between font-normal h-9 px-3 text-start",
+              "h-9 w-full justify-between px-3 text-start font-normal",
               !selectedOffer && "text-muted-foreground",
               className
             )}
@@ -102,12 +118,12 @@ export function OfferSelect({
                 {selectedOffer ? (
                   <span className="flex items-center gap-1.5 font-medium text-foreground">
                     <span>{selectedOffer.name}</span>
-                    <span className="rounded bg-primary/10 px-1.5 py-0.5 text-xs text-primary font-semibold">
+                    <span className="rounded bg-primary/10 px-1.5 py-0.5 text-xs font-semibold text-primary">
                       {formatOfferBadge(selectedOffer)}
                     </span>
                   </span>
                 ) : (
-                  placeholder
+                  resolvedPlaceholder
                 )}
               </span>
             </span>
@@ -120,14 +136,18 @@ export function OfferSelect({
           container={container}
         >
           <Command shouldFilter={false}>
-            <CommandInput value={search} onValueChange={setSearch} placeholder={searchPlaceholder} />
+            <CommandInput
+              value={search}
+              onValueChange={setSearch}
+              placeholder={resolvedSearchPlaceholder}
+            />
             <CommandList className="max-h-60">
               {isLoading ? (
                 <div className="flex items-center justify-center py-6 text-muted-foreground">
                   <Loader2 className="size-4 animate-spin" />
                 </div>
               ) : validOffers.length === 0 && !selectedOffer ? (
-                <CommandEmpty>{emptyMessage}</CommandEmpty>
+                <CommandEmpty>{resolvedEmptyMessage}</CommandEmpty>
               ) : (
                 <CommandGroup>
                   {selectedOffer && (
@@ -137,9 +157,9 @@ export function OfferSelect({
                         onValueChange?.(null)
                         setOpen(false)
                       }}
-                      className="flex items-center justify-between text-muted-foreground py-2 cursor-pointer"
+                      className="flex cursor-pointer items-center justify-between py-2 text-muted-foreground"
                     >
-                      <span>Remove offer</span>
+                      <span>{t("offerRemove")}</span>
                       <X className="size-4" />
                     </CommandItem>
                   )}
@@ -148,20 +168,24 @@ export function OfferSelect({
                       key={offer.id}
                       value={offer.id}
                       onSelect={(currentValue) => {
-                        onValueChange?.(currentValue === value ? null : currentValue)
+                        onValueChange?.(
+                          currentValue === value ? null : currentValue
+                        )
                         setOpen(false)
                       }}
-                      className="flex items-center justify-between py-2 cursor-pointer"
+                      className="flex cursor-pointer items-center justify-between py-2"
                     >
-                      <div className="flex flex-col min-w-0">
+                      <div className="flex min-w-0 flex-col">
                         <div className="flex items-center gap-2">
-                          <span className="font-medium truncate">{offer.name}</span>
-                          <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[11px] text-primary font-semibold">
+                          <span className="truncate font-medium">
+                            {offer.name}
+                          </span>
+                          <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[11px] font-semibold text-primary">
                             {formatOfferBadge(offer)}
                           </span>
                         </div>
                         {offer.description && (
-                          <span className="text-xs text-muted-foreground truncate">
+                          <span className="truncate text-xs text-muted-foreground">
                             {offer.description}
                           </span>
                         )}
@@ -169,7 +193,9 @@ export function OfferSelect({
                       <Check
                         className={cn(
                           "ms-2 size-4 shrink-0",
-                          value === offer.id ? "opacity-100 text-primary" : "opacity-0"
+                          value === offer.id
+                            ? "text-primary opacity-100"
+                            : "opacity-0"
                         )}
                       />
                     </CommandItem>
@@ -187,7 +213,7 @@ export function OfferSelect({
           size="icon-xs"
           onClick={() => onValueChange?.(null)}
           title="Remove offer"
-          className="text-muted-foreground hover:text-foreground shrink-0"
+          className="shrink-0 text-muted-foreground hover:text-foreground"
         >
           <X className="size-3.5" />
         </Button>

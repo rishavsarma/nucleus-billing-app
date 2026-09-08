@@ -19,7 +19,5 @@ export default async function LocaleLayout({
     notFound()
   }
 
-  return (
-    <NextIntlClientProvider>{children}</NextIntlClientProvider>
-  )
+  return <NextIntlClientProvider>{children}</NextIntlClientProvider>
 }

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { dbError } from "@/lib/api-response"
 import { requireSuperadmin } from "@/lib/database/require-org"
 
 // GET requires the caller to already be a superadmin — this table controls
@@ -15,8 +16,11 @@ export async function GET() {
     return NextResponse.json({ error: auth.error }, { status: 403 })
   }
 
-  const { data, error } = await auth.supabase.schema("billing").from("superadmins").select("*")
+  const { data, error } = await auth.supabase
+    .schema("billing")
+    .from("superadmins")
+    .select("*")
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return dbError(error, "superadmins:GET")
   return NextResponse.json(data)
 }

@@ -16,7 +16,11 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
 
 export function ThemePresetSelector() {
   const { preset, setPreset } = useThemePreset()
@@ -36,7 +40,9 @@ export function ThemePresetSelector() {
         >
           <span className="flex min-w-0 items-center gap-2">
             <Palette className="size-4 shrink-0" />
-            <span className="truncate">{current?.label ?? t("fallbackLabel")}</span>
+            <span className="truncate">
+              {current?.label ?? t("fallbackLabel")}
+            </span>
           </span>
           <ChevronsUpDown className="size-4 shrink-0 opacity-50" />
         </Button>
@@ -62,7 +68,10 @@ export function ThemePresetSelector() {
                   />
                   <span className="truncate">{p.label}</span>
                   <Check
-                    className={cn("ml-auto size-4", preset === p.id ? "opacity-100" : "opacity-0")}
+                    className={cn(
+                      "ml-auto size-4",
+                      preset === p.id ? "opacity-100" : "opacity-0"
+                    )}
                   />
                 </CommandItem>
               ))}

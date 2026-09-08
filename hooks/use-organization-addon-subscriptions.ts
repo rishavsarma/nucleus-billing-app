@@ -18,7 +18,10 @@ export function useSubscribeToAddon() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: subscribeToAddon,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["organization-addon-subscriptions"] }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({
+        queryKey: ["organization-addon-subscriptions"],
+      }),
   })
 }
 
@@ -26,6 +29,9 @@ export function useCancelAddon() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: cancelAddon,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["organization-addon-subscriptions"] }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({
+        queryKey: ["organization-addon-subscriptions"],
+      }),
   })
 }

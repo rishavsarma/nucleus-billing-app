@@ -17,7 +17,12 @@ import { useServerTableParams } from "@/components/server-table"
 import { Field, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
-import { useCreateWarehouse, useDeleteWarehouse, useUpdateWarehouse, useWarehousesList } from "@/hooks/use-warehouses"
+import {
+  useCreateWarehouse,
+  useDeleteWarehouse,
+  useUpdateWarehouse,
+  useWarehousesList,
+} from "@/hooks/use-warehouses"
 import type { Warehouse } from "@/lib/database/types"
 
 const columnHelper = entityColumnHelper<Warehouse>()
@@ -48,7 +53,11 @@ function toInput(values: WarehouseFormValues) {
   return {
     name: values.name,
     is_default: values.is_default,
-    address: { line1: values.address_line || null, city: values.city || null, state: values.state || null },
+    address: {
+      line1: values.address_line || null,
+      city: values.city || null,
+      state: values.state || null,
+    },
   }
 }
 
@@ -84,7 +93,7 @@ export default function WarehousesPage() {
             setEditing(null)
           },
           onError: () => toast.error(tCommon("genericError")),
-        },
+        }
       )
     } else {
       createWarehouse.mutate(input, {
@@ -107,22 +116,37 @@ export default function WarehousesPage() {
       header: t("columnAddress"),
       cell: ({ row }) => {
         const address = (row.original.address ?? {}) as Address
-        return <span className="text-muted-foreground">{[address.city, address.state].filter(Boolean).join(", ") || "—"}</span>
+        return (
+          <span className="text-muted-foreground">
+            {[address.city, address.state].filter(Boolean).join(", ") || "—"}
+          </span>
+        )
       },
     }),
     columnHelper.accessor("is_default", {
       header: t("columnDefault"),
-      cell: ({ getValue }) => (getValue() ? <Badge variant="outline">{t("columnDefault")}</Badge> : null),
+      cell: ({ getValue }) =>
+        getValue() ? (
+          <Badge variant="outline">{t("columnDefault")}</Badge>
+        ) : null,
     }),
     columnHelper.display({
       id: "actions",
       header: () => null,
       cell: ({ row }) => (
         <div className="flex justify-end gap-1">
-          <Button variant="ghost" size="icon-sm" onClick={() => setEditing(row.original)}>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={() => setEditing(row.original)}
+          >
             <PencilIcon />
           </Button>
-          <Button variant="ghost" size="icon-sm" onClick={() => setToDelete(row.original)}>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={() => setToDelete(row.original)}
+          >
             <TrashIcon />
           </Button>
         </div>
@@ -157,7 +181,9 @@ export default function WarehousesPage() {
         open={!!editing}
         onOpenChange={(open) => !open && setEditing(null)}
         title={editing !== "new" ? t("editWarehouse") : t("newWarehouse")}
-        description={editing !== "new" ? t("editDescription") : t("newDescription")}
+        description={
+          editing !== "new" ? t("editDescription") : t("newDescription")
+        }
         onSubmit={form.handleSubmit(onSubmit)}
         isSubmitting={isSaving}
         submitLabel={editing !== "new" ? tCommon("save") : tCommon("create")}

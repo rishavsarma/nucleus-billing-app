@@ -9,14 +9,22 @@ import { Link } from "@/i18n/navigation"
 import { Button } from "@/components/ui/button"
 import { CreditNoteItemsSection } from "@/components/credit-note-items-section"
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog"
-import { DocumentStepper, type StepperStep } from "@/components/document-stepper"
+import {
+  DocumentStepper,
+  type StepperStep,
+} from "@/components/document-stepper"
 import { StatusBadge } from "@/components/status-badge"
 import { useCustomer } from "@/hooks/use-customers"
 import { useCreditNote, useUpdateCreditNote } from "@/hooks/use-credit-notes"
 import { useInvoice } from "@/hooks/use-invoices"
 import { routes } from "@/lib/routes"
 
-const money = (n: number) => "₹" + n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+const money = (n: number) =>
+  "₹" +
+  n.toLocaleString("en-IN", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })
 
 export function CreditNoteDetailClient({ id }: { id: string }) {
   const t = useTranslations("CreditNotes")
@@ -25,18 +33,25 @@ export function CreditNoteDetailClient({ id }: { id: string }) {
 
   const { data: creditNote, isLoading } = useCreditNote(id)
   const { data: customer } = useCustomer(creditNote?.customer_id)
-  const { data: relatedInvoice } = useInvoice(creditNote?.invoice_id ?? undefined)
+  const { data: relatedInvoice } = useInvoice(
+    creditNote?.invoice_id ?? undefined
+  )
   const updateCreditNote = useUpdateCreditNote()
   const [confirmVoid, setConfirmVoid] = useState(false)
 
   if (isLoading) {
-    return <div className="text-sm text-muted-foreground">{tCommon("loading")}</div>
+    return (
+      <div className="text-sm text-muted-foreground">{tCommon("loading")}</div>
+    )
   }
 
   if (!creditNote) {
     return (
       <div className="flex flex-col gap-2">
-        <Link href={routes.sales.creditNotes.list} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+        <Link
+          href={routes.sales.creditNotes.list}
+          className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+        >
           <ArrowLeftIcon className="size-3.5" />
           {t("backToList")}
         </Link>
@@ -59,7 +74,7 @@ export function CreditNoteDetailClient({ id }: { id: string }) {
       {
         onSuccess: () => toast.success(tCommon("updatedSuccess")),
         onError: () => toast.error(tCommon("genericError")),
-      },
+      }
     )
   }
 
@@ -72,37 +87,55 @@ export function CreditNoteDetailClient({ id }: { id: string }) {
           setConfirmVoid(false)
         },
         onError: () => toast.error(tCommon("genericError")),
-      },
+      }
     )
   }
 
   return (
     <div className="flex flex-col gap-1">
-      <Link href={routes.sales.creditNotes.list} className="mb-2 flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+      <Link
+        href={routes.sales.creditNotes.list}
+        className="mb-2 flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+      >
         <ArrowLeftIcon className="size-3.5" />
         {t("backToList")}
       </Link>
 
-      <div className="mb-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="mb-5 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
         <div>
           <div className="mb-1.5 flex flex-wrap items-center gap-2.5">
-            <h1 className="text-xl sm:text-2xl font-semibold">{creditNote.credit_note_number ?? "—"}</h1>
-            <StatusBadge status={creditNote.status}>{tStatus(creditNote.status)}</StatusBadge>
+            <h1 className="text-xl font-semibold sm:text-2xl">
+              {creditNote.credit_note_number ?? "—"}
+            </h1>
+            <StatusBadge status={creditNote.status}>
+              {tStatus(creditNote.status)}
+            </StatusBadge>
           </div>
-          <p className="text-xs sm:text-sm text-muted-foreground">
+          <p className="text-xs text-muted-foreground sm:text-sm">
             {customer?.name ?? "—"}
-            {relatedInvoice ? ` • ${t("columnInvoice")} ${relatedInvoice.invoice_number}` : ""}
+            {relatedInvoice
+              ? ` • ${t("columnInvoice")} ${relatedInvoice.invoice_number}`
+              : ""}
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+        <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
           {isDraft ? (
-            <Button size="sm" onClick={issueCreditNote} disabled={updateCreditNote.isPending}>
+            <Button
+              size="sm"
+              onClick={issueCreditNote}
+              disabled={updateCreditNote.isPending}
+            >
               <CheckIcon />
               {t("issueCreditNote")}
             </Button>
           ) : null}
           {!isVoid ? (
-            <Button variant="destructive" size="icon-sm" onClick={() => setConfirmVoid(true)} title={t("voidCreditNote")}>
+            <Button
+              variant="destructive"
+              size="icon-sm"
+              onClick={() => setConfirmVoid(true)}
+              title={t("voidCreditNote")}
+            >
               <XIcon />
             </Button>
           ) : null}
@@ -115,13 +148,15 @@ export function CreditNoteDetailClient({ id }: { id: string }) {
         </div>
       ) : null}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        <div className="lg:col-span-2 flex flex-col gap-5">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
+        <div className="flex flex-col gap-5 lg:col-span-2">
           <CreditNoteItemsSection creditNoteId={id} editable={isDraft} />
           {creditNote.reason ? (
             <div className="rounded-xl bg-card p-4 ring-1 ring-foreground/10">
               <h2 className="mb-2 text-sm font-semibold">{t("reasonLabel")}</h2>
-              <p className="text-sm text-muted-foreground">{creditNote.reason}</p>
+              <p className="text-sm text-muted-foreground">
+                {creditNote.reason}
+              </p>
             </div>
           ) : null}
         </div>
@@ -131,7 +166,9 @@ export function CreditNoteDetailClient({ id }: { id: string }) {
             <h2 className="mb-3 text-sm font-semibold">{t("summaryTitle")}</h2>
             <div className="flex flex-col gap-1.5 text-sm">
               <div className="flex justify-between">
-                <span className="text-muted-foreground">{t("subtotalLabel")}</span>
+                <span className="text-muted-foreground">
+                  {t("subtotalLabel")}
+                </span>
                 <span>{money(creditNote.subtotal)}</span>
               </div>
               <div className="flex justify-between">

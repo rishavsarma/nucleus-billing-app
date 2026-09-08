@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { useTranslations } from "next-intl"
 import { Check, ChevronsUpDown, Loader2, type LucideIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
@@ -13,7 +14,11 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
 
 export interface SearchableOption {
   value: string
@@ -53,9 +58,9 @@ export function SearchableSelect({
   options = [],
   value,
   onValueChange,
-  placeholder = "Select an option…",
-  searchPlaceholder = "Search…",
-  emptyMessage = "No results found.",
+  placeholder,
+  searchPlaceholder,
+  emptyMessage,
   disabled = false,
   className,
   icon: Icon,
@@ -64,6 +69,12 @@ export function SearchableSelect({
   onSearchChange,
   isLoading = false,
 }: SearchableSelectProps) {
+  const t = useTranslations("Pickers")
+  const resolvedPlaceholder = placeholder ?? t("genericPlaceholder")
+  const resolvedSearchPlaceholder =
+    searchPlaceholder ?? t("genericSearchPlaceholder")
+  const resolvedEmptyMessage = emptyMessage ?? t("genericEmpty")
+
   const [open, setOpen] = React.useState(false)
   const isServerSearch = onSearchChange !== undefined
 
@@ -89,7 +100,7 @@ export function SearchableSelect({
           aria-expanded={open}
           disabled={disabled}
           className={cn(
-            "w-full justify-between font-normal h-9 px-3 text-start",
+            "h-9 w-full justify-between px-3 text-start font-normal",
             !selectedOption && "text-muted-foreground",
             className
           )}
@@ -97,7 +108,9 @@ export function SearchableSelect({
           <span className="flex min-w-0 items-center gap-2 truncate">
             {Icon && <Icon className="size-4 shrink-0 text-muted-foreground" />}
             <span className="truncate">
-              {selectedOption ? (selectedOption.label ?? "—") : placeholder}
+              {selectedOption
+                ? (selectedOption.label ?? "—")
+                : resolvedPlaceholder}
             </span>
           </span>
           <ChevronsUpDown className="ms-2 size-4 shrink-0 opacity-50" />
@@ -117,17 +130,28 @@ export function SearchableSelect({
                   const opt = options.find((o) => o.value === itemValue)
                   if (!opt) return 0
                   const query = search.toLowerCase().trim()
-                  const matchLabel = (opt.label ?? "").toLowerCase().includes(query)
-                  const matchSub = (opt.subtitle ?? "").toLowerCase().includes(query)
-                  const matchKeywords = opt.keywords?.some((k) => k.toLowerCase().includes(query)) ?? false
+                  const matchLabel = (opt.label ?? "")
+                    .toLowerCase()
+                    .includes(query)
+                  const matchSub = (opt.subtitle ?? "")
+                    .toLowerCase()
+                    .includes(query)
+                  const matchKeywords =
+                    opt.keywords?.some((k) =>
+                      k.toLowerCase().includes(query)
+                    ) ?? false
                   return matchLabel || matchSub || matchKeywords ? 1 : 0
                 }
           }
         >
           {isServerSearch ? (
-            <CommandInput value={search} onValueChange={onSearchChange} placeholder={searchPlaceholder} />
+            <CommandInput
+              value={search}
+              onValueChange={onSearchChange}
+              placeholder={resolvedSearchPlaceholder}
+            />
           ) : (
-            <CommandInput placeholder={searchPlaceholder} />
+            <CommandInput placeholder={resolvedSearchPlaceholder} />
           )}
           <CommandList className="max-h-60">
             {isServerSearch && isLoading ? (
@@ -135,36 +159,40 @@ export function SearchableSelect({
                 <Loader2 className="size-4 animate-spin" />
               </div>
             ) : options.length === 0 ? (
-              <CommandEmpty>{emptyMessage}</CommandEmpty>
+              <CommandEmpty>{resolvedEmptyMessage}</CommandEmpty>
             ) : (
-            <CommandGroup>
-              {options.map((option) => (
-                <CommandItem
-                  key={option.value}
-                  value={option.value}
-                  onSelect={(currentValue) => {
-                    onValueChange?.(currentValue)
-                    setOpen(false)
-                  }}
-                  className="flex items-center justify-between py-2 cursor-pointer"
-                >
-                  <div className="flex flex-col min-w-0">
-                    <span className="font-medium truncate">{option.label ?? "—"}</span>
-                    {option.subtitle && (
-                      <span className="text-xs text-muted-foreground truncate">
-                        {option.subtitle}
+              <CommandGroup>
+                {options.map((option) => (
+                  <CommandItem
+                    key={option.value}
+                    value={option.value}
+                    onSelect={(currentValue) => {
+                      onValueChange?.(currentValue)
+                      setOpen(false)
+                    }}
+                    className="flex cursor-pointer items-center justify-between py-2"
+                  >
+                    <div className="flex min-w-0 flex-col">
+                      <span className="truncate font-medium">
+                        {option.label ?? "—"}
                       </span>
-                    )}
-                  </div>
-                  <Check
-                    className={cn(
-                      "ms-2 size-4 shrink-0",
-                      value === option.value ? "opacity-100 text-primary" : "opacity-0"
-                    )}
-                  />
-                </CommandItem>
-              ))}
-            </CommandGroup>
+                      {option.subtitle && (
+                        <span className="truncate text-xs text-muted-foreground">
+                          {option.subtitle}
+                        </span>
+                      )}
+                    </div>
+                    <Check
+                      className={cn(
+                        "ms-2 size-4 shrink-0",
+                        value === option.value
+                          ? "text-primary opacity-100"
+                          : "opacity-0"
+                      )}
+                    />
+                  </CommandItem>
+                ))}
+              </CommandGroup>
             )}
           </CommandList>
         </Command>

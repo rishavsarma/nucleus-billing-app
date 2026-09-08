@@ -3,8 +3,17 @@
 import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { PartyForm, formValuesToPartyInput, type PartyFormValues } from "@/components/party-form"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import {
+  PartyForm,
+  formValuesToPartyInput,
+  type PartyFormValues,
+} from "@/components/party-form"
 import { useCreateCustomer } from "@/hooks/use-customers"
 
 export function QuickAddCustomerDialog({
@@ -38,7 +47,10 @@ export function QuickAddCustomerDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-xl" container={container}>
+      <DialogContent
+        className="max-h-[85vh] overflow-y-auto sm:max-w-xl"
+        container={container}
+      >
         <DialogHeader>
           <DialogTitle>{t("newCustomer")}</DialogTitle>
         </DialogHeader>

@@ -1,5 +1,6 @@
 import { randomBytes } from "crypto"
 import { NextResponse } from "next/server"
+import { badRequest, dbError, readJson } from "@/lib/api-response"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { requireSuperadmin } from "@/lib/database/require-org"
 
@@ -19,10 +20,19 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: auth.error }, { status: 403 })
   }
 
-  const body = await request.json()
-  const { orgId, email, role } = body as { orgId?: string; email?: string; role?: string }
+  const body = await readJson(request)
+  if (!body)
+    return badRequest("invalid_json", "Request body must be valid JSON.")
+  const { orgId, email, role } = body as {
+    orgId?: string
+    email?: string
+    role?: string
+  }
   if (!orgId || !email || !role) {
-    return NextResponse.json({ error: '"orgId", "email" and "role" are required' }, { status: 400 })
+    return NextResponse.json(
+      { error: '"orgId", "email" and "role" are required' },
+      { status: 400 }
+    )
   }
   if (!["owner", "admin", "member"].includes(role)) {
     return NextResponse.json({ error: 'Invalid "role"' }, { status: 400 })
@@ -31,13 +41,17 @@ export async function POST(request: Request) {
   const admin = createAdminClient()
   const temporaryPassword = generateTemporaryPassword()
 
-  const { data: created, error: createError } = await admin.auth.admin.createUser({
-    email,
-    password: temporaryPassword,
-    email_confirm: true,
-  })
+  const { data: created, error: createError } =
+    await admin.auth.admin.createUser({
+      email,
+      password: temporaryPassword,
+      email_confirm: true,
+    })
   if (createError || !created.user) {
-    return NextResponse.json({ error: createError?.message ?? "Failed to create user" }, { status: 400 })
+    return NextResponse.json(
+      { error: createError?.message ?? "Failed to create user" },
+      { status: 400 }
+    )
   }
 
   const { error: membershipError } = await admin
@@ -49,11 +63,11 @@ export async function POST(request: Request) {
     // Roll back the auth user so a failed membership insert doesn't leave an
     // orphaned account with no org access and no way to reach it again.
     await admin.auth.admin.deleteUser(created.user.id)
-    return NextResponse.json({ error: membershipError.message }, { status: 500 })
+    return dbError(membershipError, "admin-org-users:GET")
   }
 
   return NextResponse.json(
     { userId: created.user.id, email, temporaryPassword },
-    { status: 201 },
+    { status: 201 }
   )
 }

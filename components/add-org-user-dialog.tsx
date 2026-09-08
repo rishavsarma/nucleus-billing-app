@@ -21,7 +21,13 @@ import {
 import { EntityFormDialog } from "@/components/entity-form-dialog"
 import { Field, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { useCreateOrgUser } from "@/hooks/use-admin-org-users"
 import type { CreateOrgUserResult } from "@/lib/services/admin-org-users"
 import type { Membership } from "@/lib/database/types"
@@ -66,10 +72,12 @@ export function AddOrgUserDialog({
           form.reset({ email: "", role: "owner" })
         },
         onError: (error) => {
-          const message = isAxiosError<{ error?: string }>(error) ? error.response?.data?.error : undefined
+          const message = isAxiosError<{ error?: string }>(error)
+            ? error.response?.data?.error
+            : undefined
           toast.error(message ?? tCommon("genericError"))
         },
-      },
+      }
     )
   }
 
@@ -97,7 +105,11 @@ export function AddOrgUserDialog({
             <Field>
               <FieldLabel>{t("temporaryPasswordLabel")}</FieldLabel>
               <div className="flex gap-2">
-                <Input readOnly value={created.temporaryPassword} className="font-mono" />
+                <Input
+                  readOnly
+                  value={created.temporaryPassword}
+                  className="font-mono"
+                />
                 <Button
                   type="button"
                   variant="outline"
@@ -137,7 +149,12 @@ export function AddOrgUserDialog({
       </Field>
       <Field>
         <FieldLabel htmlFor="add-user-role">{t("roleLabel")}</FieldLabel>
-        <Select value={role} onValueChange={(value) => form.setValue("role", value as Membership["role"])}>
+        <Select
+          value={role}
+          onValueChange={(value) =>
+            form.setValue("role", value as Membership["role"])
+          }
+        >
           <SelectTrigger id="add-user-role" className="w-full">
             <SelectValue />
           </SelectTrigger>

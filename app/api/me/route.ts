@@ -38,11 +38,13 @@ export async function GET() {
     admin
       .schema("billing")
       .from("memberships")
-      .select(`
+      .select(
+        `
         org_id,
         role,
         org:organizations(is_active, subscription_status, subscription_current_period_end)
-      `)
+      `
+      )
       .eq("user_id", user.id)
       .limit(1)
       .maybeSingle(),
@@ -88,7 +90,11 @@ export async function GET() {
     orgStatus,
   }
 
-  await cacheSet(meCacheKey(user.id), JSON.stringify(payload), ME_CACHE_TTL_SECONDS)
+  await cacheSet(
+    meCacheKey(user.id),
+    JSON.stringify(payload),
+    ME_CACHE_TTL_SECONDS
+  )
 
   return NextResponse.json(payload)
 }

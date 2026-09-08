@@ -14,11 +14,25 @@ import { AddOrgUserDialog } from "@/components/add-org-user-dialog"
 import { StatusBadge } from "@/components/status-badge"
 import { Button } from "@/components/ui/button"
 import { DatePicker } from "@/components/ui/date-picker"
-import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field"
+import {
+  Field,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
-import { useOrganization, useUpdateOrganization } from "@/hooks/use-organizations"
+import {
+  useOrganization,
+  useUpdateOrganization,
+} from "@/hooks/use-organizations"
 import type { Organization } from "@/lib/database/types"
 
 const adminOrganizationSchema = z.object({
@@ -46,7 +60,9 @@ export function AdminOrganizationDetailClient({ id }: { id: string }) {
   const { data: organization, isLoading } = useOrganization(id)
 
   if (isLoading) {
-    return <div className="text-sm text-muted-foreground">{tCommon("loading")}</div>
+    return (
+      <div className="text-sm text-muted-foreground">{tCommon("loading")}</div>
+    )
   }
 
   if (!organization) {
@@ -64,10 +80,16 @@ export function AdminOrganizationDetailClient({ id }: { id: string }) {
     )
   }
 
-  return <AdminOrganizationForm key={organization.id} organization={organization} />
+  return (
+    <AdminOrganizationForm key={organization.id} organization={organization} />
+  )
 }
 
-function AdminOrganizationForm({ organization }: { organization: Organization }) {
+function AdminOrganizationForm({
+  organization,
+}: {
+  organization: Organization
+}) {
   const t = useTranslations("AdminOrganizations")
   const tCommon = useTranslations("Common")
   const updateOrganization = useUpdateOrganization()
@@ -81,13 +103,17 @@ function AdminOrganizationForm({ organization }: { organization: Organization })
       default_currency: organization.default_currency,
       is_active: organization.is_active,
       subscription_status: organization.subscription_status,
-      subscription_current_period_end: organization.subscription_current_period_end?.slice(0, 10) ?? "",
+      subscription_current_period_end:
+        organization.subscription_current_period_end?.slice(0, 10) ?? "",
     },
   })
   const { register, handleSubmit, formState, setValue, control } = form
   const isActive = useWatch({ control, name: "is_active" })
   const subscriptionStatus = useWatch({ control, name: "subscription_status" })
-  const subscriptionCurrentPeriodEnd = useWatch({ control, name: "subscription_current_period_end" })
+  const subscriptionCurrentPeriodEnd = useWatch({
+    control,
+    name: "subscription_current_period_end",
+  })
   const [addUserOpen, setAddUserOpen] = useState(false)
 
   function onSubmit(values: AdminOrganizationFormValues) {
@@ -101,13 +127,14 @@ function AdminOrganizationForm({ organization }: { organization: Organization })
           default_currency: values.default_currency,
           is_active: values.is_active,
           subscription_status: values.subscription_status,
-          subscription_current_period_end: values.subscription_current_period_end || null,
+          subscription_current_period_end:
+            values.subscription_current_period_end || null,
         },
       },
       {
         onSuccess: () => toast.success(tCommon("updatedSuccess")),
         onError: () => toast.error(tCommon("genericError")),
-      },
+      }
     )
   }
 
@@ -136,29 +163,52 @@ function AdminOrganizationForm({ organization }: { organization: Organization })
         <div className="rounded-xl bg-card ring-1 ring-foreground/10">
           <div className="border-b px-4 py-3">
             <h2 className="text-sm font-semibold">{t("basicDetailsTitle")}</h2>
-            <p className="text-xs text-muted-foreground">{t("basicDetailsDescription")}</p>
+            <p className="text-xs text-muted-foreground">
+              {t("basicDetailsDescription")}
+            </p>
           </div>
           <div className="p-4">
             <FieldGroup>
               <div className="grid grid-cols-2 gap-4">
                 <Field data-invalid={!!formState.errors.name}>
-                  <FieldLabel htmlFor="admin-org-name">{t("nameLabel")}</FieldLabel>
-                  <Input id="admin-org-name" {...register("name")} aria-invalid={!!formState.errors.name} />
-                  {formState.errors.name ? <FieldError>{tCommon("required")}</FieldError> : null}
+                  <FieldLabel htmlFor="admin-org-name">
+                    {t("nameLabel")}
+                  </FieldLabel>
+                  <Input
+                    id="admin-org-name"
+                    {...register("name")}
+                    aria-invalid={!!formState.errors.name}
+                  />
+                  {formState.errors.name ? (
+                    <FieldError>{tCommon("required")}</FieldError>
+                  ) : null}
                 </Field>
                 <Field>
-                  <FieldLabel htmlFor="admin-org-slug">{t("slugLabel")}</FieldLabel>
+                  <FieldLabel htmlFor="admin-org-slug">
+                    {t("slugLabel")}
+                  </FieldLabel>
                   <Input id="admin-org-slug" {...register("slug")} />
                 </Field>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <Field>
-                  <FieldLabel htmlFor="admin-org-billing-email">{t("billingEmailLabel")}</FieldLabel>
-                  <Input id="admin-org-billing-email" type="email" {...register("billing_email")} />
+                  <FieldLabel htmlFor="admin-org-billing-email">
+                    {t("billingEmailLabel")}
+                  </FieldLabel>
+                  <Input
+                    id="admin-org-billing-email"
+                    type="email"
+                    {...register("billing_email")}
+                  />
                 </Field>
                 <Field>
-                  <FieldLabel htmlFor="admin-org-currency">{t("currencyLabel")}</FieldLabel>
-                  <Input id="admin-org-currency" {...register("default_currency")} />
+                  <FieldLabel htmlFor="admin-org-currency">
+                    {t("currencyLabel")}
+                  </FieldLabel>
+                  <Input
+                    id="admin-org-currency"
+                    {...register("default_currency")}
+                  />
                 </Field>
               </div>
             </FieldGroup>
@@ -168,14 +218,20 @@ function AdminOrganizationForm({ organization }: { organization: Organization })
         <div className="rounded-xl bg-card ring-1 ring-foreground/10">
           <div className="border-b px-4 py-3">
             <h2 className="text-sm font-semibold">{t("statusTitle")}</h2>
-            <p className="text-xs text-muted-foreground">{t("statusDescription")}</p>
+            <p className="text-xs text-muted-foreground">
+              {t("statusDescription")}
+            </p>
           </div>
           <div className="p-4">
             <FieldGroup>
               <Field orientation="horizontal">
                 <div>
-                  <FieldLabel htmlFor="admin-org-active">{t("activeLabel")}</FieldLabel>
-                  <p className="text-xs text-muted-foreground">{t("activeHint")}</p>
+                  <FieldLabel htmlFor="admin-org-active">
+                    {t("activeLabel")}
+                  </FieldLabel>
+                  <p className="text-xs text-muted-foreground">
+                    {t("activeHint")}
+                  </p>
                 </div>
                 <Switch
                   id="admin-org-active"
@@ -186,14 +242,22 @@ function AdminOrganizationForm({ organization }: { organization: Organization })
               </Field>
               <div className="grid grid-cols-2 gap-4">
                 <Field>
-                  <FieldLabel htmlFor="admin-org-subscription-status">{t("subscriptionStatusLabel")}</FieldLabel>
+                  <FieldLabel htmlFor="admin-org-subscription-status">
+                    {t("subscriptionStatusLabel")}
+                  </FieldLabel>
                   <Select
                     value={subscriptionStatus}
                     onValueChange={(value) =>
-                      setValue("subscription_status", value as AdminOrganizationFormValues["subscription_status"])
+                      setValue(
+                        "subscription_status",
+                        value as AdminOrganizationFormValues["subscription_status"]
+                      )
                     }
                   >
-                    <SelectTrigger id="admin-org-subscription-status" className="w-full">
+                    <SelectTrigger
+                      id="admin-org-subscription-status"
+                      className="w-full"
+                    >
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -206,12 +270,16 @@ function AdminOrganizationForm({ organization }: { organization: Organization })
                   </Select>
                 </Field>
                 <Field>
-                  <FieldLabel htmlFor="admin-org-period-end">{t("subscriptionPeriodEndLabel")}</FieldLabel>
+                  <FieldLabel htmlFor="admin-org-period-end">
+                    {t("subscriptionPeriodEndLabel")}
+                  </FieldLabel>
                   <DatePicker
                     id="admin-org-period-end"
                     value={subscriptionCurrentPeriodEnd}
                     onChange={(value) =>
-                      setValue("subscription_current_period_end", value, { shouldValidate: true })
+                      setValue("subscription_current_period_end", value, {
+                        shouldValidate: true,
+                      })
                     }
                     clearable
                   />
@@ -223,7 +291,9 @@ function AdminOrganizationForm({ organization }: { organization: Organization })
 
         <div className="flex justify-end">
           <Button type="submit" disabled={updateOrganization.isPending}>
-            {updateOrganization.isPending ? <Loader2Icon className="animate-spin" /> : null}
+            {updateOrganization.isPending ? (
+              <Loader2Icon className="animate-spin" />
+            ) : null}
             {t("saveChanges")}
           </Button>
         </div>
@@ -233,7 +303,9 @@ function AdminOrganizationForm({ organization }: { organization: Organization })
         <div className="flex items-center justify-between border-b px-4 py-3">
           <div>
             <h2 className="text-sm font-semibold">{t("teamTitle")}</h2>
-            <p className="text-xs text-muted-foreground">{t("teamDescription")}</p>
+            <p className="text-xs text-muted-foreground">
+              {t("teamDescription")}
+            </p>
           </div>
           <Button size="sm" onClick={() => setAddUserOpen(true)}>
             <PlusIcon />
@@ -242,7 +314,11 @@ function AdminOrganizationForm({ organization }: { organization: Organization })
         </div>
       </div>
 
-      <AddOrgUserDialog orgId={organization.id} open={addUserOpen} onOpenChange={setAddUserOpen} />
+      <AddOrgUserDialog
+        orgId={organization.id}
+        open={addUserOpen}
+        onOpenChange={setAddUserOpen}
+      />
     </div>
   )
 }

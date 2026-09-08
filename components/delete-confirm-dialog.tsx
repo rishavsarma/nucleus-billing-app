@@ -36,8 +36,12 @@ export function DeleteConfirmDialog({
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>{title ?? t("deleteConfirmTitle")}</AlertDialogTitle>
-          <AlertDialogDescription>{description ?? t("deleteConfirmDescription")}</AlertDialogDescription>
+          <AlertDialogTitle>
+            {title ?? t("deleteConfirmTitle")}
+          </AlertDialogTitle>
+          <AlertDialogDescription>
+            {description ?? t("deleteConfirmDescription")}
+          </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>

@@ -1,5 +1,10 @@
 import { createServerClient } from "@supabase/ssr"
 import { cookies } from "next/headers"
+import { http2Fetch } from "@/lib/http2-fetch"
+
+// Set SUPABASE_HTTP2_FETCH=0 to fall back to Bun's plain (HTTP/1.1) fetch
+// without a code change — see lib/http2-fetch.ts for why this exists.
+const useHttp2Fetch = process.env.SUPABASE_HTTP2_FETCH !== "0"
 
 export async function createClient() {
   const cookieStore = await cookies()
@@ -23,6 +28,7 @@ export async function createClient() {
           }
         },
       },
-    },
+      global: useHttp2Fetch ? { fetch: http2Fetch } : undefined,
+    }
   )
 }

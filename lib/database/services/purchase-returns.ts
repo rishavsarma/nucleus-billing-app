@@ -1,27 +1,53 @@
 import { api } from "@/lib/axios"
-import type { PurchaseReturn, PurchaseReturnWithRelations } from "@/lib/database/types"
-import type { ListParams, PaginatedResponse } from "@/lib/database/list-params-types"
+import type {
+  PurchaseReturn,
+  PurchaseReturnWithRelations,
+} from "@/lib/database/types"
+import type {
+  ListParams,
+  PaginatedResponse,
+} from "@/lib/database/list-params-types"
 
 /** Fetch a single record by id — for detail pages. */
-export async function fetchPurchaseReturnById(id: string): Promise<PurchaseReturn> {
-  const { data } = await api.get<PurchaseReturn>("/database/purchase_returns", { params: { id } })
+export async function fetchPurchaseReturnById(
+  id: string
+): Promise<PurchaseReturn> {
+  const { data } = await api.get<PurchaseReturn>("/database/purchase_returns", {
+    params: { id },
+  })
   return data
 }
 
 /** Fetch a paginated + searched page of purchase returns, with each row's
  * vendor name and original bill number embedded via real joins. */
-export async function fetchPurchaseReturnsPaginated(params: ListParams): Promise<PaginatedResponse<PurchaseReturnWithRelations>> {
-  const { data } = await api.get<PaginatedResponse<PurchaseReturnWithRelations>>("/database/purchase_returns", { params })
+export async function fetchPurchaseReturnsPaginated(
+  params: ListParams
+): Promise<PaginatedResponse<PurchaseReturnWithRelations>> {
+  const { data } = await api.get<
+    PaginatedResponse<PurchaseReturnWithRelations>
+  >("/database/purchase_returns", { params })
   return data
 }
 
-export async function createPurchaseReturn(input: Partial<PurchaseReturn>): Promise<PurchaseReturn> {
-  const { data } = await api.post<PurchaseReturn>("/database/purchase_returns", input)
+export async function createPurchaseReturn(
+  input: Partial<PurchaseReturn>
+): Promise<PurchaseReturn> {
+  const { data } = await api.post<PurchaseReturn>(
+    "/database/purchase_returns",
+    input
+  )
   return data
 }
 
-export async function updatePurchaseReturn(id: string, input: Partial<PurchaseReturn>): Promise<PurchaseReturn> {
-  const { data } = await api.put<PurchaseReturn>("/database/purchase_returns", input, { params: { id } })
+export async function updatePurchaseReturn(
+  id: string,
+  input: Partial<PurchaseReturn>
+): Promise<PurchaseReturn> {
+  const { data } = await api.put<PurchaseReturn>(
+    "/database/purchase_returns",
+    input,
+    { params: { id } }
+  )
   return data
 }
 

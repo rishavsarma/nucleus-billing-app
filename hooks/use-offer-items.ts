@@ -21,7 +21,9 @@ export function useCreateOfferItem() {
   return useMutation({
     mutationFn: (input: OfferItem) => createOfferItem(input),
     onSuccess: (_data, variables) =>
-      queryClient.invalidateQueries({ queryKey: ["offer-items", variables.offer_id] }),
+      queryClient.invalidateQueries({
+        queryKey: ["offer-items", variables.offer_id],
+      }),
   })
 }
 
@@ -31,6 +33,7 @@ export function useDeleteOfferItem(offerId: string | undefined) {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (itemId: string) => deleteOfferItem(offerId!, itemId),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["offer-items", offerId] }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["offer-items", offerId] }),
   })
 }

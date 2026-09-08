@@ -2,14 +2,27 @@
 
 import type { DocumentProps } from "@react-pdf/renderer"
 import type { InvoicePdfLabels } from "@/components/invoice-pdf-document"
-import type { Customer, Invoice, InvoiceItem, Item, Organization } from "@/lib/database/types"
+import type {
+  Customer,
+  Invoice,
+  InvoiceItem,
+  Item,
+  Organization,
+  OrganizationBankAccount,
+} from "@/lib/database/types"
 
-type TFunc = (key: string, values?: Record<string, string | number | Date>) => string
+type TFunc = (
+  key: string,
+  values?: Record<string, string | number | Date>
+) => string
 
 /** Maps the InvoicePrint message namespace onto InvoicePdfDocument's labels
  * prop — shared so the POS's print-after-sale flow and the invoice detail
  * page's Print/Download buttons can never drift out of sync. */
-export function buildInvoicePdfLabels(tPrint: TFunc, lineItems: InvoiceItem[]): InvoicePdfLabels {
+export function buildInvoicePdfLabels(
+  tPrint: TFunc,
+  lineItems: InvoiceItem[]
+): InvoicePdfLabels {
   return {
     taxInvoice: tPrint("taxInvoice"),
     originalForRecipient: tPrint("originalForRecipient"),
@@ -40,6 +53,14 @@ export function buildInvoicePdfLabels(tPrint: TFunc, lineItems: InvoiceItem[]): 
     totalTaxAmountLabel: tPrint("totalTaxAmountLabel"),
     amountInWordsLabel: tPrint("amountInWordsLabel"),
     authorisedSignatoryLabel: tPrint("authorisedSignatoryLabel"),
+    igstLabel: tPrint("igstLabel", { rate: lineItems[0]?.tax_rate ?? 0 }),
+    igstColumnLabel: tPrint("igstColumnLabel"),
+    roundOffLabel: tPrint("roundOffLabel"),
+    bankDetailsLabel: tPrint("bankDetailsLabel"),
+    accountHolderLabel: tPrint("accountHolderLabel"),
+    accountNumberLabel: tPrint("accountNumberLabel"),
+    ifscLabel: tPrint("ifscLabel"),
+    bankNameLabel: tPrint("bankNameLabel"),
   }
 }
 
@@ -53,6 +74,10 @@ export async function buildInvoicePdfElement(params: {
   organization: Organization | undefined
   lineItems: InvoiceItem[]
   items: Item[] | undefined
+  /** The invoice's linked bank account (resolved by the caller via
+   * useOrganizationBankAccounts(), since this function has no hook access),
+   * printed on the invoice when set. */
+  bankAccount?: OrganizationBankAccount | null
   tPrint: TFunc
   /** Today's active date-range preset text (resolved by the caller via
    * useActivePdfWatermarkText(), since this function has no hook access),
@@ -60,7 +85,8 @@ export async function buildInvoicePdfElement(params: {
    * currently active. */
   watermarkText?: string | null
 }): Promise<React.ReactElement<DocumentProps>> {
-  const { InvoicePdfDocument } = await import("@/components/invoice-pdf-document")
+  const { InvoicePdfDocument } =
+    await import("@/components/invoice-pdf-document")
   return (
     <InvoicePdfDocument
       invoice={params.invoice}
@@ -68,8 +94,11 @@ export async function buildInvoicePdfElement(params: {
       organization={params.organization}
       lineItems={params.lineItems}
       items={params.items}
+      bankAccount={params.bankAccount}
       labels={buildInvoicePdfLabels(params.tPrint, params.lineItems)}
-      watermarkText={params.watermarkText ?? params.organization?.pdf_watermark_text}
+      watermarkText={
+        params.watermarkText ?? params.organization?.pdf_watermark_text
+      }
     />
   ) as React.ReactElement<DocumentProps>
 }
@@ -77,7 +106,10 @@ export async function buildInvoicePdfElement(params: {
 /** Renders a react-pdf element to an actual PDF file client-side (not a
  * browser print-to-PDF) and downloads it — pixel-accurate layout and real
  * embedded fonts/colors regardless of the browser's print settings. */
-export async function downloadInvoicePdf(element: React.ReactElement<DocumentProps>, filename: string) {
+export async function downloadInvoicePdf(
+  element: React.ReactElement<DocumentProps>,
+  filename: string
+) {
   const { pdf } = await import("@react-pdf/renderer")
   const blob = await pdf(element).toBlob()
   const url = URL.createObjectURL(blob)
@@ -91,7 +123,9 @@ export async function downloadInvoicePdf(element: React.ReactElement<DocumentPro
 /** Same generated PDF, but opened straight into the browser's print dialog
  * via a hidden iframe instead of downloading — one action to print, no
  * intermediate "open the file, then print" step. */
-export async function printInvoicePdf(element: React.ReactElement<DocumentProps>) {
+export async function printInvoicePdf(
+  element: React.ReactElement<DocumentProps>
+) {
   const { pdf } = await import("@react-pdf/renderer")
   const blob = await pdf(element).toBlob()
   const url = URL.createObjectURL(blob)

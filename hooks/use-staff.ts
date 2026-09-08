@@ -41,7 +41,8 @@ export function useCreateStaff() {
 export function useUpdateStaff() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, input }: { id: string; input: Partial<Staff> }) => updateStaff(id, input),
+    mutationFn: ({ id, input }: { id: string; input: Partial<Staff> }) =>
+      updateStaff(id, input),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["staff"] }),
   })
 }

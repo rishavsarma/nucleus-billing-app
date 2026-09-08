@@ -12,7 +12,12 @@ import { useInstallmentsList } from "@/hooks/use-installments"
 import { routes } from "@/lib/routes"
 import type { InstallmentWithInvoice } from "@/lib/database/types"
 
-const money = (n: number) => "₹" + n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+const money = (n: number) =>
+  "₹" +
+  n.toLocaleString("en-IN", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })
 const columnHelper = entityColumnHelper<InstallmentWithInvoice>()
 
 export default function InstallmentsPage() {
@@ -28,7 +33,10 @@ export default function InstallmentsPage() {
       id: "invoice_id",
       header: t("columnInvoice"),
       cell: ({ getValue, row }) => (
-        <Link href={routes.sales.invoices.detail(row.original.invoice_id)} className="font-medium hover:underline">
+        <Link
+          href={routes.sales.invoices.detail(row.original.invoice_id)}
+          className="font-medium hover:underline"
+        >
           {getValue() ?? "—"}
         </Link>
       ),
@@ -42,16 +50,23 @@ export default function InstallmentsPage() {
     }),
     columnHelper.accessor("amount", {
       header: t("columnAmount"),
-      cell: ({ getValue }) => <span className="font-medium">{money(getValue())}</span>,
+      cell: ({ getValue }) => (
+        <span className="font-medium">{money(getValue())}</span>
+      ),
     }),
     columnHelper.display({
       id: "status",
       header: t("columnStatus"),
       cell: ({ row }) => {
         const installment = row.original
-        const isOverdue = installment.status === "pending" && installment.due_date < today
-        if (installment.status === "paid") return <StatusBadge status="paid">{t("statusPaid")}</StatusBadge>
-        if (isOverdue) return <StatusBadge status="overdue">{t("statusOverdue")}</StatusBadge>
+        const isOverdue =
+          installment.status === "pending" && installment.due_date < today
+        if (installment.status === "paid")
+          return <StatusBadge status="paid">{t("statusPaid")}</StatusBadge>
+        if (isOverdue)
+          return (
+            <StatusBadge status="overdue">{t("statusOverdue")}</StatusBadge>
+          )
         return <StatusBadge status="pending">{t("statusPending")}</StatusBadge>
       },
     }),

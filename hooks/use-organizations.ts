@@ -2,7 +2,10 @@
 
 import type { ListParams } from "@/lib/database/list-params-types"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { fetchCurrentOrganization, fetchOrganizationById, fetchOrganizationsPaginated,
+import {
+  fetchCurrentOrganization,
+  fetchOrganizationById,
+  fetchOrganizationsPaginated,
   createOrganization,
   updateOrganization,
 } from "@/lib/database/services/organizations"
@@ -38,7 +41,8 @@ export function useCreateOrganization() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (input: Partial<Organization>) => createOrganization(input),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["organizations"] }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["organizations"] }),
   })
 }
 
@@ -47,7 +51,8 @@ export function useUpdateOrganization() {
   return useMutation({
     mutationFn: ({ id, input }: { id: string; input: Partial<Organization> }) =>
       updateOrganization(id, input),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["organizations"] }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["organizations"] }),
   })
 }
 

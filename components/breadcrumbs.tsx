@@ -27,7 +27,7 @@ export function Breadcrumbs() {
   const isItemCurrent = remainder.length === 0
 
   return (
-    <Breadcrumb className="max-w-[200px] sm:max-w-none truncate">
+    <Breadcrumb className="max-w-[200px] truncate sm:max-w-none">
       <BreadcrumbList className="flex-nowrap whitespace-nowrap">
         <BreadcrumbItem className="hidden sm:inline-flex">
           <span>{t(`groups.${group.labelKey}`)}</span>
@@ -35,10 +35,17 @@ export function Breadcrumbs() {
         <BreadcrumbSeparator className="hidden sm:inline-flex" />
         <BreadcrumbItem>
           {isItemCurrent ? (
-            <BreadcrumbPage className="truncate max-w-[140px] sm:max-w-none">{t(`items.${item.titleKey}`)}</BreadcrumbPage>
+            <BreadcrumbPage className="max-w-[140px] truncate sm:max-w-none">
+              {t(`items.${item.titleKey}`)}
+            </BreadcrumbPage>
           ) : (
             <BreadcrumbLink asChild>
-              <Link href={item.url} className="truncate max-w-[120px] sm:max-w-none">{t(`items.${item.titleKey}`)}</Link>
+              <Link
+                href={item.url}
+                className="max-w-[120px] truncate sm:max-w-none"
+              >
+                {t(`items.${item.titleKey}`)}
+              </Link>
             </BreadcrumbLink>
           )}
         </BreadcrumbItem>

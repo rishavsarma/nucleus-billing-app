@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
+import { authError, dbError, notFound } from "@/lib/api-response"
 import { requireOrgId, type SupabaseClient } from "@/lib/database/require-org"
-import { cacheGet, cacheSet } from "@/lib/cache"
-import { redis } from "@/lib/redis"
+import { cacheGet, cacheGetListVersion, cacheSet } from "@/lib/cache"
 
 const STOCK_CACHE_TTL_SECONDS = 60
 
@@ -9,21 +9,12 @@ function singleStockCacheKey(orgId: string, itemId: string) {
   return `item-stock:single:${orgId}:${itemId}`
 }
 
-async function getListVersion(orgId: string): Promise<number> {
-  try {
-    const v = await redis.get(`item-stock-list-version:${orgId}`)
-    return v ? parseInt(v, 10) : 0
-  } catch {
-    return 0
-  }
-}
-
 function stockListCacheKey(
   orgId: string,
   version: number,
   search: string,
   page: number,
-  pageSize: number,
+  pageSize: number
 ) {
   return `item-stock-list:${orgId}:v${version}:${search}:${page}:${pageSize}`
 }
@@ -32,9 +23,13 @@ async function verifyItemInOrg(
   supabase: SupabaseClient,
   itemId: string,
   orgId: string | null,
-  isSuperadmin: boolean,
+  isSuperadmin: boolean
 ) {
-  let query = supabase.schema("billing").from("items").select("id").eq("id", itemId)
+  let query = supabase
+    .schema("billing")
+    .from("items")
+    .select("id")
+    .eq("id", itemId)
   if (!isSuperadmin) query = query.eq("org_id", orgId!)
   const { data, error } = await query.maybeSingle()
   return { ok: !error && !!data, error }
@@ -43,10 +38,7 @@ async function verifyItemInOrg(
 export async function GET(request: Request) {
   const auth = await requireOrgId()
   if (auth.error) {
-    return NextResponse.json(
-      { error: auth.error },
-      { status: auth.error === "unauthorized" ? 401 : 403 },
-    )
+    return authError(auth.error)
   }
 
   const { searchParams } = new URL(request.url)
@@ -63,10 +55,10 @@ export async function GET(request: Request) {
       supabase,
       itemId,
       auth.orgId,
-      auth.isSuperadmin,
+      auth.isSuperadmin
     )
-    if (verifyError) return NextResponse.json({ error: verifyError.message }, { status: 500 })
-    if (!ok) return NextResponse.json({ error: "Not found" }, { status: 404 })
+    if (verifyError) return dbError(verifyError, "item_stock:GET")
+    if (!ok) return notFound()
 
     const { data, error } = await supabase
       .schema("billing")
@@ -74,10 +66,14 @@ export async function GET(request: Request) {
       .select("*")
       .eq("item_id", itemId)
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) return dbError(error, "item_stock:GET")
 
     if (!auth.isSuperadmin) {
-      await cacheSet(singleStockCacheKey(auth.orgId!, itemId), JSON.stringify(data ?? []), STOCK_CACHE_TTL_SECONDS)
+      await cacheSet(
+        singleStockCacheKey(auth.orgId!, itemId),
+        JSON.stringify(data ?? []),
+        STOCK_CACHE_TTL_SECONDS
+      )
     }
     return NextResponse.json(data)
   }
@@ -87,8 +83,14 @@ export async function GET(request: Request) {
   const pageSize = Number(searchParams.get("pageSize") ?? 10)
 
   if (!auth.isSuperadmin) {
-    const version = await getListVersion(auth.orgId!)
-    const listKey = stockListCacheKey(auth.orgId!, version, search, page, pageSize)
+    const version = await cacheGetListVersion("item-stock", auth.orgId!)
+    const listKey = stockListCacheKey(
+      auth.orgId!,
+      version,
+      search,
+      page,
+      pageSize
+    )
     const cached = await cacheGet(listKey)
     if (cached) return NextResponse.json(JSON.parse(cached))
 
@@ -97,11 +99,14 @@ export async function GET(request: Request) {
       .from("item_stock")
       .select(
         "item_id, warehouse_id, quantity_on_hand, items!inner(name, sku, reorder_level, org_id), warehouses(name)",
-        { count: "exact" },
+        { count: "exact" }
       )
       .eq("items.org_id", auth.orgId!)
 
-    if (search) query = query.or(`name.ilike.%${search}%,sku.ilike.%${search}%`, { foreignTable: "items" })
+    if (search)
+      query = query.or(`name.ilike.%${search}%,sku.ilike.%${search}%`, {
+        foreignTable: "items",
+      })
     query = query.order("name", { foreignTable: "items", ascending: true })
 
     const from = (page - 1) * pageSize
@@ -109,11 +114,13 @@ export async function GET(request: Request) {
     query = query.range(from, to)
 
     const { data, error, count } = await query
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) return dbError(error, "item_stock:GET")
 
     const rows = (data ?? []).map((row) => {
       const item = Array.isArray(row.items) ? row.items[0] : row.items
-      const warehouse = Array.isArray(row.warehouses) ? row.warehouses[0] : row.warehouses
+      const warehouse = Array.isArray(row.warehouses)
+        ? row.warehouses[0]
+        : row.warehouses
       return {
         item_id: row.item_id,
         warehouse_id: row.warehouse_id,
@@ -135,10 +142,13 @@ export async function GET(request: Request) {
     .from("item_stock")
     .select(
       "item_id, warehouse_id, quantity_on_hand, items!inner(name, sku, reorder_level, org_id), warehouses(name)",
-      { count: "exact" },
+      { count: "exact" }
     )
 
-  if (search) query = query.or(`name.ilike.%${search}%,sku.ilike.%${search}%`, { foreignTable: "items" })
+  if (search)
+    query = query.or(`name.ilike.%${search}%,sku.ilike.%${search}%`, {
+      foreignTable: "items",
+    })
   query = query.order("name", { foreignTable: "items", ascending: true })
 
   const from = (page - 1) * pageSize
@@ -146,11 +156,13 @@ export async function GET(request: Request) {
   query = query.range(from, to)
 
   const { data, error, count } = await query
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return dbError(error, "item_stock:GET")
 
   const rows = (data ?? []).map((row) => {
     const item = Array.isArray(row.items) ? row.items[0] : row.items
-    const warehouse = Array.isArray(row.warehouses) ? row.warehouses[0] : row.warehouses
+    const warehouse = Array.isArray(row.warehouses)
+      ? row.warehouses[0]
+      : row.warehouses
     return {
       item_id: row.item_id,
       warehouse_id: row.warehouse_id,

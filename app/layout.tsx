@@ -1,18 +1,18 @@
-import {  Geist_Mono, Inter, Roboto } from "next/font/google"
+import { Geist_Mono, Inter, Roboto } from "next/font/google"
 import { getLocale } from "next-intl/server"
 
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { ThemePresetScript } from "@/components/theme-preset-script"
 import { QueryProvider } from "@/components/providers/query-provider"
-import { cn } from "@/lib/utils";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { Toaster } from "@/components/ui/sonner";
-import { ThemeLoaderOverlay } from "@/components/theme-loader-overlay";
+import { cn } from "@/lib/utils"
+import { TooltipProvider } from "@/components/ui/tooltip"
+import { Toaster } from "@/components/ui/sonner"
+import { ThemeLoaderOverlay } from "@/components/theme-loader-overlay"
 
-const robotoHeading = Roboto({subsets:['latin'],variable:'--font-heading'});
+const robotoHeading = Roboto({ subsets: ["latin"], variable: "--font-heading" })
 
-const inter = Inter({subsets:['latin'],variable:'--font-sans'})
+const inter = Inter({ subsets: ["latin"], variable: "--font-sans" })
 
 const fontMono = Geist_Mono({
   subsets: ["latin"],
@@ -30,7 +30,14 @@ export default async function RootLayout({
     <html
       lang={locale}
       suppressHydrationWarning
-      className={cn("antialiased", fontMono.variable, "font-sans", inter.variable, robotoHeading.variable, "bg-sidebar")}
+      className={cn(
+        "antialiased",
+        fontMono.variable,
+        "font-sans",
+        inter.variable,
+        robotoHeading.variable,
+        "bg-sidebar"
+      )}
     >
       <head>
         <ThemePresetScript />
@@ -39,7 +46,8 @@ export default async function RootLayout({
         <ThemeLoaderOverlay />
         <QueryProvider>
           <ThemeProvider>
-             <TooltipProvider>{children}</TooltipProvider></ThemeProvider>
+            <TooltipProvider>{children}</TooltipProvider>
+          </ThemeProvider>
         </QueryProvider>
         <Toaster />
       </body>

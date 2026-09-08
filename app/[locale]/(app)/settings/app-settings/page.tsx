@@ -20,7 +20,9 @@ export default function AppSettingsPage() {
       <div className="rounded-xl bg-card ring-1 ring-foreground/10">
         <div className="border-b px-4 py-3">
           <h2 className="text-sm font-semibold">{t("appearanceTitle")}</h2>
-          <p className="text-xs text-muted-foreground">{t("appearanceDescription")}</p>
+          <p className="text-xs text-muted-foreground">
+            {t("appearanceDescription")}
+          </p>
         </div>
         <div className="flex flex-col gap-4 p-4">
           <Field orientation="horizontal">

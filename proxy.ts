@@ -36,8 +36,11 @@ export async function proxy(request: NextRequest) {
   const normalizedPath = path === "" ? "/" : path
 
   const isProtected =
-    normalizedPath === "/" || PROTECTED_PREFIXES.some((p) => normalizedPath.startsWith(p))
-  const isAuthOnly = AUTH_ONLY_PREFIXES.some((p) => normalizedPath.startsWith(p))
+    normalizedPath === "/" ||
+    PROTECTED_PREFIXES.some((p) => normalizedPath.startsWith(p))
+  const isAuthOnly = AUTH_ONLY_PREFIXES.some((p) =>
+    normalizedPath.startsWith(p)
+  )
 
   if (!user && isProtected) {
     const url = request.nextUrl.clone()
@@ -59,5 +62,7 @@ export const config = {
   // images, etc. served from public/) from locale-prefix redirection —
   // without it, e.g. /fonts/NotoSans-Regular.ttf 307s to /en/fonts/... and
   // 404s, since public/ assets aren't otherwise exempted from this matcher.
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|monitoring|api|auth|.*\\..*).*)"],
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|monitoring|api|auth|.*\\..*).*)",
+  ],
 }

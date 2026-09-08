@@ -1,7 +1,12 @@
 "use client"
 
 import { useTranslations } from "next-intl"
-import { FileTextIcon, GalleryVerticalEndIcon, UsersIcon, WarehouseIcon } from "lucide-react"
+import {
+  FileTextIcon,
+  GalleryVerticalEndIcon,
+  UsersIcon,
+  WarehouseIcon,
+} from "lucide-react"
 
 import { LoginForm } from "@/components/login-form"
 import { ThemePresetSelector } from "@/components/theme-preset-selector"
@@ -12,9 +17,21 @@ export default function LoginPage() {
   const t = useTranslations("LoginHero")
 
   const features = [
-    { icon: FileTextIcon, title: t("feature1Title"), description: t("feature1Description") },
-    { icon: WarehouseIcon, title: t("feature2Title"), description: t("feature2Description") },
-    { icon: UsersIcon, title: t("feature3Title"), description: t("feature3Description") },
+    {
+      icon: FileTextIcon,
+      title: t("feature1Title"),
+      description: t("feature1Description"),
+    },
+    {
+      icon: WarehouseIcon,
+      title: t("feature2Title"),
+      description: t("feature2Description"),
+    },
+    {
+      icon: UsersIcon,
+      title: t("feature3Title"),
+      description: t("feature3Description"),
+    },
   ]
 
   return (
@@ -51,7 +68,9 @@ export default function LoginPage() {
 
         <div className="relative z-10 mt-16 flex max-w-md flex-col gap-3">
           <h1 className="text-3xl font-semibold text-balance">{t("title")}</h1>
-          <p className="text-sm text-balance text-primary-foreground/80">{t("subtitle")}</p>
+          <p className="text-sm text-balance text-primary-foreground/80">
+            {t("subtitle")}
+          </p>
         </div>
 
         <div className="relative z-10 flex flex-col gap-4">
@@ -65,7 +84,9 @@ export default function LoginPage() {
               </div>
               <div>
                 <h2 className="text-sm font-semibold">{feature.title}</h2>
-                <p className="text-xs text-primary-foreground/70">{feature.description}</p>
+                <p className="text-xs text-primary-foreground/70">
+                  {feature.description}
+                </p>
               </div>
             </div>
           ))}

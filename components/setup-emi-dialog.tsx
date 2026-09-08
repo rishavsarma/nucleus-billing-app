@@ -54,21 +54,35 @@ export function SetupEmiDialog({
       <div className="grid grid-cols-2 gap-4">
         <Field data-invalid={!!formState.errors.months}>
           <FieldLabel htmlFor="emi-months">{t("monthsLabel")}</FieldLabel>
-          <Input id="emi-months" type="number" min={2} max={60} step={1} {...register("months", { valueAsNumber: true })} />
+          <Input
+            id="emi-months"
+            type="number"
+            min={2}
+            max={60}
+            step={1}
+            {...register("months", { valueAsNumber: true })}
+          />
         </Field>
         <Field>
           <FieldLabel htmlFor="emi-start">{t("startDateLabel")}</FieldLabel>
           <DatePicker
             id="emi-start"
             value={startDate}
-            onChange={(value) => setValue("start_date", value, { shouldValidate: true })}
+            onChange={(value) =>
+              setValue("start_date", value, { shouldValidate: true })
+            }
           />
         </Field>
       </div>
       <p className="text-xs text-muted-foreground">
         {t("previewNote", {
           months,
-          amount: "₹" + perInstallment.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+          amount:
+            "₹" +
+            perInstallment.toLocaleString("en-IN", {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            }),
         })}
       </p>
     </EntityFormDialog>

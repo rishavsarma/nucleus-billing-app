@@ -61,7 +61,9 @@ export function entityColumnHelper<TData extends Record<string, any>>() {
 }
 
 export type EntityTableProps<TData extends { id: string }> = {
-  columns: ReturnType<ReturnType<typeof createColumnHelper<typeof features, TData>>["columns"]>
+  columns: ReturnType<
+    ReturnType<typeof createColumnHelper<typeof features, TData>>["columns"]
+  >
   data: TData[]
   isLoading?: boolean
   emptyMessage?: string
@@ -113,7 +115,8 @@ export function EntityTable<TData extends { id: string }>({
   toolbarExtra,
 }: EntityTableProps<TData>) {
   const t = useTranslations("DataTable")
-  const [columnVisibility, setColumnVisibility] = React.useState<ColumnVisibilityState>({})
+  const [columnVisibility, setColumnVisibility] =
+    React.useState<ColumnVisibilityState>({})
   const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({})
 
   const columnHelper = React.useMemo(() => entityColumnHelper<TData>(), [])
@@ -130,7 +133,9 @@ export function EntityTable<TData extends { id: string }>({
               table.getIsAllPageRowsSelected() ||
               (table.getIsSomePageRowsSelected() && "indeterminate")
             }
-            onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+            onCheckedChange={(value) =>
+              table.toggleAllPageRowsSelected(!!value)
+            }
             aria-label="Select all"
           />
         </div>
@@ -183,21 +188,21 @@ export function EntityTable<TData extends { id: string }>({
 
   return (
     <div className="flex flex-col gap-3 sm:gap-4">
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 sm:gap-3">
-        <div className="flex flex-1 items-center gap-2 w-full sm:max-w-sm">
+      <div className="flex flex-col items-stretch justify-between gap-2.5 sm:flex-row sm:items-center sm:gap-3">
+        <div className="flex w-full flex-1 items-center gap-2 sm:max-w-sm">
           {showSearch && (
             <div className="relative w-full">
-              <SearchIcon className="pointer-events-none absolute top-1/2 start-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+              <SearchIcon className="pointer-events-none absolute start-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 value={search}
                 onChange={(e) => onSearchChange(e.target.value)}
                 placeholder={searchPlaceholder ?? t("searchPlaceholder")}
-                className="ps-8 h-9 w-full"
+                className="h-9 w-full ps-8"
               />
             </div>
           )}
         </div>
-        <div className="flex items-center gap-2 justify-end">
+        <div className="flex items-center justify-end gap-2">
           {toolbarExtra}
           {showColumnVisibility && (
             <DropdownMenu>
@@ -248,7 +253,11 @@ export function EntityTable<TData extends { id: string }>({
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id} colSpan={header.colSpan} className="text-xs sm:text-sm">
+                  <TableHead
+                    key={header.id}
+                    colSpan={header.colSpan}
+                    className="text-xs sm:text-sm"
+                  >
                     {header.isPlaceholder ? null : (
                       <FlexRender header={header} />
                     )}
@@ -257,7 +266,7 @@ export function EntityTable<TData extends { id: string }>({
               </TableRow>
             ))}
           </TableHeader>
-          <TableBody className="**:data-[slot=table-cell]:first:w-8 text-xs sm:text-sm">
+          <TableBody className="text-xs **:data-[slot=table-cell]:first:w-8 sm:text-sm">
             {isLoading ? (
               <TableRow>
                 <TableCell
@@ -272,7 +281,9 @@ export function EntityTable<TData extends { id: string }>({
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
-                  onClick={onRowClick ? () => onRowClick(row.original) : undefined}
+                  onClick={
+                    onRowClick ? () => onRowClick(row.original) : undefined
+                  }
                   className={onRowClick ? "cursor-pointer" : undefined}
                 >
                   {row.getAllCells().map((cell) => (
@@ -296,7 +307,7 @@ export function EntityTable<TData extends { id: string }>({
         </Table>
       </div>
 
-      <div className="flex items-center justify-between px-1 sm:px-2 text-xs sm:text-sm text-muted-foreground gap-2">
+      <div className="flex items-center justify-between gap-2 px-1 text-xs text-muted-foreground sm:px-2 sm:text-sm">
         <div className="hidden flex-1 text-sm text-muted-foreground md:flex">
           {Object.keys(rowSelection).length > 0
             ? t("rowsSelected", {
@@ -305,9 +316,12 @@ export function EntityTable<TData extends { id: string }>({
               })
             : t("rowCount", { count: totalCount })}
         </div>
-        <div className="flex w-full items-center justify-between sm:justify-end gap-3 sm:gap-6 lg:w-fit lg:gap-8 ms-auto">
+        <div className="ms-auto flex w-full items-center justify-between gap-3 sm:justify-end sm:gap-6 lg:w-fit lg:gap-8">
           <div className="hidden items-center gap-2 sm:flex">
-            <Label htmlFor="rows-per-page" className="text-xs sm:text-sm font-medium">
+            <Label
+              htmlFor="rows-per-page"
+              className="text-xs font-medium sm:text-sm"
+            >
               {t("rowsPerPage")}
             </Label>
             <Select
@@ -316,7 +330,11 @@ export function EntityTable<TData extends { id: string }>({
                 onPageSizeChange(Number(value))
               }}
             >
-              <SelectTrigger size="sm" className="w-18 sm:w-20" id="rows-per-page">
+              <SelectTrigger
+                size="sm"
+                className="w-18 sm:w-20"
+                id="rows-per-page"
+              >
                 <SelectValue placeholder={pageSize} />
               </SelectTrigger>
               <SelectContent side="top">
@@ -330,13 +348,13 @@ export function EntityTable<TData extends { id: string }>({
               </SelectContent>
             </Select>
           </div>
-          <div className="flex w-fit items-center justify-center text-xs sm:text-sm font-medium">
+          <div className="flex w-fit items-center justify-center text-xs font-medium sm:text-sm">
             {t("pageOf", { page, pages: pageCount })}
           </div>
           <div className="flex items-center gap-1.5 sm:gap-2">
             <Button
               variant="outline"
-              className="hidden size-8 lg:flex p-0"
+              className="hidden size-8 p-0 lg:flex"
               size="icon"
               onClick={() => onPageChange(1)}
               disabled={!canPrev}
@@ -366,7 +384,7 @@ export function EntityTable<TData extends { id: string }>({
             </Button>
             <Button
               variant="outline"
-              className="hidden size-8 lg:flex p-0"
+              className="hidden size-8 p-0 lg:flex"
               size="icon"
               onClick={() => onPageChange(pageCount)}
               disabled={!canNext}

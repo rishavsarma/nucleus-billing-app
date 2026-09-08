@@ -24,10 +24,13 @@ export function usePurchaseBillItems(purchaseBillId: string | undefined) {
 export function useCreatePurchaseBillItem() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (input: Partial<PurchaseBillItem> & { purchase_bill_id: string }) =>
-      createPurchaseBillItem(input),
+    mutationFn: (
+      input: Partial<PurchaseBillItem> & { purchase_bill_id: string }
+    ) => createPurchaseBillItem(input),
     onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["purchase-bill-items", variables.purchase_bill_id] })
+      queryClient.invalidateQueries({
+        queryKey: ["purchase-bill-items", variables.purchase_bill_id],
+      })
       queryClient.invalidateQueries({ queryKey: ["purchase-bills"] })
     },
   })
@@ -36,10 +39,17 @@ export function useCreatePurchaseBillItem() {
 export function useUpdatePurchaseBillItem(purchaseBillId: string | undefined) {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, input }: { id: string; input: Partial<PurchaseBillItem> }) =>
-      updatePurchaseBillItem(id, input),
+    mutationFn: ({
+      id,
+      input,
+    }: {
+      id: string
+      input: Partial<PurchaseBillItem>
+    }) => updatePurchaseBillItem(id, input),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["purchase-bill-items", purchaseBillId] })
+      queryClient.invalidateQueries({
+        queryKey: ["purchase-bill-items", purchaseBillId],
+      })
       queryClient.invalidateQueries({ queryKey: ["purchase-bills"] })
     },
   })
@@ -50,7 +60,9 @@ export function useDeletePurchaseBillItem(purchaseBillId: string | undefined) {
   return useMutation({
     mutationFn: (id: string) => deletePurchaseBillItem(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["purchase-bill-items", purchaseBillId] })
+      queryClient.invalidateQueries({
+        queryKey: ["purchase-bill-items", purchaseBillId],
+      })
       queryClient.invalidateQueries({ queryKey: ["purchase-bills"] })
     },
   })

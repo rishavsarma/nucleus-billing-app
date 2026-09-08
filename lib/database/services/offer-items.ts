@@ -15,6 +15,11 @@ export async function createOfferItem(input: OfferItem): Promise<OfferItem> {
 
 // No update: offer_items is a pure (offer_id, item_id) link with no other columns.
 
-export async function deleteOfferItem(offerId: string, itemId: string): Promise<void> {
-  await api.delete("/database/offer_items", { params: { offer_id: offerId, item_id: itemId } })
+export async function deleteOfferItem(
+  offerId: string,
+  itemId: string
+): Promise<void> {
+  await api.delete("/database/offer_items", {
+    params: { offer_id: offerId, item_id: itemId },
+  })
 }

@@ -1,8 +1,15 @@
 "use client"
 
 import type { ListParams } from "@/lib/database/list-params-types"
-import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { fetchCustomerById, fetchCustomersPaginated,
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query"
+import {
+  fetchCustomerById,
+  fetchCustomersPaginated,
   createCustomer,
   updateCustomer,
   deleteCustomer,

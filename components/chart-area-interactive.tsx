@@ -23,14 +23,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import {
-  ToggleGroup,
-  ToggleGroupItem,
-} from "@/components/ui/toggle-group"
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { useDashboardStats } from "@/hooks/use-dashboard-stats"
 import { Skeleton } from "@/components/ui/skeleton"
 
-export const description = "An interactive area chart showing revenue vs cash collections"
+export const description =
+  "An interactive area chart showing revenue vs cash collections"
 
 const chartConfig = {
   revenue: {
@@ -69,7 +67,7 @@ export function ChartAreaInteractive() {
       <Card className="@container/card">
         <CardHeader className="flex items-center gap-2 space-y-0 border-b py-5 sm:flex-row">
           <div className="grid flex-1 gap-1 text-center sm:text-left">
-            <Skeleton className="h-5 w-40 mb-1" />
+            <Skeleton className="mb-1 h-5 w-40" />
             <Skeleton className="h-4 w-60" />
           </div>
         </CardHeader>
@@ -97,9 +95,15 @@ export function ChartAreaInteractive() {
             variant="outline"
             className="hidden sm:inline-flex"
           >
-            <ToggleGroupItem value="7d" className="text-xs">7 Days</ToggleGroupItem>
-            <ToggleGroupItem value="30d" className="text-xs">30 Days</ToggleGroupItem>
-            <ToggleGroupItem value="90d" className="text-xs">3 Months</ToggleGroupItem>
+            <ToggleGroupItem value="7d" className="text-xs">
+              7 Days
+            </ToggleGroupItem>
+            <ToggleGroupItem value="30d" className="text-xs">
+              30 Days
+            </ToggleGroupItem>
+            <ToggleGroupItem value="90d" className="text-xs">
+              3 Months
+            </ToggleGroupItem>
           </ToggleGroup>
           <Select value={timeRange} onValueChange={setTimeRange}>
             <SelectTrigger

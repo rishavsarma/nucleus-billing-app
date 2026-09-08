@@ -1,7 +1,9 @@
 import { api } from "@/lib/axios"
 import type { InvoiceItem } from "@/lib/database/types"
 
-export async function fetchInvoiceItems(invoiceId: string): Promise<InvoiceItem[]> {
+export async function fetchInvoiceItems(
+  invoiceId: string
+): Promise<InvoiceItem[]> {
   const { data } = await api.get<InvoiceItem[]>("/database/invoice_items", {
     params: { invoice_id: invoiceId },
   })
@@ -9,7 +11,7 @@ export async function fetchInvoiceItems(invoiceId: string): Promise<InvoiceItem[
 }
 
 export async function createInvoiceItem(
-  input: Partial<InvoiceItem> & { invoice_id: string },
+  input: Partial<InvoiceItem> & { invoice_id: string }
 ): Promise<InvoiceItem> {
   const { data } = await api.post<InvoiceItem>("/database/invoice_items", input)
   return data
@@ -17,11 +19,15 @@ export async function createInvoiceItem(
 
 export async function updateInvoiceItem(
   id: string,
-  input: Partial<InvoiceItem>,
+  input: Partial<InvoiceItem>
 ): Promise<InvoiceItem> {
-  const { data } = await api.put<InvoiceItem>("/database/invoice_items", input, {
-    params: { id },
-  })
+  const { data } = await api.put<InvoiceItem>(
+    "/database/invoice_items",
+    input,
+    {
+      params: { id },
+    }
+  )
   return data
 }
 

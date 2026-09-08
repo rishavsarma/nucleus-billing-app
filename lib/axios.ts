@@ -11,5 +11,5 @@ api.interceptors.response.use(
   (error) => {
     Sentry.captureException(error)
     return Promise.reject(error)
-  },
+  }
 )

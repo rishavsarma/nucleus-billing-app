@@ -1,7 +1,23 @@
-import { Document, Font, Image, Page, StyleSheet, Text, View } from "@react-pdf/renderer"
+import {
+  Document,
+  Font,
+  Image,
+  Page,
+  StyleSheet,
+  Text,
+  View,
+} from "@react-pdf/renderer"
 
 import { amountToWords } from "@/lib/number-to-words"
-import type { Customer, Invoice, InvoiceItem, Item, Organization } from "@/lib/database/types"
+import { gstStateName } from "@/lib/gst-states"
+import type {
+  Customer,
+  Invoice,
+  InvoiceItem,
+  Item,
+  Organization,
+  OrganizationBankAccount,
+} from "@/lib/database/types"
 
 // Noto Sans, not a core PDF font — the core 14 (Helvetica etc.) don't carry
 // the ₹ (U+20B9) glyph at all, which would silently render as a blank box.
@@ -15,12 +31,22 @@ Font.register({
   ],
 })
 
-const money = (n: number) => "₹" + n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-const num = (n: number) => n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+const money = (n: number) =>
+  "₹" +
+  n.toLocaleString("en-IN", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })
+const num = (n: number) =>
+  n.toLocaleString("en-IN", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })
 // GST halves are commonly x.5 (5% -> 2.5% + 2.5%) — round to whole % only
 // when the value actually is whole, instead of always flooring/rounding to
 // 0 decimals and silently turning 2.5% into "3%".
-const formatRate = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(1))
+const formatRate = (n: number) =>
+  Number.isInteger(n) ? String(n) : n.toFixed(1)
 
 const INK = "#000000"
 const MUTED = "#555555"
@@ -62,10 +88,29 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
   },
   taxInvoiceLabel: { fontSize: 10, fontWeight: 700 },
-  originalBadge: { borderWidth: 1, borderColor: INK, paddingVertical: 2, paddingHorizontal: 6, fontSize: 6.5, fontWeight: 700 },
+  originalBadge: {
+    borderWidth: 1,
+    borderColor: INK,
+    paddingVertical: 2,
+    paddingHorizontal: 6,
+    fontSize: 6.5,
+    fontWeight: 700,
+  },
 
-  sellerRow: { flexDirection: "row", borderRightWidth: 1, borderBottomWidth: 1, borderColor: INK },
-  sellerCol: { flex: 1, flexDirection: "row", gap: 8, borderRightWidth: 1, borderColor: INK, padding: 10 },
+  sellerRow: {
+    flexDirection: "row",
+    borderRightWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: INK,
+  },
+  sellerCol: {
+    flex: 1,
+    flexDirection: "row",
+    gap: 8,
+    borderRightWidth: 1,
+    borderColor: INK,
+    padding: 10,
+  },
   logo: { width: 30, height: 30, objectFit: "contain" },
   orgName: { fontSize: 12, fontWeight: 700, marginBottom: 2 },
   smallText: { fontSize: 7.5, marginBottom: 2, color: MUTED },
@@ -77,7 +122,12 @@ const styles = StyleSheet.create({
   metaLabel: { fontSize: 6.5, color: MUTED },
   metaValue: { fontSize: 8.5, fontWeight: 700, marginBottom: 8 },
 
-  billShipRow: { flexDirection: "row", borderRightWidth: 1, borderBottomWidth: 1, borderColor: INK },
+  billShipRow: {
+    flexDirection: "row",
+    borderRightWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: INK,
+  },
   billCol: { flex: 1, borderRightWidth: 1, borderColor: INK, padding: 10 },
   shipCol: { flex: 1, padding: 10 },
   sectionLabel: { fontSize: 8, fontWeight: 700, marginBottom: 3 },
@@ -162,29 +212,83 @@ const styles = StyleSheet.create({
 
   hsnHeadRow: { flexDirection: "row", backgroundColor: PANEL },
   hsnRow: { flexDirection: "row" },
-  hsnTh: { fontSize: 6.5, fontWeight: 700, padding: 4, textAlign: "center", borderRightWidth: 1, borderBottomWidth: 1, borderColor: INK },
-  hsnTd: { fontSize: 7, padding: 4, textAlign: "right", borderRightWidth: 1, borderBottomWidth: 1, borderColor: INK },
+  hsnTh: {
+    fontSize: 6.5,
+    fontWeight: 700,
+    padding: 4,
+    textAlign: "center",
+    borderRightWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: INK,
+  },
+  hsnTd: {
+    fontSize: 7,
+    padding: 4,
+    textAlign: "right",
+    borderRightWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: INK,
+  },
   colHsn: { width: "12%", textAlign: "left" },
   colTaxable: { width: "16%" },
   colRate2: { width: "9%" },
   colTaxAmt: { width: "13%" },
   colTotalTax: { width: "28%" },
 
-  wordsBlock: { borderRightWidth: 1, borderBottomWidth: 1, borderColor: INK, padding: 10 },
-  wordsLabel: { fontSize: 8, fontWeight: 700, marginBottom: 2 },
-  wordsValue: { fontSize: 8 },
-
-  signBlock: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
+  wordsBlock: {
     borderRightWidth: 1,
     borderBottomWidth: 1,
     borderColor: INK,
     padding: 10,
-    paddingTop: 40,
+  },
+  wordsLabel: { fontSize: 8, fontWeight: 700, marginBottom: 2 },
+  wordsValue: { fontSize: 8 },
+
+  bankSignRow: {
+    flexDirection: "row",
+    borderRightWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: INK,
+  },
+  bankBlock: { flex: 1, borderRightWidth: 1, borderColor: INK, padding: 10 },
+  bankLabel: { fontSize: 8, fontWeight: 700, marginBottom: 3 },
+  bankLine: { fontSize: 7.5, marginBottom: 1 },
+  signBlock: {
+    flex: 1,
+    justifyContent: "flex-end",
+    alignItems: "flex-end",
+    padding: 10,
+    paddingTop: 12,
+  },
+  signatureImage: {
+    width: 90,
+    height: 32,
+    objectFit: "contain",
+    marginBottom: 2,
   },
   signText: { fontSize: 7.5, textAlign: "center" },
   signOrg: { fontSize: 8, fontWeight: 700, textAlign: "center", marginTop: 2 },
+
+  roundOffCell: {
+    width: "86%",
+    fontSize: 7.5,
+    fontWeight: 700,
+    padding: 5,
+    textAlign: "right",
+    borderRightWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: INK,
+  },
+  roundOffAmountCell: {
+    width: "14%",
+    fontSize: 7.5,
+    fontWeight: 700,
+    padding: 5,
+    textAlign: "right",
+    borderRightWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: INK,
+  },
 })
 
 type BillingAddress = {
@@ -197,11 +301,18 @@ type BillingAddress = {
 
 function formatAddress(address: BillingAddress | null | undefined): string[] {
   if (!address) return []
-  const line2 = [address.city, address.state, address.postal_code].filter(Boolean).join(", ")
-  return [address.line1, line2, address.country].filter((line): line is string => !!line)
+  const line2 = [address.city, address.state, address.postal_code]
+    .filter(Boolean)
+    .join(", ")
+  return [address.line1, line2, address.country].filter(
+    (line): line is string => !!line
+  )
 }
 
-function splitDescription(description: string): { name: string; sublines: string[] } {
+function splitDescription(description: string): {
+  name: string
+  sublines: string[]
+} {
   const [name, ...sublines] = description.split("\n").map((line) => line.trim())
   return { name: name || description, sublines: sublines.filter(Boolean) }
 }
@@ -236,6 +347,14 @@ export type InvoicePdfLabels = {
   totalTaxAmountLabel: string
   amountInWordsLabel: string
   authorisedSignatoryLabel: string
+  igstLabel: string
+  igstColumnLabel: string
+  roundOffLabel: string
+  bankDetailsLabel: string
+  accountHolderLabel: string
+  accountNumberLabel: string
+  ifscLabel: string
+  bankNameLabel: string
 }
 
 export function InvoicePdfDocument({
@@ -244,6 +363,7 @@ export function InvoicePdfDocument({
   organization,
   lineItems,
   items,
+  bankAccount,
   labels,
   watermarkText,
 }: {
@@ -252,18 +372,40 @@ export function InvoicePdfDocument({
   organization: Organization | undefined
   lineItems: InvoiceItem[]
   items: Item[] | undefined
+  bankAccount?: OrganizationBankAccount | null
   labels: InvoicePdfLabels
   watermarkText?: string | null
 }) {
-  const billingAddress = (customer?.billing_address ?? null) as BillingAddress | null
+  const billingAddress = (customer?.billing_address ??
+    null) as BillingAddress | null
   const addressLines = formatAddress(billingAddress)
-  const placeOfSupply = billingAddress?.state || organization?.state_code || "—"
+  // Prefer the document's own recorded place of supply (real GST data) over
+  // the old best-effort guess from the customer's billing address — that
+  // guess stays as a fallback only for invoices created before this field
+  // existed.
+  const placeOfSupply =
+    gstStateName(invoice.place_of_supply) ||
+    billingAddress?.state ||
+    organization?.state_code ||
+    "—"
+  // Inter-state only when both sides of the comparison are actually known —
+  // an invoice with no place_of_supply recorded (created before this field
+  // existed) keeps the original CGST+SGST assumption rather than silently
+  // becoming an (incorrect) IGST invoice.
+  const isInterState =
+    !!invoice.place_of_supply &&
+    !!organization?.state_code &&
+    invoice.place_of_supply !== organization.state_code
 
-  const cgst = invoice.tax_total / 2
-  const sgst = invoice.tax_total / 2
+  const cgst = isInterState ? 0 : invoice.tax_total / 2
+  const sgst = isInterState ? 0 : invoice.tax_total / 2
+  const igst = isInterState ? invoice.tax_total : 0
   const totalQty = lineItems.reduce((sum, line) => sum + line.quantity, 0)
 
-  const hsnGroups = new Map<string, { hsnSac: string; rate: number; taxable: number; tax: number }>()
+  const hsnGroups = new Map<
+    string,
+    { hsnSac: string; rate: number; taxable: number; tax: number }
+  >()
   for (const line of lineItems) {
     const item = items?.find((i) => i.id === line.item_id)
     const hsnSac = item?.hsn_sac_code || "-"
@@ -273,7 +415,12 @@ export function InvoicePdfDocument({
       existing.taxable += line.line_subtotal
       existing.tax += line.line_tax
     } else {
-      hsnGroups.set(key, { hsnSac, rate: line.tax_rate, taxable: line.line_subtotal, tax: line.line_tax })
+      hsnGroups.set(key, {
+        hsnSac,
+        rate: line.tax_rate,
+        taxable: line.line_subtotal,
+        tax: line.line_tax,
+      })
     }
   }
   const hsnRows = Array.from(hsnGroups.values())
@@ -289,16 +436,22 @@ export function InvoicePdfDocument({
         <View style={styles.outer}>
           <View style={styles.headerRow}>
             <Text style={styles.taxInvoiceLabel}>{labels.taxInvoice}</Text>
-            <Text style={styles.originalBadge}>{labels.originalForRecipient}</Text>
+            <Text style={styles.originalBadge}>
+              {labels.originalForRecipient}
+            </Text>
           </View>
 
           <View style={styles.sellerRow}>
             <View style={styles.sellerCol}>
-              {/* eslint-disable-next-line jsx-a11y/alt-text */}
-              {organization?.pdf_logo_url ? <Image src={organization.pdf_logo_url} style={styles.logo} /> : null}
+              {organization?.pdf_logo_url ? (
+                // eslint-disable-next-line jsx-a11y/alt-text
+                <Image src={organization.pdf_logo_url} style={styles.logo} />
+              ) : null}
               <View>
                 <Text style={styles.orgName}>{organization?.name ?? "—"}</Text>
-                {organization?.address ? <Text style={styles.smallText}>{organization.address}</Text> : null}
+                {organization?.address ? (
+                  <Text style={styles.smallText}>{organization.address}</Text>
+                ) : null}
                 <View style={styles.inlineRow}>
                   {organization?.gstin ? (
                     <Text style={styles.inlineText}>
@@ -307,7 +460,9 @@ export function InvoicePdfDocument({
                   ) : null}
                   {organization?.phone ? (
                     <Text style={styles.inlineText}>
-                      <Text style={styles.inlineLabel}>{labels.mobileLabel}: </Text>
+                      <Text style={styles.inlineLabel}>
+                        {labels.mobileLabel}:{" "}
+                      </Text>
                       {organization.phone}
                     </Text>
                   ) : null}
@@ -318,13 +473,19 @@ export function InvoicePdfDocument({
                       {labels.panLabel}: {organization.pan}
                     </Text>
                   ) : null}
-                  {organization?.billing_email ? <Text style={styles.inlineText}>{organization.billing_email}</Text> : null}
+                  {organization?.billing_email ? (
+                    <Text style={styles.inlineText}>
+                      {organization.billing_email}
+                    </Text>
+                  ) : null}
                 </View>
               </View>
             </View>
             <View style={styles.metaCol}>
               <Text style={styles.metaLabel}>{labels.invoiceNoLabel}</Text>
-              <Text style={styles.metaValue}>{invoice.invoice_number ?? "—"}</Text>
+              <Text style={styles.metaValue}>
+                {invoice.invoice_number ?? "—"}
+              </Text>
               <Text style={styles.metaLabel}>{labels.invoiceDateLabel}</Text>
               <Text style={styles.metaValue}>{invoice.issue_date}</Text>
             </View>
@@ -361,10 +522,14 @@ export function InvoicePdfDocument({
 
           <View style={styles.itemsHeadRow}>
             <Text style={[styles.th, styles.colSno]}>{labels.snoLabel}</Text>
-            <Text style={[styles.th, styles.colItems]}>{labels.itemsLabel}</Text>
+            <Text style={[styles.th, styles.colItems]}>
+              {labels.itemsLabel}
+            </Text>
             <Text style={[styles.th, styles.colQty]}>{labels.qtyLabel}</Text>
             <Text style={[styles.th, styles.colRate]}>{labels.rateLabel}</Text>
-            <Text style={[styles.th, styles.colAmount]}>{labels.amountLabel}</Text>
+            <Text style={[styles.th, styles.colAmount]}>
+              {labels.amountLabel}
+            </Text>
           </View>
           {lineItems.map((line, index) => {
             const { name, sublines } = splitDescription(line.description)
@@ -382,63 +547,238 @@ export function InvoicePdfDocument({
                 <Text style={[styles.td, styles.colQty]}>
                   {line.quantity} {labels.unitAbbrev}
                 </Text>
-                <Text style={[styles.td, styles.colRate]}>{num(line.unit_price)}</Text>
-                <Text style={[styles.td, styles.colAmount]}>{num(line.line_subtotal)}</Text>
+                <Text style={[styles.td, styles.colRate]}>
+                  {num(line.unit_price)}
+                </Text>
+                <Text style={[styles.td, styles.colAmount]}>
+                  {num(line.line_subtotal)}
+                </Text>
               </View>
             )
           })}
-          <View style={styles.taxSummaryRow}>
-            <Text style={styles.taxLabelCell}>{labels.cgstLabel}</Text>
-            <Text style={styles.taxAmountCell}>{money(cgst)}</Text>
-          </View>
-          <View style={styles.taxSummaryRow}>
-            <Text style={styles.taxLabelCell}>{labels.sgstLabel}</Text>
-            <Text style={styles.taxAmountCell}>{money(sgst)}</Text>
-          </View>
+          {isInterState ? (
+            <View style={styles.taxSummaryRow}>
+              <Text style={styles.taxLabelCell}>{labels.igstLabel}</Text>
+              <Text style={styles.taxAmountCell}>{money(igst)}</Text>
+            </View>
+          ) : (
+            <>
+              <View style={styles.taxSummaryRow}>
+                <Text style={styles.taxLabelCell}>{labels.cgstLabel}</Text>
+                <Text style={styles.taxAmountCell}>{money(cgst)}</Text>
+              </View>
+              <View style={styles.taxSummaryRow}>
+                <Text style={styles.taxLabelCell}>{labels.sgstLabel}</Text>
+                <Text style={styles.taxAmountCell}>{money(sgst)}</Text>
+              </View>
+            </>
+          )}
+          {invoice.round_off_amount !== 0 ? (
+            <View style={styles.taxSummaryRow}>
+              <Text style={styles.roundOffCell}>{labels.roundOffLabel}</Text>
+              <Text style={styles.roundOffAmountCell}>
+                {invoice.round_off_amount > 0 ? "+" : "−"}
+                {money(Math.abs(invoice.round_off_amount))}
+              </Text>
+            </View>
+          ) : null}
           <View style={styles.totalRow}>
             <Text style={styles.totalLabelCell}>{labels.totalLabel}</Text>
             <Text style={styles.totalQtyCell}>{totalQty}</Text>
             <Text style={styles.totalAmountCell}>{money(invoice.total)}</Text>
           </View>
 
-          <View style={styles.hsnHeadRow}>
-            <Text style={[styles.hsnTh, styles.colHsn]}>{labels.hsnSacLabel}</Text>
-            <Text style={[styles.hsnTh, styles.colTaxable]}>{labels.taxableValueLabel}</Text>
-            <Text style={[styles.hsnTh, styles.colRate2]}>{labels.cgstColumnLabel} {labels.rateColumnLabel}</Text>
-            <Text style={[styles.hsnTh, styles.colTaxAmt]}>{labels.cgstColumnLabel} {labels.amountColumnLabel}</Text>
-            <Text style={[styles.hsnTh, styles.colRate2]}>{labels.sgstColumnLabel} {labels.rateColumnLabel}</Text>
-            <Text style={[styles.hsnTh, styles.colTaxAmt]}>{labels.sgstColumnLabel} {labels.amountColumnLabel}</Text>
-            <Text style={[styles.hsnTh, styles.colTotalTax]}>{labels.totalTaxAmountLabel}</Text>
-          </View>
-          {hsnRows.map((row) => (
-            <View key={row.hsnSac + row.rate} style={styles.hsnRow}>
-              <Text style={[styles.hsnTd, styles.colHsn]}>{row.hsnSac}</Text>
-              <Text style={[styles.hsnTd, styles.colTaxable]}>{num(row.taxable)}</Text>
-              <Text style={[styles.hsnTd, styles.colRate2]}>{formatRate(row.rate / 2)}%</Text>
-              <Text style={[styles.hsnTd, styles.colTaxAmt]}>{num(row.tax / 2)}</Text>
-              <Text style={[styles.hsnTd, styles.colRate2]}>{formatRate(row.rate / 2)}%</Text>
-              <Text style={[styles.hsnTd, styles.colTaxAmt]}>{num(row.tax / 2)}</Text>
-              <Text style={[styles.hsnTd, styles.colTotalTax]}>{num(row.tax)}</Text>
-            </View>
-          ))}
-          <View style={[styles.hsnRow, { backgroundColor: PANEL }]}>
-            <Text style={[styles.hsnTd, styles.colHsn, { fontWeight: 700 }]}>{labels.totalLabel}</Text>
-            <Text style={[styles.hsnTd, styles.colTaxable, { fontWeight: 700 }]}>{num(invoice.subtotal)}</Text>
-            <Text style={[styles.hsnTd, styles.colRate2]} />
-            <Text style={[styles.hsnTd, styles.colTaxAmt, { fontWeight: 700 }]}>{num(cgst)}</Text>
-            <Text style={[styles.hsnTd, styles.colRate2]} />
-            <Text style={[styles.hsnTd, styles.colTaxAmt, { fontWeight: 700 }]}>{num(sgst)}</Text>
-            <Text style={[styles.hsnTd, styles.colTotalTax, { fontWeight: 700 }]}>{num(invoice.tax_total)}</Text>
-          </View>
+          {isInterState ? (
+            <>
+              <View style={styles.hsnHeadRow}>
+                <Text style={[styles.hsnTh, styles.colHsn]}>
+                  {labels.hsnSacLabel}
+                </Text>
+                <Text style={[styles.hsnTh, styles.colTaxable]}>
+                  {labels.taxableValueLabel}
+                </Text>
+                <Text style={[styles.hsnTh, { width: "18%" }]}>
+                  {labels.igstColumnLabel} {labels.rateColumnLabel}
+                </Text>
+                <Text style={[styles.hsnTh, { width: "26%" }]}>
+                  {labels.igstColumnLabel} {labels.amountColumnLabel}
+                </Text>
+                <Text style={[styles.hsnTh, styles.colTotalTax]}>
+                  {labels.totalTaxAmountLabel}
+                </Text>
+              </View>
+              {hsnRows.map((row) => (
+                <View key={row.hsnSac + row.rate} style={styles.hsnRow}>
+                  <Text style={[styles.hsnTd, styles.colHsn]}>
+                    {row.hsnSac}
+                  </Text>
+                  <Text style={[styles.hsnTd, styles.colTaxable]}>
+                    {num(row.taxable)}
+                  </Text>
+                  <Text style={[styles.hsnTd, { width: "18%" }]}>
+                    {formatRate(row.rate)}%
+                  </Text>
+                  <Text style={[styles.hsnTd, { width: "26%" }]}>
+                    {num(row.tax)}
+                  </Text>
+                  <Text style={[styles.hsnTd, styles.colTotalTax]}>
+                    {num(row.tax)}
+                  </Text>
+                </View>
+              ))}
+              <View style={[styles.hsnRow, { backgroundColor: PANEL }]}>
+                <Text
+                  style={[styles.hsnTd, styles.colHsn, { fontWeight: 700 }]}
+                >
+                  {labels.totalLabel}
+                </Text>
+                <Text
+                  style={[styles.hsnTd, styles.colTaxable, { fontWeight: 700 }]}
+                >
+                  {num(invoice.subtotal)}
+                </Text>
+                <Text style={[styles.hsnTd, { width: "18%" }]} />
+                <Text style={[styles.hsnTd, { width: "26%", fontWeight: 700 }]}>
+                  {num(igst)}
+                </Text>
+                <Text
+                  style={[
+                    styles.hsnTd,
+                    styles.colTotalTax,
+                    { fontWeight: 700 },
+                  ]}
+                >
+                  {num(invoice.tax_total)}
+                </Text>
+              </View>
+            </>
+          ) : (
+            <>
+              <View style={styles.hsnHeadRow}>
+                <Text style={[styles.hsnTh, styles.colHsn]}>
+                  {labels.hsnSacLabel}
+                </Text>
+                <Text style={[styles.hsnTh, styles.colTaxable]}>
+                  {labels.taxableValueLabel}
+                </Text>
+                <Text style={[styles.hsnTh, styles.colRate2]}>
+                  {labels.cgstColumnLabel} {labels.rateColumnLabel}
+                </Text>
+                <Text style={[styles.hsnTh, styles.colTaxAmt]}>
+                  {labels.cgstColumnLabel} {labels.amountColumnLabel}
+                </Text>
+                <Text style={[styles.hsnTh, styles.colRate2]}>
+                  {labels.sgstColumnLabel} {labels.rateColumnLabel}
+                </Text>
+                <Text style={[styles.hsnTh, styles.colTaxAmt]}>
+                  {labels.sgstColumnLabel} {labels.amountColumnLabel}
+                </Text>
+                <Text style={[styles.hsnTh, styles.colTotalTax]}>
+                  {labels.totalTaxAmountLabel}
+                </Text>
+              </View>
+              {hsnRows.map((row) => (
+                <View key={row.hsnSac + row.rate} style={styles.hsnRow}>
+                  <Text style={[styles.hsnTd, styles.colHsn]}>
+                    {row.hsnSac}
+                  </Text>
+                  <Text style={[styles.hsnTd, styles.colTaxable]}>
+                    {num(row.taxable)}
+                  </Text>
+                  <Text style={[styles.hsnTd, styles.colRate2]}>
+                    {formatRate(row.rate / 2)}%
+                  </Text>
+                  <Text style={[styles.hsnTd, styles.colTaxAmt]}>
+                    {num(row.tax / 2)}
+                  </Text>
+                  <Text style={[styles.hsnTd, styles.colRate2]}>
+                    {formatRate(row.rate / 2)}%
+                  </Text>
+                  <Text style={[styles.hsnTd, styles.colTaxAmt]}>
+                    {num(row.tax / 2)}
+                  </Text>
+                  <Text style={[styles.hsnTd, styles.colTotalTax]}>
+                    {num(row.tax)}
+                  </Text>
+                </View>
+              ))}
+              <View style={[styles.hsnRow, { backgroundColor: PANEL }]}>
+                <Text
+                  style={[styles.hsnTd, styles.colHsn, { fontWeight: 700 }]}
+                >
+                  {labels.totalLabel}
+                </Text>
+                <Text
+                  style={[styles.hsnTd, styles.colTaxable, { fontWeight: 700 }]}
+                >
+                  {num(invoice.subtotal)}
+                </Text>
+                <Text style={[styles.hsnTd, styles.colRate2]} />
+                <Text
+                  style={[styles.hsnTd, styles.colTaxAmt, { fontWeight: 700 }]}
+                >
+                  {num(cgst)}
+                </Text>
+                <Text style={[styles.hsnTd, styles.colRate2]} />
+                <Text
+                  style={[styles.hsnTd, styles.colTaxAmt, { fontWeight: 700 }]}
+                >
+                  {num(sgst)}
+                </Text>
+                <Text
+                  style={[
+                    styles.hsnTd,
+                    styles.colTotalTax,
+                    { fontWeight: 700 },
+                  ]}
+                >
+                  {num(invoice.tax_total)}
+                </Text>
+              </View>
+            </>
+          )}
 
           <View style={styles.wordsBlock}>
             <Text style={styles.wordsLabel}>{labels.amountInWordsLabel}</Text>
-            <Text style={styles.wordsValue}>{amountToWords(invoice.total)}</Text>
+            <Text style={styles.wordsValue}>
+              {amountToWords(invoice.total)}
+            </Text>
           </View>
 
-          <View style={styles.signBlock}>
-            <View>
-              <Text style={styles.signText}>{labels.authorisedSignatoryLabel}</Text>
+          <View style={styles.bankSignRow}>
+            <View style={styles.bankBlock}>
+              {bankAccount ? (
+                <>
+                  <Text style={styles.bankLabel}>
+                    {labels.bankDetailsLabel}
+                  </Text>
+                  <Text style={styles.bankLine}>
+                    {labels.accountHolderLabel}:{" "}
+                    {bankAccount.account_holder_name}
+                  </Text>
+                  <Text style={styles.bankLine}>
+                    {labels.bankNameLabel}: {bankAccount.bank_name}
+                  </Text>
+                  <Text style={styles.bankLine}>
+                    {labels.accountNumberLabel}: {bankAccount.account_number}
+                  </Text>
+                  <Text style={styles.bankLine}>
+                    {labels.ifscLabel}: {bankAccount.ifsc_code}
+                  </Text>
+                </>
+              ) : null}
+            </View>
+            <View style={styles.signBlock}>
+              {organization?.signature_image ? (
+                // eslint-disable-next-line jsx-a11y/alt-text
+                <Image
+                  src={organization.signature_image}
+                  style={styles.signatureImage}
+                />
+              ) : null}
+              <Text style={styles.signText}>
+                {labels.authorisedSignatoryLabel}
+              </Text>
               <Text style={styles.signOrg}>{organization?.name ?? ""}</Text>
             </View>
           </View>

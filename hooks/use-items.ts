@@ -1,8 +1,19 @@
 "use client"
 
 import type { ListParams } from "@/lib/database/list-params-types"
-import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { fetchItemById, fetchItemsPaginated, createItem, updateItem, deleteItem } from "@/lib/database/services/items"
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query"
+import {
+  fetchItemById,
+  fetchItemsPaginated,
+  createItem,
+  updateItem,
+  deleteItem,
+} from "@/lib/database/services/items"
 import type { Item } from "@/lib/database/types"
 
 /** Paginated + searched list — use in list-view table pages. */
@@ -34,7 +45,8 @@ export function useCreateItem() {
 export function useUpdateItem() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, input }: { id: string; input: Partial<Item> }) => updateItem(id, input),
+    mutationFn: ({ id, input }: { id: string; input: Partial<Item> }) =>
+      updateItem(id, input),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["items"] }),
   })
 }

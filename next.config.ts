@@ -4,7 +4,38 @@ import createNextIntlPlugin from "next-intl/plugin"
 
 const withNextIntl = createNextIntlPlugin("./i18n/request.ts")
 
-const nextConfig: NextConfig = {}
+// Standard hardening headers — applied to every response. HSTS is safe to
+// set unconditionally here (Vercel/most hosts only serve HTTPS in
+// production; the header is simply inert over plain HTTP in local dev).
+// CSP is deliberately not set here: this app loads Supabase, Sentry, and
+// PDF font assets from multiple origins, and a wrong CSP silently breaks
+// those rather than failing loudly — worth its own dedicated pass with a
+// real audit of every external origin in use, not a guess bundled into a
+// broader hardening sweep.
+const securityHeaders = [
+  { key: "X-Frame-Options", value: "DENY" },
+  { key: "X-Content-Type-Options", value: "nosniff" },
+  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+  {
+    key: "Permissions-Policy",
+    value: "camera=(), microphone=(), geolocation=()",
+  },
+  {
+    key: "Strict-Transport-Security",
+    value: "max-age=63072000; includeSubDomains; preload",
+  },
+]
+
+const nextConfig: NextConfig = {
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: securityHeaders,
+      },
+    ]
+  },
+}
 
 export default withSentryConfig(withNextIntl(nextConfig), {
   // For all available options, see:

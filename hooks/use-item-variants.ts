@@ -1,9 +1,15 @@
 "use client"
 
 import { useQuery } from "@tanstack/react-query"
-import { fetchItemVariants, fetchItemVariantsBulk } from "@/lib/database/services/item-variants"
+import {
+  fetchItemVariants,
+  fetchItemVariantsBulk,
+} from "@/lib/database/services/item-variants"
 
-export function useItemVariants(itemId: string | undefined, warehouseId?: string) {
+export function useItemVariants(
+  itemId: string | undefined,
+  warehouseId?: string
+) {
   return useQuery({
     queryKey: ["item-variants", itemId, warehouseId],
     queryFn: () => fetchItemVariants(itemId!, warehouseId),

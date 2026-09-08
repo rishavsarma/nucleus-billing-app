@@ -7,7 +7,9 @@ export default function DashboardPage() {
   return (
     <div className="space-y-1">
       <h1 className="text-2xl font-semibold">{t("dashboard")}</h1>
-      <p className="text-muted-foreground text-sm">{tPlaceholder("comingSoon")}</p>
+      <p className="text-sm text-muted-foreground">
+        {tPlaceholder("comingSoon")}
+      </p>
     </div>
   )
 }

@@ -88,13 +88,15 @@ export function OfferForm({
           <h2 className="text-sm font-semibold">{t("detailsTitle")}</h2>
         </div>
         <div className="flex flex-col gap-4 p-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field>
               <FieldLabel htmlFor="offer-name">{t("nameLabel")}</FieldLabel>
               <Input id="offer-name" {...register("name")} />
             </Field>
             <Field>
-              <FieldLabel htmlFor="offer-description">{t("descriptionLabel")}</FieldLabel>
+              <FieldLabel htmlFor="offer-description">
+                {t("descriptionLabel")}
+              </FieldLabel>
               <Input id="offer-description" {...register("description")} />
             </Field>
           </div>
@@ -112,18 +114,31 @@ export function OfferForm({
               type="single"
               variant="outline"
               value={discountType}
-              onValueChange={(value) => value && setValue("discount_type", value as "percentage" | "flat")}
+              onValueChange={(value) =>
+                value &&
+                setValue("discount_type", value as "percentage" | "flat")
+              }
               className="justify-start"
             >
-              <ToggleGroupItem value="percentage">{t("percentage")}</ToggleGroupItem>
+              <ToggleGroupItem value="percentage">
+                {t("percentage")}
+              </ToggleGroupItem>
               <ToggleGroupItem value="flat">{t("flatAmount")}</ToggleGroupItem>
             </ToggleGroup>
           </Field>
           <Field className="max-w-xs">
             <FieldLabel htmlFor="offer-value">
-              {discountType === "percentage" ? t("valuePercentLabel") : t("valueFlatLabel")}
+              {discountType === "percentage"
+                ? t("valuePercentLabel")
+                : t("valueFlatLabel")}
             </FieldLabel>
-            <Input id="offer-value" type="number" step="0.01" min={0} {...register("value", { valueAsNumber: true })} />
+            <Input
+              id="offer-value"
+              type="number"
+              step="0.01"
+              min={0}
+              {...register("value", { valueAsNumber: true })}
+            />
           </Field>
         </div>
       </div>
@@ -131,25 +146,35 @@ export function OfferForm({
       <div className="rounded-xl bg-card ring-1 ring-foreground/10">
         <div className="border-b px-4 py-3">
           <h2 className="text-sm font-semibold">{t("scopeTitle")}</h2>
-          <p className="text-xs text-muted-foreground">{t("scopeDescription")}</p>
+          <p className="text-xs text-muted-foreground">
+            {t("scopeDescription")}
+          </p>
         </div>
         <div className="flex flex-col gap-4 p-4">
           <Field orientation="horizontal">
-            <FieldLabel htmlFor="offer-applies-all">{t("appliesToAllLabel")}</FieldLabel>
+            <FieldLabel htmlFor="offer-applies-all">
+              {t("appliesToAllLabel")}
+            </FieldLabel>
             <Switch
               id="offer-applies-all"
               checked={appliesToAll}
-              onCheckedChange={(checked) => setValue("applies_to_all_items", checked)}
+              onCheckedChange={(checked) =>
+                setValue("applies_to_all_items", checked)
+              }
             />
           </Field>
           {!appliesToAll ? itemPicker : null}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field>
-              <FieldLabel htmlFor="offer-starts">{t("startsOnLabel")}</FieldLabel>
+              <FieldLabel htmlFor="offer-starts">
+                {t("startsOnLabel")}
+              </FieldLabel>
               <DatePicker
                 id="offer-starts"
                 value={startsAt}
-                onChange={(value) => setValue("starts_at", value, { shouldValidate: true })}
+                onChange={(value) =>
+                  setValue("starts_at", value, { shouldValidate: true })
+                }
                 clearable
               />
             </Field>
@@ -158,7 +183,9 @@ export function OfferForm({
               <DatePicker
                 id="offer-ends"
                 value={endsAt}
-                onChange={(value) => setValue("ends_at", value, { shouldValidate: true })}
+                onChange={(value) =>
+                  setValue("ends_at", value, { shouldValidate: true })
+                }
                 clearable
               />
             </Field>
@@ -166,9 +193,15 @@ export function OfferForm({
           <Field orientation="horizontal">
             <FieldLabel htmlFor="offer-active">
               {t("activeLabel")}
-              <span className="block text-xs font-normal text-muted-foreground">{t("activeHint")}</span>
+              <span className="block text-xs font-normal text-muted-foreground">
+                {t("activeHint")}
+              </span>
             </FieldLabel>
-            <Switch id="offer-active" checked={isActive} onCheckedChange={(checked) => setValue("is_active", checked)} />
+            <Switch
+              id="offer-active"
+              checked={isActive}
+              onCheckedChange={(checked) => setValue("is_active", checked)}
+            />
           </Field>
         </div>
       </div>

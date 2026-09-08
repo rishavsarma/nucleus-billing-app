@@ -57,18 +57,42 @@ export const NAV_DATA: NavGroupData[] = [
     items: [
       { titleKey: "billing", url: routes.sales.billing, icon: ScanLine },
       { titleKey: "invoices", url: routes.sales.invoices.list, icon: FileText },
-      { titleKey: "creditNotes", url: routes.sales.creditNotes.list, icon: FileMinus2 },
-      { titleKey: "salesReturns", url: routes.sales.salesReturns.list, icon: PackageX },
+      {
+        titleKey: "creditNotes",
+        url: routes.sales.creditNotes.list,
+        icon: FileMinus2,
+      },
+      {
+        titleKey: "salesReturns",
+        url: routes.sales.salesReturns.list,
+        icon: PackageX,
+      },
       { titleKey: "payments", url: routes.sales.payments, icon: Wallet },
-      { titleKey: "installments", url: routes.sales.installments, icon: CalendarClock },
+      {
+        titleKey: "installments",
+        url: routes.sales.installments,
+        icon: CalendarClock,
+      },
     ],
   },
   {
     labelKey: "purchases",
     items: [
-      { titleKey: "bills", url: routes.purchases.bills.list, icon: ShoppingCart },
-      { titleKey: "debitNotes", url: routes.purchases.debitNotes.list, icon: FilePlus2 },
-      { titleKey: "purchaseReturns", url: routes.purchases.purchaseReturns.list, icon: PackageX },
+      {
+        titleKey: "bills",
+        url: routes.purchases.bills.list,
+        icon: ShoppingCart,
+      },
+      {
+        titleKey: "debitNotes",
+        url: routes.purchases.debitNotes.list,
+        icon: FilePlus2,
+      },
+      {
+        titleKey: "purchaseReturns",
+        url: routes.purchases.purchaseReturns.list,
+        icon: PackageX,
+      },
       { titleKey: "payments", url: routes.purchases.payments, icon: Wallet },
     ],
   },
@@ -77,15 +101,27 @@ export const NAV_DATA: NavGroupData[] = [
     items: [
       { titleKey: "items", url: routes.catalog.items.list, icon: Tag },
       { titleKey: "taxRates", url: routes.catalog.taxRates, icon: Percent },
-      { titleKey: "warehouses", url: routes.catalog.warehouses, icon: Warehouse },
+      {
+        titleKey: "warehouses",
+        url: routes.catalog.warehouses,
+        icon: Warehouse,
+      },
       { titleKey: "staff", url: routes.catalog.staff, icon: HardHat },
-      { titleKey: "offers", url: routes.catalog.offers.list, icon: BadgePercent },
+      {
+        titleKey: "offers",
+        url: routes.catalog.offers.list,
+        icon: BadgePercent,
+      },
     ],
   },
   {
     labelKey: "parties",
     items: [
-      { titleKey: "customers", url: routes.parties.customers.list, icon: Users },
+      {
+        titleKey: "customers",
+        url: routes.parties.customers.list,
+        icon: Users,
+      },
       { titleKey: "vendors", url: routes.parties.vendors.list, icon: Truck },
     ],
   },
@@ -93,30 +129,52 @@ export const NAV_DATA: NavGroupData[] = [
     labelKey: "inventory",
     items: [
       { titleKey: "stock", url: routes.inventory.stock, icon: Boxes },
-      { titleKey: "movements", url: routes.inventory.movements.list, icon: ArrowLeftRight },
+      {
+        titleKey: "movements",
+        url: routes.inventory.movements.list,
+        icon: ArrowLeftRight,
+      },
     ],
   },
   {
     labelKey: "settings",
     items: [
-      { titleKey: "organization", url: routes.settings.organization, icon: Building2 },
+      {
+        titleKey: "organization",
+        url: routes.settings.organization,
+        icon: Building2,
+      },
       { titleKey: "members", url: routes.settings.members, icon: UserCog },
       { titleKey: "addons", url: routes.settings.addons, icon: Puzzle },
-      { titleKey: "pdfWatermarks", url: routes.settings.pdfWatermarks, icon: Stamp },
+      {
+        titleKey: "pdfWatermarks",
+        url: routes.settings.pdfWatermarks,
+        icon: Stamp,
+      },
     ],
   },
   {
     labelKey: "admin",
     items: [
-      { titleKey: "organizations", url: routes.admin.organizations.list, icon: Building2 },
-      { titleKey: "superadmins", url: routes.admin.superadmins, icon: ShieldCheck },
+      {
+        titleKey: "organizations",
+        url: routes.admin.organizations.list,
+        icon: Building2,
+      },
+      {
+        titleKey: "superadmins",
+        url: routes.admin.superadmins,
+        icon: ShieldCheck,
+      },
     ],
   },
 ]
 
 /** Finds the nav group/item whose url is the longest prefix match of `pathname`
  * (so a detail page like /parties/customers/<id> still resolves to "Customers"). */
-export function matchNavEntry(pathname: string): { group: NavGroupData; item: NavItemData } | null {
+export function matchNavEntry(
+  pathname: string
+): { group: NavGroupData; item: NavItemData } | null {
   let best: { group: NavGroupData; item: NavItemData } | null = null
   for (const group of NAV_DATA) {
     for (const item of group.items) {

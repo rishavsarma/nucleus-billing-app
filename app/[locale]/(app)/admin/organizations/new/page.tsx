@@ -9,7 +9,12 @@ import { z } from "zod"
 
 import { Link, useRouter } from "@/i18n/navigation"
 import { Button } from "@/components/ui/button"
-import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field"
+import {
+  Field,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { useCreateOrganization } from "@/hooks/use-organizations"
 import { routes } from "@/lib/routes"
@@ -28,10 +33,16 @@ export default function NewOrganizationPage() {
   const router = useRouter()
   const createOrganization = useCreateOrganization()
 
-  const { register, handleSubmit, formState } = useForm<NewOrganizationFormValues>({
-    resolver: zodResolver(newOrganizationSchema),
-    defaultValues: { name: "", slug: "", billing_email: "", default_currency: "INR" },
-  })
+  const { register, handleSubmit, formState } =
+    useForm<NewOrganizationFormValues>({
+      resolver: zodResolver(newOrganizationSchema),
+      defaultValues: {
+        name: "",
+        slug: "",
+        billing_email: "",
+        default_currency: "INR",
+      },
+    })
 
   function onSubmit(values: NewOrganizationFormValues) {
     createOrganization.mutate(
@@ -47,7 +58,7 @@ export default function NewOrganizationPage() {
           router.push(routes.admin.organizations.detail(organization.id))
         },
         onError: () => toast.error(tCommon("genericError")),
-      },
+      }
     )
   }
 
@@ -61,35 +72,60 @@ export default function NewOrganizationPage() {
         {t("backToList")}
       </Link>
       <h1 className="text-2xl font-semibold">{t("newOrganization")}</h1>
-      <p className="mb-4 text-sm text-muted-foreground">{t("createDescription")}</p>
+      <p className="mb-4 text-sm text-muted-foreground">
+        {t("createDescription")}
+      </p>
 
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-6">
         <div className="rounded-xl bg-card ring-1 ring-foreground/10">
           <div className="border-b px-4 py-3">
             <h2 className="text-sm font-semibold">{t("basicDetailsTitle")}</h2>
-            <p className="text-xs text-muted-foreground">{t("basicDetailsDescription")}</p>
+            <p className="text-xs text-muted-foreground">
+              {t("basicDetailsDescription")}
+            </p>
           </div>
           <div className="p-4">
             <FieldGroup>
               <div className="grid grid-cols-2 gap-4">
                 <Field data-invalid={!!formState.errors.name}>
-                  <FieldLabel htmlFor="new-org-name">{t("nameLabel")}</FieldLabel>
-                  <Input id="new-org-name" {...register("name")} aria-invalid={!!formState.errors.name} />
-                  {formState.errors.name ? <FieldError>{tCommon("required")}</FieldError> : null}
+                  <FieldLabel htmlFor="new-org-name">
+                    {t("nameLabel")}
+                  </FieldLabel>
+                  <Input
+                    id="new-org-name"
+                    {...register("name")}
+                    aria-invalid={!!formState.errors.name}
+                  />
+                  {formState.errors.name ? (
+                    <FieldError>{tCommon("required")}</FieldError>
+                  ) : null}
                 </Field>
                 <Field>
-                  <FieldLabel htmlFor="new-org-slug">{t("slugLabel")}</FieldLabel>
+                  <FieldLabel htmlFor="new-org-slug">
+                    {t("slugLabel")}
+                  </FieldLabel>
                   <Input id="new-org-slug" {...register("slug")} />
                 </Field>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <Field>
-                  <FieldLabel htmlFor="new-org-billing-email">{t("billingEmailLabel")}</FieldLabel>
-                  <Input id="new-org-billing-email" type="email" {...register("billing_email")} />
+                  <FieldLabel htmlFor="new-org-billing-email">
+                    {t("billingEmailLabel")}
+                  </FieldLabel>
+                  <Input
+                    id="new-org-billing-email"
+                    type="email"
+                    {...register("billing_email")}
+                  />
                 </Field>
                 <Field>
-                  <FieldLabel htmlFor="new-org-currency">{t("currencyLabel")}</FieldLabel>
-                  <Input id="new-org-currency" {...register("default_currency")} />
+                  <FieldLabel htmlFor="new-org-currency">
+                    {t("currencyLabel")}
+                  </FieldLabel>
+                  <Input
+                    id="new-org-currency"
+                    {...register("default_currency")}
+                  />
                 </Field>
               </div>
             </FieldGroup>
@@ -98,7 +134,9 @@ export default function NewOrganizationPage() {
 
         <div className="flex justify-end">
           <Button type="submit" disabled={createOrganization.isPending}>
-            {createOrganization.isPending ? <Loader2Icon className="animate-spin" /> : null}
+            {createOrganization.isPending ? (
+              <Loader2Icon className="animate-spin" />
+            ) : null}
             {tCommon("create")}
           </Button>
         </div>

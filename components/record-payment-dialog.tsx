@@ -9,7 +9,13 @@ import { EntityFormDialog } from "@/components/entity-form-dialog"
 import { DatePicker } from "@/components/ui/date-picker"
 import { Field, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 
 const paymentFormSchema = z.object({
@@ -64,14 +70,23 @@ export function RecordPaymentDialog({
       isSubmitting={isSubmitting}
       submitLabel={t("submit")}
     >
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
         <Field data-invalid={!!formState.errors.amount}>
           <FieldLabel htmlFor="pay-amount">{t("amountLabel")}</FieldLabel>
-          <Input id="pay-amount" type="number" step="0.01" min={0.01} {...register("amount", { valueAsNumber: true })} />
+          <Input
+            id="pay-amount"
+            type="number"
+            step="0.01"
+            min={0.01}
+            {...register("amount", { valueAsNumber: true })}
+          />
         </Field>
         <Field>
           <FieldLabel htmlFor="pay-method">{t("methodLabel")}</FieldLabel>
-          <Select value={method} onValueChange={(value) => setValue("method", value)}>
+          <Select
+            value={method}
+            onValueChange={(value) => setValue("method", value)}
+          >
             <SelectTrigger id="pay-method" className="w-full">
               <SelectValue />
             </SelectTrigger>
@@ -90,12 +105,18 @@ export function RecordPaymentDialog({
         <DatePicker
           id="pay-date"
           value={paidAt}
-          onChange={(value) => setValue("paid_at", value, { shouldValidate: true })}
+          onChange={(value) =>
+            setValue("paid_at", value, { shouldValidate: true })
+          }
         />
       </Field>
       <Field>
         <FieldLabel htmlFor="pay-reference">{t("referenceLabel")}</FieldLabel>
-        <Input id="pay-reference" placeholder={t("referencePlaceholder")} {...register("reference")} />
+        <Input
+          id="pay-reference"
+          placeholder={t("referencePlaceholder")}
+          {...register("reference")}
+        />
       </Field>
       <Field>
         <FieldLabel htmlFor="pay-notes">{t("notesLabel")}</FieldLabel>
@@ -103,7 +124,11 @@ export function RecordPaymentDialog({
       </Field>
       {balanceDue !== undefined ? (
         <p className="text-xs text-muted-foreground">
-          {t("balanceDueNote", { amount: "₹" + balanceDue.toLocaleString("en-IN", { minimumFractionDigits: 2 }) })}
+          {t("balanceDueNote", {
+            amount:
+              "₹" +
+              balanceDue.toLocaleString("en-IN", { minimumFractionDigits: 2 }),
+          })}
         </p>
       ) : null}
     </EntityFormDialog>

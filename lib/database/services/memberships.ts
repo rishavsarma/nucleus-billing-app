@@ -6,16 +6,20 @@ export async function fetchMemberships(): Promise<Membership[]> {
   return data
 }
 
-export async function createMembership(input: Partial<Membership>): Promise<Membership> {
+export async function createMembership(
+  input: Partial<Membership>
+): Promise<Membership> {
   const { data } = await api.post<Membership>("/database/memberships", input)
   return data
 }
 
 export async function updateMembership(
   id: string,
-  input: Partial<Membership>,
+  input: Partial<Membership>
 ): Promise<Membership> {
-  const { data } = await api.put<Membership>("/database/memberships", input, { params: { id } })
+  const { data } = await api.put<Membership>("/database/memberships", input, {
+    params: { id },
+  })
   return data
 }
 

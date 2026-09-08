@@ -72,7 +72,7 @@ export function DatePicker({
           variant="outline"
           disabled={disabled}
           className={cn(
-            "w-full justify-start text-start font-normal h-9 px-3 gap-2",
+            "h-9 w-full justify-start gap-2 px-3 text-start font-normal",
             !dateValue && "text-muted-foreground",
             className
           )}
@@ -86,14 +86,18 @@ export function DatePicker({
               role="button"
               tabIndex={0}
               onClick={handleClear}
-              className="ms-auto rounded-sm p-0.5 hover:bg-muted text-muted-foreground hover:text-foreground"
+              className="ms-auto rounded-sm p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
             >
               <XIcon className="size-3.5" />
             </span>
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-auto p-0" align="start" container={container}>
+      <PopoverContent
+        className="w-auto p-0"
+        align="start"
+        container={container}
+      >
         <Calendar
           mode="single"
           selected={dateValue}

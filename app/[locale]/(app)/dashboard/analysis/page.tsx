@@ -1,7 +1,15 @@
 "use client"
 
+import { useTranslations } from "next-intl"
+
 import { useDashboardAnalytics } from "@/hooks/use-dashboard-analytics"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -22,6 +30,7 @@ const formatMoney = (n: number) =>
   })
 
 export default function AnalysisPage() {
+  const t = useTranslations("DashboardAnalysis")
   const { data: analytics, isLoading } = useDashboardAnalytics()
 
   if (isLoading) {
@@ -30,8 +39,8 @@ export default function AnalysisPage() {
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {[1, 2, 3, 4].map((i) => (
             <Card key={i} className="p-4">
-              <Skeleton className="h-4 w-28 mb-2" />
-              <Skeleton className="h-8 w-36 mb-2" />
+              <Skeleton className="mb-2 h-4 w-28" />
+              <Skeleton className="mb-2 h-8 w-36" />
               <Skeleton className="h-3 w-40" />
             </Card>
           ))}
@@ -58,17 +67,17 @@ export default function AnalysisPage() {
     <div className="flex flex-1 flex-col gap-6">
       {/* Top Header */}
       <div>
-        <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Business Analytics & Profitability</h1>
-        <p className="text-sm text-muted-foreground">
-          Real-time performance metrics, product profitability, and customer spend concentration.
-        </p>
+        <h1 className="text-xl font-bold tracking-tight sm:text-2xl">
+          {t("title")}
+        </h1>
+        <p className="text-sm text-muted-foreground">{t("description")}</p>
       </div>
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardDescription>Net Operating Margin</CardDescription>
+            <CardDescription>{t("netOperatingMargin")}</CardDescription>
             <div className="rounded-md bg-emerald-500/10 p-1.5 text-emerald-500">
               <TrendingUpIcon className="size-4" />
             </div>
@@ -77,18 +86,21 @@ export default function AnalysisPage() {
             <div className="text-2xl font-bold tabular-nums">
               {formatMoney(netProfit)}
             </div>
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1">
-              <Badge variant={profitMargin >= 0 ? "default" : "destructive"} className="text-[10px] px-1.5 py-0">
-                {profitMargin}% margin
+            <div className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
+              <Badge
+                variant={profitMargin >= 0 ? "default" : "destructive"}
+                className="px-1.5 py-0 text-[10px]"
+              >
+                {t("marginBadge", { percent: profitMargin })}
               </Badge>
-              <span>Sales vs Purchases</span>
+              <span>{t("salesVsPurchases")}</span>
             </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardDescription>Average Order Value</CardDescription>
+            <CardDescription>{t("averageOrderValue")}</CardDescription>
             <div className="rounded-md bg-primary/10 p-1.5 text-primary">
               <DollarSignIcon className="size-4" />
             </div>
@@ -97,15 +109,15 @@ export default function AnalysisPage() {
             <div className="text-2xl font-bold tabular-nums">
               {formatMoney(aov)}
             </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Average revenue per confirmed invoice
+            <p className="mt-1 text-xs text-muted-foreground">
+              {t("averageOrderValueDescription")}
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardDescription>Collection Efficiency</CardDescription>
+            <CardDescription>{t("collectionEfficiency")}</CardDescription>
             <div className="rounded-md bg-indigo-500/10 p-1.5 text-indigo-500">
               <PercentIcon className="size-4" />
             </div>
@@ -114,15 +126,15 @@ export default function AnalysisPage() {
             <div className="text-2xl font-bold tabular-nums">
               {collectionRate}%
             </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Realized cash against total invoiced amount
+            <p className="mt-1 text-xs text-muted-foreground">
+              {t("collectionEfficiencyDescription")}
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardDescription>Procurement Spend</CardDescription>
+            <CardDescription>{t("procurementSpend")}</CardDescription>
             <div className="rounded-md bg-amber-500/10 p-1.5 text-amber-500">
               <ShoppingBagIcon className="size-4" />
             </div>
@@ -131,8 +143,8 @@ export default function AnalysisPage() {
             <div className="text-2xl font-bold tabular-nums">
               {formatMoney(purchases)}
             </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Total vendor purchase bills recorded
+            <p className="mt-1 text-xs text-muted-foreground">
+              {t("procurementSpendDescription")}
             </p>
           </CardContent>
         </Card>
@@ -145,40 +157,60 @@ export default function AnalysisPage() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="text-base font-semibold flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 text-base font-semibold">
                   <PackageIcon className="size-4 text-primary" />
-                  Top Selling Products
+                  {t("topProductsTitle")}
                 </CardTitle>
-                <CardDescription>Ranked by gross sales volume and revenue</CardDescription>
+                <CardDescription>{t("topProductsDescription")}</CardDescription>
               </div>
             </div>
           </CardHeader>
           <CardContent>
             {topProducts.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-6 text-center">
-                No product sales data available yet
+              <p className="py-6 text-center text-sm text-muted-foreground">
+                {t("noProductData")}
               </p>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b text-xs text-muted-foreground">
-                      <th className="pb-2 text-left font-medium">#</th>
-                      <th className="pb-2 text-left font-medium">Product</th>
-                      <th className="pb-2 text-right font-medium">Qty Sold</th>
-                      <th className="pb-2 text-right font-medium">Revenue</th>
+                      <th className="pb-2 text-left font-medium">
+                        {t("columnRank")}
+                      </th>
+                      <th className="pb-2 text-left font-medium">
+                        {t("columnProduct")}
+                      </th>
+                      <th className="pb-2 text-right font-medium">
+                        {t("columnQtySold")}
+                      </th>
+                      <th className="pb-2 text-right font-medium">
+                        {t("columnRevenue")}
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
                     {topProducts.map((p, idx) => (
                       <tr key={idx} className="hover:bg-muted/40">
-                        <td className="py-2.5 text-muted-foreground font-mono text-xs">{idx + 1}</td>
-                        <td className="py-2.5">
-                          <p className="font-medium text-foreground">{p.name}</p>
-                          {p.sku ? <p className="text-xs text-muted-foreground">SKU: {p.sku}</p> : null}
+                        <td className="py-2.5 font-mono text-xs text-muted-foreground">
+                          {idx + 1}
                         </td>
-                        <td className="py-2.5 text-right tabular-nums text-muted-foreground">{p.quantity}</td>
-                        <td className="py-2.5 text-right font-semibold tabular-nums">{formatMoney(p.revenue)}</td>
+                        <td className="py-2.5">
+                          <p className="font-medium text-foreground">
+                            {p.name}
+                          </p>
+                          {p.sku ? (
+                            <p className="text-xs text-muted-foreground">
+                              {t("skuPrefix")} {p.sku}
+                            </p>
+                          ) : null}
+                        </td>
+                        <td className="py-2.5 text-right text-muted-foreground tabular-nums">
+                          {p.quantity}
+                        </td>
+                        <td className="py-2.5 text-right font-semibold tabular-nums">
+                          {formatMoney(p.revenue)}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -193,37 +225,53 @@ export default function AnalysisPage() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="text-base font-semibold flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 text-base font-semibold">
                   <UsersIcon className="size-4 text-primary" />
-                  High-Value Customers
+                  {t("topCustomersTitle")}
                 </CardTitle>
-                <CardDescription>Top revenue-generating customer accounts</CardDescription>
+                <CardDescription>
+                  {t("topCustomersDescription")}
+                </CardDescription>
               </div>
             </div>
           </CardHeader>
           <CardContent>
             {topCustomers.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-6 text-center">
-                No customer transactions recorded yet
+              <p className="py-6 text-center text-sm text-muted-foreground">
+                {t("noCustomerData")}
               </p>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b text-xs text-muted-foreground">
-                      <th className="pb-2 text-left font-medium">#</th>
-                      <th className="pb-2 text-left font-medium">Customer</th>
-                      <th className="pb-2 text-right font-medium">Invoices</th>
-                      <th className="pb-2 text-right font-medium">Total Spent</th>
+                      <th className="pb-2 text-left font-medium">
+                        {t("columnRank")}
+                      </th>
+                      <th className="pb-2 text-left font-medium">
+                        {t("columnCustomer")}
+                      </th>
+                      <th className="pb-2 text-right font-medium">
+                        {t("columnInvoices")}
+                      </th>
+                      <th className="pb-2 text-right font-medium">
+                        {t("columnTotalSpent")}
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
                     {topCustomers.map((c, idx) => (
                       <tr key={idx} className="hover:bg-muted/40">
-                        <td className="py-2.5 text-muted-foreground font-mono text-xs">{idx + 1}</td>
-                        <td className="py-2.5 font-medium text-foreground">{c.name}</td>
-                        <td className="py-2.5 text-right tabular-nums text-muted-foreground">{c.invoiceCount}</td>
-                        <td className="py-2.5 text-right font-semibold tabular-nums text-primary">
+                        <td className="py-2.5 font-mono text-xs text-muted-foreground">
+                          {idx + 1}
+                        </td>
+                        <td className="py-2.5 font-medium text-foreground">
+                          {c.name}
+                        </td>
+                        <td className="py-2.5 text-right text-muted-foreground tabular-nums">
+                          {c.invoiceCount}
+                        </td>
+                        <td className="py-2.5 text-right font-semibold text-primary tabular-nums">
                           {formatMoney(c.totalInvoiced)}
                         </td>
                       </tr>
@@ -239,18 +287,21 @@ export default function AnalysisPage() {
       {/* Payment Methods Distribution */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base font-semibold flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 text-base font-semibold">
             <CreditCardIcon className="size-4 text-primary" />
-            Payment Collections Breakdown
+            {t("paymentBreakdownTitle")}
           </CardTitle>
-          <CardDescription>Distribution of realized revenue across payment channels</CardDescription>
+          <CardDescription>{t("paymentBreakdownDescription")}</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-5">
             {paymentMethods.map((pm) => (
-              <div key={pm.method} className="rounded-lg border bg-card/60 p-3 flex flex-col gap-1">
+              <div
+                key={pm.method}
+                className="flex flex-col gap-1 rounded-lg border bg-card/60 p-3"
+              >
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold capitalize text-muted-foreground">
+                  <span className="text-xs font-semibold text-muted-foreground capitalize">
                     {pm.method.replace("_", " ")}
                   </span>
                   <Badge variant="secondary" className="text-[10px]">

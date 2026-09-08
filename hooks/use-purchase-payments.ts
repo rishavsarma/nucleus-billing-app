@@ -1,8 +1,11 @@
 "use client"
 
+import { useRef } from "react"
 import type { ListParams } from "@/lib/database/list-params-types"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { fetchPurchasePaymentsByBillId, fetchPurchasePaymentsPaginated,
+import {
+  fetchPurchasePaymentsByBillId,
+  fetchPurchasePaymentsPaginated,
   createPurchasePayment,
   updatePurchasePayment,
 } from "@/lib/database/services/purchase-payments"
@@ -31,11 +34,18 @@ export function usePurchasePaymentsList(params: ListParams) {
 
 export function useCreatePurchasePayment() {
   const queryClient = useQueryClient()
+  // See hooks/use-payments.ts's useCreatePayment for why this is a ref
+  // rotated onSettled rather than a fresh UUID per render.
+  const idempotencyKeyRef = useRef<string>(crypto.randomUUID())
   return useMutation({
-    mutationFn: (input: Partial<PurchasePayment>) => createPurchasePayment(input),
+    mutationFn: (input: Partial<PurchasePayment>) =>
+      createPurchasePayment(input, idempotencyKeyRef.current),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["purchase-payments"] })
       queryClient.invalidateQueries({ queryKey: ["purchase-bills"] })
+    },
+    onSettled: () => {
+      idempotencyKeyRef.current = crypto.randomUUID()
     },
   })
 }
@@ -43,8 +53,13 @@ export function useCreatePurchasePayment() {
 export function useUpdatePurchasePayment() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, input }: { id: string; input: Partial<PurchasePayment> }) =>
-      updatePurchasePayment(id, input),
+    mutationFn: ({
+      id,
+      input,
+    }: {
+      id: string
+      input: Partial<PurchasePayment>
+    }) => updatePurchasePayment(id, input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["purchase-payments"] })
       queryClient.invalidateQueries({ queryKey: ["purchase-bills"] })

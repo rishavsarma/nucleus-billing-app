@@ -17,7 +17,10 @@ export default function SuperadminsPage() {
   const { tableControlProps } = useServerTableParams()
   const { data: superadmins, isLoading } = useEnrichedSuperadmins()
 
-  const rows: SuperadminRow[] = (superadmins ?? []).map((s) => ({ ...s, id: s.user_id }))
+  const rows: SuperadminRow[] = (superadmins ?? []).map((s) => ({
+    ...s,
+    id: s.user_id,
+  }))
 
   const columns = [
     columnHelper.accessor("email", {
@@ -27,14 +30,18 @@ export default function SuperadminsPage() {
           <div className="flex size-7 items-center justify-center rounded-full bg-muted">
             <ShieldIcon className="size-3.5 text-muted-foreground" />
           </div>
-          <span className="font-medium">{row.original.email ?? row.original.user_id}</span>
+          <span className="font-medium">
+            {row.original.email ?? row.original.user_id}
+          </span>
         </div>
       ),
     }),
     columnHelper.accessor("created_at", {
       header: t("columnGranted"),
       cell: ({ getValue }) => (
-        <span className="text-muted-foreground">{new Date(getValue()).toLocaleDateString()}</span>
+        <span className="text-muted-foreground">
+          {new Date(getValue()).toLocaleDateString()}
+        </span>
       ),
     }),
   ]

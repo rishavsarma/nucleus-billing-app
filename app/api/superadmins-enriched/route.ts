@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { dbError } from "@/lib/api-response"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { requireSuperadmin } from "@/lib/database/require-org"
 import { cacheGet, cacheSet } from "@/lib/cache"
@@ -6,7 +7,10 @@ import { cacheGet, cacheSet } from "@/lib/cache"
 const SUPERADMINS_CACHE_TTL_SECONDS = 60
 const USER_EMAIL_CACHE_TTL_SECONDS = 300
 
-async function getUserEmail(admin: ReturnType<typeof createAdminClient>, userId: string): Promise<string | null> {
+async function getUserEmail(
+  admin: ReturnType<typeof createAdminClient>,
+  userId: string
+): Promise<string | null> {
   const cacheKey = `user-email:${userId}`
   const cached = await cacheGet(cacheKey)
   if (cached) return cached
@@ -36,17 +40,21 @@ export async function GET() {
     .from("superadmins")
     .select("*")
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return dbError(error, "superadmins-enriched:GET")
 
   const admin = createAdminClient()
   const enriched = await Promise.all(
     (superadmins ?? []).map(async (superadmin) => {
       const email = await getUserEmail(admin, superadmin.user_id)
       return { ...superadmin, email }
-    }),
+    })
   )
 
-  await cacheSet(cacheKey, JSON.stringify(enriched), SUPERADMINS_CACHE_TTL_SECONDS)
+  await cacheSet(
+    cacheKey,
+    JSON.stringify(enriched),
+    SUPERADMINS_CACHE_TTL_SECONDS
+  )
 
   return NextResponse.json(enriched)
 }

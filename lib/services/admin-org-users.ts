@@ -13,7 +13,12 @@ export type CreateOrgUserResult = {
   temporaryPassword: string
 }
 
-export async function createOrgUser(input: CreateOrgUserInput): Promise<CreateOrgUserResult> {
-  const { data } = await api.post<CreateOrgUserResult>("/admin/org-users", input)
+export async function createOrgUser(
+  input: CreateOrgUserInput
+): Promise<CreateOrgUserResult> {
+  const { data } = await api.post<CreateOrgUserResult>(
+    "/admin/org-users",
+    input
+  )
   return data
 }

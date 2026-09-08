@@ -9,7 +9,12 @@ import { usePaymentsList } from "@/hooks/use-payments"
 import type { PaymentWithRelations } from "@/lib/database/types"
 
 const columnHelper = entityColumnHelper<PaymentWithRelations>()
-const money = (n: number) => "₹" + n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+const money = (n: number) =>
+  "₹" +
+  n.toLocaleString("en-IN", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })
 
 export default function SalesPaymentsPage() {
   const t = useTranslations("Payments")
@@ -34,15 +39,21 @@ export default function SalesPaymentsPage() {
     }),
     columnHelper.accessor("method", {
       header: t("columnMethod"),
-      cell: ({ getValue }) => <Badge variant="outline">{tMethods(getValue())}</Badge>,
+      cell: ({ getValue }) => (
+        <Badge variant="outline">{tMethods(getValue())}</Badge>
+      ),
     }),
     columnHelper.accessor("reference", {
       header: t("columnReference"),
-      cell: ({ getValue }) => <span className="text-muted-foreground">{getValue() ?? "—"}</span>,
+      cell: ({ getValue }) => (
+        <span className="text-muted-foreground">{getValue() ?? "—"}</span>
+      ),
     }),
     columnHelper.accessor("amount", {
       header: t("columnAmount"),
-      cell: ({ getValue }) => <span className="font-medium">{money(getValue())}</span>,
+      cell: ({ getValue }) => (
+        <span className="font-medium">{money(getValue())}</span>
+      ),
     }),
   ]
 

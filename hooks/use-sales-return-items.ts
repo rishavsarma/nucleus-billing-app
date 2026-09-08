@@ -23,10 +23,13 @@ export function useSalesReturnItems(salesReturnId: string | undefined) {
 export function useCreateSalesReturnItem() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (input: Partial<SalesReturnItem> & { sales_return_id: string }) =>
-      createSalesReturnItem(input),
+    mutationFn: (
+      input: Partial<SalesReturnItem> & { sales_return_id: string }
+    ) => createSalesReturnItem(input),
     onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["sales-return-items", variables.sales_return_id] })
+      queryClient.invalidateQueries({
+        queryKey: ["sales-return-items", variables.sales_return_id],
+      })
       queryClient.invalidateQueries({ queryKey: ["sales-returns"] })
     },
   })
@@ -35,10 +38,17 @@ export function useCreateSalesReturnItem() {
 export function useUpdateSalesReturnItem(salesReturnId: string | undefined) {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, input }: { id: string; input: Partial<SalesReturnItem> }) =>
-      updateSalesReturnItem(id, input),
+    mutationFn: ({
+      id,
+      input,
+    }: {
+      id: string
+      input: Partial<SalesReturnItem>
+    }) => updateSalesReturnItem(id, input),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["sales-return-items", salesReturnId] })
+      queryClient.invalidateQueries({
+        queryKey: ["sales-return-items", salesReturnId],
+      })
       queryClient.invalidateQueries({ queryKey: ["sales-returns"] })
     },
   })
@@ -49,7 +59,9 @@ export function useDeleteSalesReturnItem(salesReturnId: string | undefined) {
   return useMutation({
     mutationFn: (id: string) => deleteSalesReturnItem(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["sales-return-items", salesReturnId] })
+      queryClient.invalidateQueries({
+        queryKey: ["sales-return-items", salesReturnId],
+      })
       queryClient.invalidateQueries({ queryKey: ["sales-returns"] })
     },
   })

@@ -23,12 +23,12 @@ export function DocumentStepper({
   return (
     <div
       className={cn(
-        "flex items-center justify-start sm:justify-center gap-0 rounded-xl bg-card p-3 sm:p-4 ring-1 ring-foreground/10 overflow-x-auto whitespace-nowrap -mx-3 sm:mx-0",
+        "-mx-3 flex items-center justify-start gap-0 overflow-x-auto rounded-xl bg-card p-3 whitespace-nowrap ring-1 ring-foreground/10 sm:mx-0 sm:justify-center sm:p-4",
         className
       )}
     >
       {steps.map((step, i) => (
-        <div key={step.label} className="flex items-center gap-0 shrink-0">
+        <div key={step.label} className="flex shrink-0 items-center gap-0">
           <div className="flex items-center gap-2.5">
             <div
               className={cn(
@@ -36,11 +36,15 @@ export function DocumentStepper({
                 step.done
                   ? "bg-primary text-primary-foreground"
                   : step.current
-                  ? "bg-primary text-primary-foreground ring-2 ring-primary/30 ring-offset-2 ring-offset-background"
-                  : "bg-muted text-muted-foreground"
+                    ? "bg-primary text-primary-foreground ring-2 ring-primary/30 ring-offset-2 ring-offset-background"
+                    : "bg-muted text-muted-foreground"
               )}
             >
-              {step.done ? <CheckIcon className="size-3.5 stroke-[2.5]" /> : i + 1}
+              {step.done ? (
+                <CheckIcon className="size-3.5 stroke-[2.5]" />
+              ) : (
+                i + 1
+              )}
             </div>
             <div className="flex flex-col">
               <span
@@ -49,8 +53,8 @@ export function DocumentStepper({
                   step.current
                     ? "font-semibold text-foreground"
                     : step.done
-                    ? "font-medium text-foreground"
-                    : "font-medium text-muted-foreground"
+                      ? "font-medium text-foreground"
+                      : "font-medium text-muted-foreground"
                 )}
               >
                 {step.label}

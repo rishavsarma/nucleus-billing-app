@@ -2,7 +2,10 @@
 
 import type { ListParams } from "@/lib/database/list-params-types"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { fetchStockMovementsPaginated, createStockMovement } from "@/lib/database/services/stock-movements"
+import {
+  fetchStockMovementsPaginated,
+  createStockMovement,
+} from "@/lib/database/services/stock-movements"
 import type { StockMovement } from "@/lib/database/types"
 
 /** Paginated + searched list — use in list-view table pages. */
@@ -17,7 +20,8 @@ export function useCreateStockMovement() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (input: Partial<StockMovement>) => createStockMovement(input),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["stock-movements"] }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["stock-movements"] }),
   })
 }
 

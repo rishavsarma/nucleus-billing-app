@@ -30,7 +30,7 @@ export function LanguageSwitcher() {
           router.replace(
             // @ts-expect-error -- params matches the pathname's dynamic segments
             { pathname, params },
-            { locale: nextLocale },
+            { locale: nextLocale }
           )
         })
       }}

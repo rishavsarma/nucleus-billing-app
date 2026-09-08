@@ -15,6 +15,6 @@ export const useThemePresetStore = create<ThemePresetStore>()(
       preset: DEFAULT_THEME_PRESET,
       setPreset: (preset) => set({ preset }),
     }),
-    { name: THEME_PRESET_STORAGE_KEY },
-  ),
+    { name: THEME_PRESET_STORAGE_KEY }
+  )
 )

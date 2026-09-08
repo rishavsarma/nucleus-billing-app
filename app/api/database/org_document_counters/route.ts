@@ -1,17 +1,18 @@
 import { NextResponse } from "next/server"
+import { authError, dbError } from "@/lib/api-response"
 import { requireOrgId } from "@/lib/database/require-org"
 
 export async function GET(request: Request) {
   const auth = await requireOrgId()
   if (auth.error) {
-    return NextResponse.json(
-      { error: auth.error },
-      { status: auth.error === "unauthorized" ? 401 : 403 },
-    )
+    return authError(auth.error)
   }
 
   const supabase = auth.supabase
-  let query = supabase.schema("billing").from("org_document_counters").select("*")
+  let query = supabase
+    .schema("billing")
+    .from("org_document_counters")
+    .select("*")
   if (auth.isSuperadmin) {
     // Optional filter for superadmins browsing one org; omit to see every org's counters.
     const orgId = new URL(request.url).searchParams.get("org_id")
@@ -21,7 +22,7 @@ export async function GET(request: Request) {
   }
   const { data, error } = await query
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return dbError(error, "org_document_counters:GET")
   return NextResponse.json(data)
 }
 

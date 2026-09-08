@@ -16,13 +16,14 @@ type OmitControlled<T extends { id: string }> = Omit<
   | "onSearchChange"
 >
 
-export type ServerTableProps<TData extends { id: string }> = OmitControlled<TData> & {
-  /** Result from a `useXList(params)` hook — already paginated by the server. */
-  result: PaginatedResponse<TData> | undefined
-  isLoading: boolean
-  /** Default page size (default: 10). */
-  defaultPageSize?: number
-}
+export type ServerTableProps<TData extends { id: string }> =
+  OmitControlled<TData> & {
+    /** Result from a `useXList(params)` hook — already paginated by the server. */
+    result: PaginatedResponse<TData> | undefined
+    isLoading: boolean
+    /** Default page size (default: 10). */
+    defaultPageSize?: number
+  }
 
 /**
  * Owns search/page/pageSize state and debounce, wires them to EntityTable.
@@ -79,7 +80,7 @@ export function useServerTableParams(defaultPageSize = 10) {
 
   const params = React.useMemo(
     () => ({ search: debouncedSearch || undefined, page, pageSize }),
-    [debouncedSearch, page, pageSize],
+    [debouncedSearch, page, pageSize]
   )
 
   const tableControlProps = {

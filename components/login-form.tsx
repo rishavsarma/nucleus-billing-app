@@ -36,6 +36,7 @@ export function LoginForm({
     invalid_credentials: t("invalidCredentials"),
     invalid_email: t("invalidEmail"),
     password_required: t("passwordRequired"),
+    rate_limited: t("rateLimited"),
   }
 
   const errorBody = isAxiosError<{ error: string; code?: string }>(login.error)

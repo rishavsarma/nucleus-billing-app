@@ -2,7 +2,9 @@
 
 import type { ListParams } from "@/lib/database/list-params-types"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { fetchTaxRatesAll, fetchTaxRatesPaginated,
+import {
+  fetchTaxRatesAll,
+  fetchTaxRatesPaginated,
   createTaxRate,
   updateTaxRate,
   deleteTaxRate,
