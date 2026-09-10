@@ -1,6 +1,5 @@
 "use client"
 
-import type { DocumentProps } from "@react-pdf/renderer"
 import type { InvoicePdfLabels } from "@/components/invoice-pdf-document"
 import type {
   Customer,
@@ -10,6 +9,7 @@ import type {
   Organization,
   OrganizationBankAccount,
 } from "@/lib/database/types"
+import { downloadPdf, renderPdfObjectUrl } from "./render"
 
 type TFunc = (
   key: string,
@@ -64,10 +64,10 @@ export function buildInvoicePdfLabels(
   }
 }
 
-/** Dynamically imports InvoicePdfDocument (and, with it, @react-pdf/renderer
- * plus the two ~650 KB embedded font files it registers at module load) so
- * that ~2.6 MB only downloads the first time a PDF is actually requested,
- * not on every visit to a page that merely has a Print/Download button. */
+/** Dynamically imports InvoicePdfDocument (and, with it, @formepdf/react and
+ * the font registrations) so none of it downloads on a page that merely has a
+ * Print/Download button — only when a PDF is actually requested. The heavy
+ * part, the WASM renderer, is deferred separately in renderInvoiceBlob(). */
 export async function buildInvoicePdfElement(params: {
   invoice: Invoice
   customer: Customer | undefined
@@ -84,7 +84,7 @@ export async function buildInvoicePdfElement(params: {
    * falling back to organization.pdf_watermark_text when no preset is
    * currently active. */
   watermarkText?: string | null
-}): Promise<React.ReactElement<DocumentProps>> {
+}): Promise<React.ReactElement> {
   const { InvoicePdfDocument } =
     await import("@/components/invoice-pdf-document")
   return (
@@ -100,54 +100,23 @@ export async function buildInvoicePdfElement(params: {
         params.watermarkText ?? params.organization?.pdf_watermark_text
       }
     />
-  ) as React.ReactElement<DocumentProps>
+  )
 }
 
-/** Renders a react-pdf element to an actual PDF file client-side (not a
- * browser print-to-PDF) and downloads it — pixel-accurate layout and real
- * embedded fonts/colors regardless of the browser's print settings. */
+/** Renders the invoice to an actual PDF file client-side (not a browser
+ * print-to-PDF) and downloads it — pixel-accurate layout and real embedded
+ * fonts/colors regardless of the browser's print settings. */
 export async function downloadInvoicePdf(
-  element: React.ReactElement<DocumentProps>,
+  element: React.ReactElement,
   filename: string
 ) {
-  const { pdf } = await import("@react-pdf/renderer")
-  const blob = await pdf(element).toBlob()
-  const url = URL.createObjectURL(blob)
-  const link = document.createElement("a")
-  link.href = url
-  link.download = filename
-  link.click()
-  URL.revokeObjectURL(url)
+  await downloadPdf(element, filename)
 }
 
-/** Same generated PDF, but opened straight into the browser's print dialog
- * via a hidden iframe instead of downloading — one action to print, no
- * intermediate "open the file, then print" step. */
-export async function printInvoicePdf(
-  element: React.ReactElement<DocumentProps>
-) {
-  const { pdf } = await import("@react-pdf/renderer")
-  const blob = await pdf(element).toBlob()
-  const url = URL.createObjectURL(blob)
-  const iframe = document.createElement("iframe")
-  iframe.style.position = "fixed"
-  iframe.style.right = "0"
-  iframe.style.bottom = "0"
-  iframe.style.width = "0"
-  iframe.style.height = "0"
-  iframe.style.border = "0"
-  iframe.src = url
-  iframe.onload = () => {
-    iframe.contentWindow?.focus()
-    iframe.contentWindow?.print()
-  }
-  document.body.appendChild(iframe)
-  // Cleanup once the print dialog has had time to open — there's no
-  // reliable "print dialog closed" event, so this is a generous fixed
-  // delay rather than removing the iframe (and revoking the blob URL the
-  // PDF is still being read from) too early.
-  setTimeout(() => {
-    document.body.removeChild(iframe)
-    URL.revokeObjectURL(url)
-  }, 60000)
+/** Renders to an object URL for the in-app preview dialog. Caller owns the
+ * URL and must revoke it — see lib/pdf/render.ts. */
+export async function previewInvoicePdf(
+  element: React.ReactElement
+): Promise<string> {
+  return renderPdfObjectUrl(element)
 }

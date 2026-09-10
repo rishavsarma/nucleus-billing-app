@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useQueries } from "@tanstack/react-query"
 import { isAxiosError } from "axios"
 import { useTranslations } from "next-intl"
 import { toast } from "sonner"
@@ -8,6 +9,9 @@ import {
   ArrowLeftIcon,
   BanknoteIcon,
   CheckIcon,
+  DownloadIcon,
+  EyeIcon,
+  Loader2Icon,
   MoreHorizontalIcon,
   XIcon,
 } from "lucide-react"
@@ -15,6 +19,7 @@ import {
 import { Link } from "@/i18n/navigation"
 import { Button } from "@/components/ui/button"
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog"
+import { PdfPreviewDialog } from "@/components/pdf-preview-dialog"
 import {
   DocumentStepper,
   type StepperStep,
@@ -43,6 +48,15 @@ import { useOrganizationBankAccounts } from "@/hooks/use-organization-bank-accou
 import { WarehouseSelect } from "@/components/warehouse-select"
 import { useWarehouse } from "@/hooks/use-warehouses"
 import { routes } from "@/lib/routes"
+import { fetchItemById } from "@/lib/database/services/items"
+import { usePurchaseBillItems } from "@/hooks/use-purchase-bill-items"
+import { useCurrentOrganization } from "@/hooks/use-organizations"
+import { useActivePdfWatermarkText } from "@/hooks/use-pdf-watermarks"
+import {
+  buildPurchaseBillPdfElement,
+  downloadPurchaseBillPdf,
+  previewPurchaseBillPdf,
+} from "@/lib/pdf/purchase-bill-pdf"
 import type { PurchasePayment } from "@/lib/database/types"
 
 const money = (n: number) =>
@@ -58,6 +72,7 @@ export function PurchaseBillDetailClient({ id }: { id: string }) {
   const tStatus = useTranslations("DocStatus")
   const tCommon = useTranslations("Common")
   const tMethods = useTranslations("PaymentMethods")
+  const tPrint = useTranslations("PurchaseBillPrint")
 
   const { data: bill, isLoading } = usePurchaseBill(id)
   const { data: vendor } = useVendor(bill?.vendor_id)
@@ -66,9 +81,35 @@ export function PurchaseBillDetailClient({ id }: { id: string }) {
   const updateBill = useUpdatePurchaseBill()
   const { data: bankAccounts } = useOrganizationBankAccounts()
   const createPayment = useCreatePurchasePayment()
+  const { data: organization } = useCurrentOrganization()
+  const { data: billLineItems } = usePurchaseBillItems(id)
+  const watermarkText = useActivePdfWatermarkText()
+
+  // Line items only carry item_id; the PDF's HSN/SAC summary needs the item
+  // rows themselves. Same shape as the invoice detail page.
+  const referencedItemIds = [
+    ...new Set(
+      (billLineItems ?? [])
+        .map((line) => line.item_id)
+        .filter((itemId): itemId is string => !!itemId)
+    ),
+  ]
+  const referencedItemQueries = useQueries({
+    queries: referencedItemIds.map((itemId) => ({
+      queryKey: ["items", "detail", itemId],
+      queryFn: () => fetchItemById(itemId),
+    })),
+  })
+  const referencedItems = referencedItemQueries
+    .map((query) => query.data)
+    .filter((item) => !!item)
 
   const [confirmVoid, setConfirmVoid] = useState(false)
   const [showRecordPayment, setShowRecordPayment] = useState(false)
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false)
+  const [isPreparingPreview, setIsPreparingPreview] = useState(false)
+  const [previewOpen, setPreviewOpen] = useState(false)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
 
   if (isLoading) {
     return (
@@ -107,6 +148,58 @@ export function PurchaseBillDetailClient({ id }: { id: string }) {
     },
     { label: t("stepPaid"), done: isPaid, current: isPaid },
   ]
+
+  function buildPdf() {
+    return buildPurchaseBillPdfElement({
+      bill: bill!,
+      vendor,
+      organization,
+      lineItems: billLineItems ?? [],
+      items: referencedItems,
+      bankAccount:
+        bankAccounts?.find((a) => a.id === bill?.bank_account_id) ?? null,
+      tPrint,
+      watermarkText,
+    })
+  }
+
+  /** Renders the purchase bill as a real PDF client-side via Forme and
+   * downloads it — same pipeline the invoice uses. */
+  async function downloadPdf() {
+    setIsGeneratingPdf(true)
+    try {
+      const element = await buildPdf()
+      await downloadPurchaseBillPdf(
+        element,
+        `${bill!.bill_number ?? "purchase-bill"}.pdf`
+      )
+    } catch {
+      toast.error(tCommon("genericError"))
+    } finally {
+      setIsGeneratingPdf(false)
+    }
+  }
+
+  /** Same PDF, shown in an in-app viewer. The object URL is revoked by
+   * PdfPreviewDialog, not here. */
+  async function openPreview() {
+    setIsPreparingPreview(true)
+    setPreviewOpen(true)
+    try {
+      const element = await buildPdf()
+      setPreviewUrl(await previewPurchaseBillPdf(element))
+    } catch {
+      toast.error(tCommon("genericError"))
+      setPreviewOpen(false)
+    } finally {
+      setIsPreparingPreview(false)
+    }
+  }
+
+  function closePreview(open: boolean) {
+    setPreviewOpen(open)
+    if (!open) setPreviewUrl(null)
+  }
 
   function confirmBill() {
     updateBill.mutate(
@@ -165,6 +258,34 @@ export function PurchaseBillDetailClient({ id }: { id: string }) {
           </p>
         </div>
         <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={openPreview}
+            disabled={isPreparingPreview}
+          >
+            {isPreparingPreview ? (
+              <Loader2Icon className="animate-spin" />
+            ) : (
+              <EyeIcon />
+            )}
+            <span className="xs:inline hidden">{tPrint("previewButton")}</span>
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={downloadPdf}
+            disabled={isGeneratingPdf}
+          >
+            {isGeneratingPdf ? (
+              <Loader2Icon className="animate-spin" />
+            ) : (
+              <DownloadIcon />
+            )}
+            <span className="xs:inline hidden">
+              {tPrint("downloadPdfButton")}
+            </span>
+          </Button>
           {isDraft ? (
             <Button
               size="sm"
@@ -412,6 +533,19 @@ export function PurchaseBillDetailClient({ id }: { id: string }) {
         title={t("voidConfirmTitle")}
         description={t("voidConfirmDescription")}
         onConfirm={voidBill}
+      />
+
+      <PdfPreviewDialog
+        open={previewOpen}
+        onOpenChange={closePreview}
+        url={previewUrl}
+        loading={isPreparingPreview}
+        title={tPrint("previewTitle")}
+        description={bill?.bill_number ?? undefined}
+        onDownload={downloadPdf}
+        downloading={isGeneratingPdf}
+        loadingLabel={tPrint("preparingPreview")}
+        downloadLabel={tPrint("downloadPdfButton")}
       />
     </div>
   )

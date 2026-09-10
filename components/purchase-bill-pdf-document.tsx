@@ -12,14 +12,20 @@ import {
 import { amountToWords } from "@/lib/number-to-words"
 import { gstStateName } from "@/lib/gst-states"
 import type {
-  Customer,
-  Invoice,
-  InvoiceItem,
   Item,
   Organization,
   OrganizationBankAccount,
+  PurchaseBill,
+  PurchaseBillItem,
+  Vendor,
 } from "@/lib/database/types"
 
+// Vendor-side mirror of components/invoice-pdf-document.tsx — same layout and
+// styles so the two documents stay visually identical, with the supplier-side
+// bits swapped for purchase-bill ones (vendor block instead of bill-to/ship-to,
+// unit_cost instead of unit_price, the vendor's own invoice number, and no
+// "ORIGINAL FOR RECIPIENT" legend, which only a tax invoice's issuer prints).
+//
 // Noto Sans, not a core PDF font — the core 14 (Helvetica etc.) don't carry
 // the ₹ (U+20B9) glyph at all, which would silently render as a blank box.
 // Registered once per module load.
@@ -79,14 +85,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
   },
   taxInvoiceLabel: { fontSize: 10, fontWeight: 700 },
-  originalBadge: {
-    borderWidth: 1,
-    borderColor: INK,
-    paddingVertical: 2,
-    paddingHorizontal: 6,
-    fontSize: 6.5,
-    fontWeight: 700,
-  },
 
   sellerRow: {
     flexDirection: "row",
@@ -122,7 +120,6 @@ const styles = StyleSheet.create({
     borderColor: INK,
   },
   billCol: { flex: 1, borderRightWidth: 1, borderColor: INK, padding: 10 },
-  shipCol: { flex: 1, padding: 10 },
   sectionLabel: { fontSize: 8, fontWeight: 700, marginBottom: 3 },
   partyName: { fontSize: 8.5, fontWeight: 700, marginBottom: 2 },
   partyLine: { fontSize: 7.5, marginBottom: 1 },
@@ -310,16 +307,15 @@ function splitDescription(description: string): {
   return { name: name || description, sublines: sublines.filter(Boolean) }
 }
 
-export type InvoicePdfLabels = {
-  taxInvoice: string
-  originalForRecipient: string
+export type PurchaseBillPdfLabels = {
+  purchaseBill: string
   gstinLabel: string
   panLabel: string
   mobileLabel: string
-  invoiceNoLabel: string
-  invoiceDateLabel: string
-  billToLabel: string
-  shipToLabel: string
+  billNoLabel: string
+  vendorInvoiceNoLabel: string
+  billDateLabel: string
+  vendorLabel: string
   addressLabel: string
   placeOfSupplyLabel: string
   snoLabel: string
@@ -350,9 +346,9 @@ export type InvoicePdfLabels = {
   bankNameLabel: string
 }
 
-export function InvoicePdfDocument({
-  invoice,
-  customer,
+export function PurchaseBillPdfDocument({
+  bill,
+  vendor,
   organization,
   lineItems,
   items,
@@ -360,16 +356,16 @@ export function InvoicePdfDocument({
   labels,
   watermarkText,
 }: {
-  invoice: Invoice
-  customer: Customer | undefined
+  bill: PurchaseBill
+  vendor: Vendor | undefined
   organization: Organization | undefined
-  lineItems: InvoiceItem[]
+  lineItems: PurchaseBillItem[]
   items: Item[] | undefined
   bankAccount?: OrganizationBankAccount | null
-  labels: InvoicePdfLabels
+  labels: PurchaseBillPdfLabels
   watermarkText?: string | null
 }) {
-  const billingAddress = (customer?.billing_address ??
+  const billingAddress = (vendor?.billing_address ??
     null) as BillingAddress | null
   const addressLines = formatAddress(billingAddress)
   // Prefer the document's own recorded place of supply (real GST data) over
@@ -377,7 +373,7 @@ export function InvoicePdfDocument({
   // guess stays as a fallback only for invoices created before this field
   // existed.
   const placeOfSupply =
-    gstStateName(invoice.place_of_supply) ||
+    gstStateName(bill.place_of_supply) ||
     billingAddress?.state ||
     organization?.state_code ||
     "—"
@@ -386,13 +382,13 @@ export function InvoicePdfDocument({
   // existed) keeps the original CGST+SGST assumption rather than silently
   // becoming an (incorrect) IGST invoice.
   const isInterState =
-    !!invoice.place_of_supply &&
+    !!bill.place_of_supply &&
     !!organization?.state_code &&
-    invoice.place_of_supply !== organization.state_code
+    bill.place_of_supply !== organization.state_code
 
-  const cgst = isInterState ? 0 : invoice.tax_total / 2
-  const sgst = isInterState ? 0 : invoice.tax_total / 2
-  const igst = isInterState ? invoice.tax_total : 0
+  const cgst = isInterState ? 0 : bill.tax_total / 2
+  const sgst = isInterState ? 0 : bill.tax_total / 2
+  const igst = isInterState ? bill.tax_total : 0
   const totalQty = lineItems.reduce((sum, line) => sum + line.quantity, 0)
 
   const hsnGroups = new Map<
@@ -434,10 +430,7 @@ export function InvoicePdfDocument({
         ) : null}
         <View style={styles.outer}>
           <View style={styles.headerRow}>
-            <Text style={styles.taxInvoiceLabel}>{labels.taxInvoice}</Text>
-            <View style={styles.originalBadge}><Text>
-              {labels.originalForRecipient}
-            </Text></View>
+            <Text style={styles.taxInvoiceLabel}>{labels.purchaseBill}</Text>
           </View>
 
           <View style={styles.sellerRow}>
@@ -481,19 +474,34 @@ export function InvoicePdfDocument({
               </View>
             </View>
             <View style={styles.metaCol}>
-              <Text style={styles.metaLabel}>{labels.invoiceNoLabel}</Text>
+              <Text style={styles.metaLabel}>{labels.billNoLabel}</Text>
               <Text style={styles.metaValue}>
-                {invoice.invoice_number ?? "—"}
+                {bill.bill_number ?? "—"}
               </Text>
-              <Text style={styles.metaLabel}>{labels.invoiceDateLabel}</Text>
-              <Text style={styles.metaValue}>{invoice.issue_date}</Text>
+              <Text style={styles.metaLabel}>{labels.billDateLabel}</Text>
+              <Text style={styles.metaValue}>{bill.bill_date}</Text>
+              {bill.vendor_invoice_number ? (
+                <>
+                  <Text style={styles.metaLabel}>
+                    {labels.vendorInvoiceNoLabel}
+                  </Text>
+                  <Text style={styles.metaValue}>
+                    {bill.vendor_invoice_number}
+                  </Text>
+                </>
+              ) : null}
             </View>
           </View>
 
           <View style={styles.billShipRow}>
-            <View style={styles.billCol}>
-              <Text style={styles.sectionLabel}>{labels.billToLabel}</Text>
-              <Text style={styles.partyName}>{customer?.name ?? "—"}</Text>
+            <View style={{ ...styles.billCol, borderRightWidth: 0 }}>
+              <Text style={styles.sectionLabel}>{labels.vendorLabel}</Text>
+              <Text style={styles.partyName}>{vendor?.name ?? "—"}</Text>
+              {vendor?.tax_id ? (
+                <Text style={styles.partyLine}>
+                  {labels.gstinLabel}: {vendor.tax_id}
+                </Text>
+              ) : null}
               {addressLines.length ? (
                 <Text style={styles.partyLine}>
                   {labels.addressLabel}: {addressLines.join(", ")}
@@ -502,18 +510,9 @@ export function InvoicePdfDocument({
               <Text style={styles.partyLine}>
                 {labels.placeOfSupplyLabel}: {placeOfSupply}
               </Text>
-              {customer?.phone ? (
+              {vendor?.phone ? (
                 <Text style={styles.partyLine}>
-                  {labels.mobileLabel}: {customer.phone}
-                </Text>
-              ) : null}
-            </View>
-            <View style={styles.shipCol}>
-              <Text style={styles.sectionLabel}>{labels.shipToLabel}</Text>
-              <Text style={styles.partyName}>{customer?.name ?? "—"}</Text>
-              {addressLines.length ? (
-                <Text style={styles.partyLine}>
-                  {labels.addressLabel}: {addressLines.join(", ")}
+                  {labels.mobileLabel}: {vendor.phone}
                 </Text>
               ) : null}
             </View>
@@ -547,7 +546,7 @@ export function InvoicePdfDocument({
                   {line.quantity} {labels.unitAbbrev}
                 </Text></View>
                 <View style={{ ...styles.td, ...styles.colRate }}><Text>
-                  {num(line.unit_price)}
+                  {num(line.unit_cost)}
                 </Text></View>
                 <View style={{ ...styles.td, ...styles.colAmount }}><Text>
                   {num(line.line_subtotal)}
@@ -572,19 +571,19 @@ export function InvoicePdfDocument({
               </View>
             </>
           )}
-          {invoice.round_off_amount !== 0 ? (
+          {bill.round_off_amount !== 0 ? (
             <View style={styles.taxSummaryRow}>
               <View style={styles.roundOffCell}><Text>{labels.roundOffLabel}</Text></View>
               <View style={styles.roundOffAmountCell}><Text>
-                {invoice.round_off_amount > 0 ? "+" : "−"}
-                {money(Math.abs(invoice.round_off_amount))}
+                {bill.round_off_amount > 0 ? "+" : "−"}
+                {money(Math.abs(bill.round_off_amount))}
               </Text></View>
             </View>
           ) : null}
           <View style={styles.totalRow}>
             <View style={styles.totalLabelCell}><Text>{labels.totalLabel}</Text></View>
             <View style={styles.totalQtyCell}><Text>{totalQty}</Text></View>
-            <View style={styles.totalAmountCell}><Text>{money(invoice.total)}</Text></View>
+            <View style={styles.totalAmountCell}><Text>{money(bill.total)}</Text></View>
           </View>
 
           {isInterState ? (
@@ -634,7 +633,7 @@ export function InvoicePdfDocument({
                 <View
                   style={{ ...styles.hsnTd, ...styles.colTaxable, fontWeight: 700 }}
                 ><Text>
-                  {num(invoice.subtotal)}
+                  {num(bill.subtotal)}
                 </Text></View>
                 <View style={{ ...styles.hsnTd, width: "18%" }} />
                 <View style={{ ...styles.hsnTd, width: "26%", fontWeight: 700 }}><Text>
@@ -643,7 +642,7 @@ export function InvoicePdfDocument({
                 <View
                   style={{ ...styles.hsnTd, ...styles.colTotalTax, fontWeight: 700 }}
                 ><Text>
-                  {num(invoice.tax_total)}
+                  {num(bill.tax_total)}
                 </Text></View>
               </View>
             </>
@@ -706,7 +705,7 @@ export function InvoicePdfDocument({
                 <View
                   style={{ ...styles.hsnTd, ...styles.colTaxable, fontWeight: 700 }}
                 ><Text>
-                  {num(invoice.subtotal)}
+                  {num(bill.subtotal)}
                 </Text></View>
                 <View style={{ ...styles.hsnTd, ...styles.colRate2 }} />
                 <View
@@ -723,7 +722,7 @@ export function InvoicePdfDocument({
                 <View
                   style={{ ...styles.hsnTd, ...styles.colTotalTax, fontWeight: 700 }}
                 ><Text>
-                  {num(invoice.tax_total)}
+                  {num(bill.tax_total)}
                 </Text></View>
               </View>
             </>
@@ -732,7 +731,7 @@ export function InvoicePdfDocument({
           <View style={styles.wordsBlock}>
             <Text style={styles.wordsLabel}>{labels.amountInWordsLabel}</Text>
             <Text style={styles.wordsValue}>
-              {amountToWords(invoice.total)}
+              {amountToWords(bill.total)}
             </Text>
           </View>
 

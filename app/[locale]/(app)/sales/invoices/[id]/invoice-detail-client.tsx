@@ -13,7 +13,7 @@ import {
   DownloadIcon,
   Loader2Icon,
   MoreHorizontalIcon,
-  PrinterIcon,
+  EyeIcon,
   TruckIcon,
   XIcon,
 } from "lucide-react"
@@ -21,6 +21,7 @@ import {
 import { Link } from "@/i18n/navigation"
 import { Button } from "@/components/ui/button"
 import { DeleteConfirmDialog } from "@/components/delete-confirm-dialog"
+import { PdfPreviewDialog } from "@/components/pdf-preview-dialog"
 import {
   DocumentStepper,
   type StepperStep,
@@ -62,7 +63,7 @@ import { useWarehouse } from "@/hooks/use-warehouses"
 import {
   buildInvoicePdfElement,
   downloadInvoicePdf,
-  printInvoicePdf,
+  previewInvoicePdf,
 } from "@/lib/pdf/invoice-pdf"
 import { routes } from "@/lib/routes"
 import type { Installment, Payment } from "@/lib/database/types"
@@ -131,7 +132,9 @@ export function InvoiceDetailClient({ id }: { id: string }) {
   const [payingInstallment, setPayingInstallment] =
     useState<Installment | null>(null)
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false)
-  const [isPreparingPrint, setIsPreparingPrint] = useState(false)
+  const [isPreparingPreview, setIsPreparingPreview] = useState(false)
+  const [previewOpen, setPreviewOpen] = useState(false)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
 
   if (isLoading) {
     return (
@@ -245,23 +248,27 @@ export function InvoiceDetailClient({ id }: { id: string }) {
   }
 
   /** Renders the invoice as an actual PDF file client-side via
-   * @react-pdf/renderer (not a browser print-to-PDF) and downloads it —
+   * Forme (not a browser print-to-PDF) and downloads it —
    * pixel-accurate layout and real embedded fonts/colors regardless of the
    * browser's print settings. */
+  function buildPdf() {
+    return buildInvoicePdfElement({
+      invoice: invoice!,
+      customer,
+      organization,
+      lineItems: invoiceLineItems ?? [],
+      items: referencedItems,
+      bankAccount:
+        bankAccounts?.find((a) => a.id === invoice?.bank_account_id) ?? null,
+      tPrint,
+      watermarkText,
+    })
+  }
+
   async function downloadPdf() {
     setIsGeneratingPdf(true)
     try {
-      const element = await buildInvoicePdfElement({
-        invoice: invoice!,
-        customer,
-        organization,
-        lineItems: invoiceLineItems ?? [],
-        items: referencedItems,
-        bankAccount:
-          bankAccounts?.find((a) => a.id === invoice?.bank_account_id) ?? null,
-        tPrint,
-        watermarkText,
-      })
+      const element = await buildPdf()
       await downloadInvoicePdf(
         element,
         `${invoice!.invoice_number ?? "invoice"}.pdf`
@@ -273,29 +280,26 @@ export function InvoiceDetailClient({ id }: { id: string }) {
     }
   }
 
-  /** Same generated PDF, but opened straight into the browser's print
-   * dialog via a hidden iframe instead of downloading — one click to print,
-   * no intermediate "open the file, then print" step. */
-  async function printPdf() {
-    setIsPreparingPrint(true)
+  /** Same generated PDF, shown in an in-app viewer instead of downloading.
+   * The object URL is revoked by PdfPreviewDialog, not here. */
+  async function openPreview() {
+    setIsPreparingPreview(true)
+    setPreviewOpen(true)
     try {
-      const element = await buildInvoicePdfElement({
-        invoice: invoice!,
-        customer,
-        organization,
-        lineItems: invoiceLineItems ?? [],
-        items: referencedItems,
-        bankAccount:
-          bankAccounts?.find((a) => a.id === invoice?.bank_account_id) ?? null,
-        tPrint,
-        watermarkText,
-      })
-      await printInvoicePdf(element)
+      const element = await buildPdf()
+      setPreviewUrl(await previewInvoicePdf(element))
     } catch {
       toast.error(tCommon("genericError"))
+      setPreviewOpen(false)
     } finally {
-      setIsPreparingPrint(false)
+      setIsPreparingPreview(false)
     }
+  }
+
+  function closePreview(open: boolean) {
+    setPreviewOpen(open)
+    // Drop the reference so the dialog's cleanup effect revokes the blob.
+    if (!open) setPreviewUrl(null)
   }
 
   return (
@@ -329,15 +333,15 @@ export function InvoiceDetailClient({ id }: { id: string }) {
           <Button
             variant="outline"
             size="sm"
-            onClick={printPdf}
-            disabled={isPreparingPrint}
+            onClick={openPreview}
+            disabled={isPreparingPreview}
           >
-            {isPreparingPrint ? (
+            {isPreparingPreview ? (
               <Loader2Icon className="animate-spin" />
             ) : (
-              <PrinterIcon />
+              <EyeIcon />
             )}
-            <span className="xs:inline hidden">{tPrint("printButton")}</span>
+            <span className="xs:inline hidden">{tPrint("previewButton")}</span>
           </Button>
           <Button
             variant="outline"
@@ -811,6 +815,19 @@ export function InvoiceDetailClient({ id }: { id: string }) {
         title={t("voidConfirmTitle")}
         description={t("voidConfirmDescription")}
         onConfirm={voidInvoice}
+      />
+
+      <PdfPreviewDialog
+        open={previewOpen}
+        onOpenChange={closePreview}
+        url={previewUrl}
+        loading={isPreparingPreview}
+        title={tPrint("previewTitle")}
+        description={invoice?.invoice_number ?? undefined}
+        onDownload={downloadPdf}
+        downloading={isGeneratingPdf}
+        loadingLabel={tPrint("preparingPreview")}
+        downloadLabel={tPrint("downloadPdfButton")}
       />
     </div>
   )
