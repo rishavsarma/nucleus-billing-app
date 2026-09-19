@@ -58,6 +58,20 @@ export const ALLOWED_FIELDS = {
 
   staff: ["name", "phone", "is_active", "role", "role_label"],
 
+  // staff_id / customer_id are FKs: routes verify them against the caller's
+  // org, and guard_staff_record_refs() re-checks in the database.
+  staff_attendance: ["staff_id", "attendance_date", "status", "note"],
+
+  staff_visits: [
+    "staff_id",
+    "customer_id",
+    "visit_at",
+    "place",
+    "purpose",
+    "outcome",
+    "status",
+  ],
+
   offers: [
     "name",
     "description",

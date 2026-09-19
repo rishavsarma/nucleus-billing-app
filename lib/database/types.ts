@@ -605,6 +605,44 @@ export interface Staff {
   created_at: string
 }
 
+export type AttendanceStatus = "present" | "absent" | "half_day" | "leave"
+
+/** One row per staff member per day (unique on staff_id + attendance_date),
+ * recorded by a logged-in member — staff rows have no login of their own. */
+export interface StaffAttendance {
+  id: string
+  org_id: string
+  staff_id: string
+  attendance_date: string // YYYY-MM-DD
+  status: AttendanceStatus
+  note: string | null
+  recorded_by: string | null
+  created_at: string
+  updated_at: string
+}
+
+export type StaffVisitStatus = "planned" | "completed" | "cancelled"
+
+/** A staff member going somewhere for work (site survey, customer call, etc.),
+ * logged by a member on their behalf. */
+export interface StaffVisit {
+  id: string
+  org_id: string
+  staff_id: string
+  customer_id: string | null
+  visit_at: string // timestamptz
+  place: string
+  purpose: string | null
+  outcome: string | null
+  status: StaffVisitStatus
+  created_by: string | null
+  created_at: string
+  updated_at: string
+  // Embedded by the list/detail GET.
+  staff?: Pick<Staff, "name" | "role" | "role_label"> | null
+  customer?: { name: string } | null
+}
+
 // One per invoice — operational tracking, not a financial document, so
 // status moves freely (see db-schema/005_delivery_and_public_pricing.sql).
 export interface Delivery {

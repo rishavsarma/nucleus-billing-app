@@ -61,6 +61,8 @@ export const routes = {
     taxRates: "/catalog/tax-rates",
     warehouses: "/catalog/warehouses",
     staff: "/catalog/staff",
+    staffAttendance: "/catalog/staff/attendance",
+    staffVisits: "/catalog/staff/visits",
     offers: {
       list: "/catalog/offers",
       new: "/catalog/offers/new",

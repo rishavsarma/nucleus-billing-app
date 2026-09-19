@@ -73,7 +73,9 @@
       "appSettings": "App Settings",
       "staff": "Staff",
       "installments": "Installments",
-      "pdfWatermarks": "PDF Watermarks"
+      "pdfWatermarks": "PDF Watermarks",
+      "staffAttendance": "Attendance",
+      "staffVisits": "Field Visits"
     }
   },
   "Common": {
@@ -1327,5 +1329,75 @@
     "unitAbbrev": "PCS",
     "vendorInvoiceNoLabel": "Vendor Invoice No.",
     "vendorLabel": "VENDOR"
+  },
+  "AttendanceStatus": {
+    "present": "Present",
+    "absent": "Absent",
+    "half_day": "Half day",
+    "leave": "Leave",
+    "presentShort": "P",
+    "absentShort": "A",
+    "half_dayShort": "H",
+    "leaveShort": "L"
+  },
+  "VisitStatus": {
+    "planned": "Planned",
+    "completed": "Completed",
+    "cancelled": "Cancelled"
+  },
+  "StaffAttendance": {
+    "title": "Attendance",
+    "description": "Mark daily attendance for your staff. Staff don't log in — a member records it on their behalf.",
+    "tabDaily": "Daily",
+    "tabRegister": "Monthly register",
+    "dateLabel": "Date",
+    "markAllPresent": "Mark all present",
+    "save": "Save attendance",
+    "saved": "Attendance saved",
+    "notMarked": "Not marked",
+    "notePlaceholder": "Note (optional)",
+    "noStaff": "No active staff yet. Add staff first.",
+    "unsaved": "Unsaved changes",
+    "nothingToSave": "Mark at least one staff member first.",
+    "columnStaff": "Staff",
+    "prevMonth": "Previous month",
+    "nextMonth": "Next month",
+    "tooManyStaff": "Showing the first 100 active staff.",
+    "clearMark": "Clear",
+    "legend": "P Present · A Absent · H Half day · L Leave",
+    "markedCount": "{marked} of {total} marked"
+  },
+  "StaffVisits": {
+    "title": "Field Visits",
+    "description": "Log where staff went for work — site surveys, customer calls, on-site jobs.",
+    "newVisit": "New Visit",
+    "editVisit": "Edit Visit",
+    "newDescription": "Record a work visit for a staff member.",
+    "editDescription": "Update this visit.",
+    "searchPlaceholder": "Search place, purpose or outcome…",
+    "noResults": "No visits logged yet.",
+    "columnWhen": "When",
+    "columnStaff": "Staff",
+    "columnPlace": "Place",
+    "columnCustomer": "Customer",
+    "columnPurpose": "Purpose",
+    "columnStatus": "Status",
+    "staffLabel": "Staff",
+    "staffPlaceholder": "Select staff",
+    "dateLabel": "Date",
+    "timeLabel": "Time",
+    "placeLabel": "Place",
+    "placePlaceholder": "e.g. Brahmaputra Traders, MG Road",
+    "customerLabel": "Customer (optional)",
+    "customerPlaceholder": "Link a customer",
+    "purposeLabel": "Purpose",
+    "purposePlaceholder": "e.g. Site survey for rack install",
+    "outcomeLabel": "Outcome / notes",
+    "outcomePlaceholder": "What happened on the visit",
+    "statusLabel": "Status",
+    "allStatuses": "All statuses",
+    "allStaff": "All staff",
+    "clearCustomer": "Remove customer",
+    "deleteDescription": "This visit log will be permanently removed."
   }
 }

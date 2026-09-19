@@ -73,7 +73,9 @@
       "appSettings": "ऐप सेटिंग्स",
       "staff": "स्टाफ़",
       "installments": "किश्तें",
-      "pdfWatermarks": "PDF वॉटरमार्क"
+      "pdfWatermarks": "PDF वॉटरमार्क",
+      "staffAttendance": "उपस्थिति",
+      "staffVisits": "फील्ड विज़िट"
     }
   },
   "Common": {
@@ -1327,5 +1329,75 @@
     "unitAbbrev": "नग",
     "vendorInvoiceNoLabel": "विक्रेता चालान सं.",
     "vendorLabel": "विक्रेता"
+  },
+  "AttendanceStatus": {
+    "present": "उपस्थित",
+    "absent": "अनुपस्थित",
+    "half_day": "आधा दिन",
+    "leave": "छुट्टी",
+    "presentShort": "उ",
+    "absentShort": "अ",
+    "half_dayShort": "आ",
+    "leaveShort": "छु"
+  },
+  "VisitStatus": {
+    "planned": "नियोजित",
+    "completed": "पूर्ण",
+    "cancelled": "रद्द"
+  },
+  "StaffAttendance": {
+    "title": "उपस्थिति",
+    "description": "अपने स्टाफ़ की दैनिक उपस्थिति दर्ज करें। स्टाफ़ लॉग इन नहीं करते — कोई सदस्य उनकी ओर से दर्ज करता है।",
+    "tabDaily": "दैनिक",
+    "tabRegister": "मासिक रजिस्टर",
+    "dateLabel": "दिनांक",
+    "markAllPresent": "सभी को उपस्थित करें",
+    "save": "उपस्थिति सहेजें",
+    "saved": "उपस्थिति सहेजी गई",
+    "notMarked": "दर्ज नहीं",
+    "notePlaceholder": "टिप्पणी (वैकल्पिक)",
+    "noStaff": "अभी कोई सक्रिय स्टाफ़ नहीं है। पहले स्टाफ़ जोड़ें।",
+    "unsaved": "बिना सहेजे बदलाव",
+    "nothingToSave": "पहले कम से कम एक स्टाफ़ सदस्य को दर्ज करें।",
+    "columnStaff": "स्टाफ़",
+    "prevMonth": "पिछला महीना",
+    "nextMonth": "अगला महीना",
+    "tooManyStaff": "पहले 100 सक्रिय स्टाफ़ दिखाए जा रहे हैं।",
+    "clearMark": "हटाएँ",
+    "legend": "उ उपस्थित · अ अनुपस्थित · आ आधा दिन · छु छुट्टी",
+    "markedCount": "{total} में से {marked} दर्ज"
+  },
+  "StaffVisits": {
+    "title": "फील्ड विज़िट",
+    "description": "स्टाफ़ काम के लिए कहाँ गए, दर्ज करें — साइट सर्वे, ग्राहक से मुलाक़ात, ऑन-साइट काम।",
+    "newVisit": "नई विज़िट",
+    "editVisit": "विज़िट संपादित करें",
+    "newDescription": "किसी स्टाफ़ सदस्य की कार्य विज़िट दर्ज करें।",
+    "editDescription": "इस विज़िट को अपडेट करें।",
+    "searchPlaceholder": "स्थान, उद्देश्य या परिणाम खोजें…",
+    "noResults": "अभी कोई विज़िट दर्ज नहीं है।",
+    "columnWhen": "कब",
+    "columnStaff": "स्टाफ़",
+    "columnPlace": "स्थान",
+    "columnCustomer": "ग्राहक",
+    "columnPurpose": "उद्देश्य",
+    "columnStatus": "स्थिति",
+    "staffLabel": "स्टाफ़",
+    "staffPlaceholder": "स्टाफ़ चुनें",
+    "dateLabel": "दिनांक",
+    "timeLabel": "समय",
+    "placeLabel": "स्थान",
+    "placePlaceholder": "जैसे ब्रह्मपुत्र ट्रेडर्स, एम.जी. रोड",
+    "customerLabel": "ग्राहक (वैकल्पिक)",
+    "customerPlaceholder": "ग्राहक जोड़ें",
+    "purposeLabel": "उद्देश्य",
+    "purposePlaceholder": "जैसे रैक लगाने के लिए साइट सर्वे",
+    "outcomeLabel": "परिणाम / टिप्पणी",
+    "outcomePlaceholder": "विज़िट में क्या हुआ",
+    "statusLabel": "स्थिति",
+    "allStatuses": "सभी स्थितियाँ",
+    "allStaff": "सभी स्टाफ़",
+    "clearCustomer": "ग्राहक हटाएँ",
+    "deleteDescription": "यह विज़िट रिकॉर्ड स्थायी रूप से हटा दिया जाएगा।"
   }
 }

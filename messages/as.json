@@ -73,7 +73,9 @@
       "appSettings": "এপ ছেটিংছ",
       "staff": "কৰ্মচাৰী",
       "installments": "কিস্তি",
-      "pdfWatermarks": "PDF ৱাটাৰমাৰ্ক"
+      "pdfWatermarks": "PDF ৱাটাৰমাৰ্ক",
+      "staffAttendance": "উপস্থিতি",
+      "staffVisits": "ফিল্ড ভিজিট"
     }
   },
   "Common": {
@@ -1327,5 +1329,75 @@
     "unitAbbrev": "টা",
     "vendorInvoiceNoLabel": "বিক্ৰেতা চালান নং.",
     "vendorLabel": "বিক্ৰেতা"
+  },
+  "AttendanceStatus": {
+    "present": "উপস্থিত",
+    "absent": "অনুপস্থিত",
+    "half_day": "আধা দিন",
+    "leave": "ছুটী",
+    "presentShort": "উ",
+    "absentShort": "অ",
+    "half_dayShort": "আ",
+    "leaveShort": "ছু"
+  },
+  "VisitStatus": {
+    "planned": "পৰিকল্পিত",
+    "completed": "সম্পূৰ্ণ",
+    "cancelled": "বাতিল"
+  },
+  "StaffAttendance": {
+    "title": "উপস্থিতি",
+    "description": "আপোনাৰ কৰ্মচাৰীৰ দৈনিক উপস্থিতি লিখক। কৰ্মচাৰীয়ে লগ ইন নকৰে — এজন সদস্যই তেওঁলোকৰ হৈ লিখে।",
+    "tabDaily": "দৈনিক",
+    "tabRegister": "মাহেকীয়া ৰেজিষ্টাৰ",
+    "dateLabel": "তাৰিখ",
+    "markAllPresent": "সকলোকে উপস্থিত কৰক",
+    "save": "উপস্থিতি সংৰক্ষণ কৰক",
+    "saved": "উপস্থিতি সংৰক্ষিত হ'ল",
+    "notMarked": "লিখা হোৱা নাই",
+    "notePlaceholder": "টোকা (বৈকল্পিক)",
+    "noStaff": "এতিয়াও কোনো সক্ৰিয় কৰ্মচাৰী নাই। প্ৰথমে কৰ্মচাৰী যোগ কৰক।",
+    "unsaved": "সংৰক্ষণ নকৰা পৰিৱৰ্তন",
+    "nothingToSave": "প্ৰথমে অন্ততঃ এজন কৰ্মচাৰীৰ উপস্থিতি লিখক।",
+    "columnStaff": "কৰ্মচাৰী",
+    "prevMonth": "আগৰ মাহ",
+    "nextMonth": "পিছৰ মাহ",
+    "tooManyStaff": "প্ৰথম ১০০ জন সক্ৰিয় কৰ্মচাৰী দেখুওৱা হৈছে।",
+    "clearMark": "মচক",
+    "legend": "উ উপস্থিত · অ অনুপস্থিত · আ আধা দিন · ছু ছুটী",
+    "markedCount": "{total} জনৰ ভিতৰত {marked} জন লিখা হৈছে"
+  },
+  "StaffVisits": {
+    "title": "ফিল্ড ভিজিট",
+    "description": "কৰ্মচাৰী কামৰ বাবে ক'লৈ গৈছিল লিখক — ছাইট চাৰ্ভে, গ্ৰাহকৰ সৈতে সাক্ষাৎ, অন-ছাইট কাম।",
+    "newVisit": "নতুন ভিজিট",
+    "editVisit": "ভিজিট সম্পাদনা কৰক",
+    "newDescription": "এজন কৰ্মচাৰীৰ কামৰ ভিজিট লিখক।",
+    "editDescription": "এই ভিজিট আপডেট কৰক।",
+    "searchPlaceholder": "স্থান, উদ্দেশ্য বা ফলাফল সন্ধান কৰক…",
+    "noResults": "এতিয়াও কোনো ভিজিট লিখা হোৱা নাই।",
+    "columnWhen": "কেতিয়া",
+    "columnStaff": "কৰ্মচাৰী",
+    "columnPlace": "স্থান",
+    "columnCustomer": "গ্ৰাহক",
+    "columnPurpose": "উদ্দেশ্য",
+    "columnStatus": "স্থিতি",
+    "staffLabel": "কৰ্মচাৰী",
+    "staffPlaceholder": "কৰ্মচাৰী বাছক",
+    "dateLabel": "তাৰিখ",
+    "timeLabel": "সময়",
+    "placeLabel": "স্থান",
+    "placePlaceholder": "যেনে ব্ৰহ্মপুত্ৰ ট্ৰেডাৰ্ছ, এম.জি. ৰোড",
+    "customerLabel": "গ্ৰাহক (বৈকল্পিক)",
+    "customerPlaceholder": "গ্ৰাহক যোগ কৰক",
+    "purposeLabel": "উদ্দেশ্য",
+    "purposePlaceholder": "যেনে ৰেক বহুৱাবলৈ ছাইট চাৰ্ভে",
+    "outcomeLabel": "ফলাফল / টোকা",
+    "outcomePlaceholder": "ভিজিটত কি হ'ল",
+    "statusLabel": "স্থিতি",
+    "allStatuses": "সকলো স্থিতি",
+    "allStaff": "সকলো কৰ্মচাৰী",
+    "clearCustomer": "গ্ৰাহক আঁতৰাওক",
+    "deleteDescription": "এই ভিজিটৰ তথ্য স্থায়ীভাৱে মচি পেলোৱা হ'ব।"
   }
 }
